@@ -37,8 +37,8 @@ final class Explainer
                 'file' => $file,
                 'line' => $line,
             ],
-            // Attach raw trace for rich HTML rendering
-            'trace' => is_array($trace) ? $trace : [],
+            // Attach normalized trace for rich HTML rendering
+            'trace' => is_array($trace) ? self::normalizeTrace($trace) : [],
             // Capture a minimal snapshot of superglobals to help debugging
             'globals' => [
                 'get' => isset($_GET) ? $_GET : [],
@@ -151,6 +151,87 @@ final class Explainer
             case E_USER_DEPRECATED: return 'E_USER_DEPRECATED';
             default: return 'E_'.(string)$severity;
         }
+    }
+
+    private static function normalizeTrace(array $trace): array
+    {
+        $out = [];
+        foreach ($trace as $f) {
+            if (!is_array($f)) { continue; }
+            $fn = isset($f['function']) ? (string)$f['function'] : '';
+            $cls = isset($f['class']) ? (string)$f['class'] : '';
+            $type = isset($f['type']) ? (string)$f['type'] : '';
+            $file = isset($f['file']) ? (string)$f['file'] : null;
+            $line = isset($f['line']) ? (int)$f['line'] : null;
+            $args = isset($f['args']) && is_array($f['args']) ? $f['args'] : [];
+            $named = null;
+            try {
+                if ($fn !== '') {
+                    if ($cls !== '') {
+                        if (class_exists($cls, false) && method_exists($cls, $fn)) {
+                            $ref = new \ReflectionMethod($cls, $fn);
+                            $params = $ref->getParameters();
+                            $namedTmp = [];
+                            $i = 0;
+                            foreach ($params as $p) {
+                                $name = '$' . $p->getName();
+                                if (array_key_exists($i, $args)) {
+                                    $namedTmp[$name] = $args[$i];
+                                } else {
+                                    $namedTmp[$name] = '[missing]';
+                                }
+                                $i++;
+                            }
+                            $total = count($args);
+                            for (; $i < $total; $i++) {
+                                $namedTmp['$' . $i] = $args[$i];
+                            }
+                            $named = $namedTmp;
+                        }
+                    } else {
+                        if (function_exists($fn)) {
+                            $ref = new \ReflectionFunction($fn);
+                            $params = $ref->getParameters();
+                            $namedTmp = [];
+                            $i = 0;
+                            foreach ($params as $p) {
+                                $name = '$' . $p->getName();
+                                if (array_key_exists($i, $args)) {
+                                    $namedTmp[$name] = $args[$i];
+                                } else {
+                                    $namedTmp[$name] = '[missing]';
+                                }
+                                $i++;
+                            }
+                            $total = count($args);
+                            for (; $i < $total; $i++) {
+                                $namedTmp['$' . $i] = $args[$i];
+                            }
+                            $named = $namedTmp;
+                        }
+                    }
+                }
+            } catch (\Throwable $e) { $named = null; }
+
+            $locals = [];
+            if (isset($f['object'])) { $locals['$this'] = $f['object']; }
+            if (is_array($named)) {
+                foreach ($named as $k => $v) { $locals[$k] = $v; }
+            } elseif (!empty($args)) {
+                $i = 0; foreach ($args as $v) { $locals['$' . $i] = $v; $i++; }
+            }
+
+            $out[] = [
+                'function' => $fn,
+                'class' => $cls,
+                'type' => $type,
+                'file' => $file,
+                'line' => $line,
+                'args' => is_array($named) ? $named : $args,
+                'locals' => $locals,
+            ];
+        }
+        return $out;
     }
 
     /**

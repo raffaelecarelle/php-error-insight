@@ -112,6 +112,7 @@ final class Renderer
         $hStack = htmlspecialchars(Translator::t($config, 'html.headings.stack'), ENT_QUOTES, 'UTF-8');
         $hGlobals = htmlspecialchars(Translator::t($config, 'html.headings.globals'), ENT_QUOTES, 'UTF-8');
         $lArgs = htmlspecialchars(Translator::t($config, 'html.labels.arguments'), ENT_QUOTES, 'UTF-8');
+        $lLocals = htmlspecialchars(Translator::t($config, 'html.labels.locals'), ENT_QUOTES, 'UTF-8');
         $lCode = htmlspecialchars(Translator::t($config, 'html.labels.code'), ENT_QUOTES, 'UTF-8');
         $lGET = htmlspecialchars(Translator::t($config, 'html.labels.get'), ENT_QUOTES, 'UTF-8');
         $lPOST = htmlspecialchars(Translator::t($config, 'html.labels.post'), ENT_QUOTES, 'UTF-8');
@@ -173,6 +174,9 @@ final class Renderer
                 echo '<div class="frame">';
                 echo '<div class="frame-h" onclick="__ee_sel(' . $idx . ')"><div class="idx">#' . $idx . '</div><div class="sig">' . $sig . '</div><div class="loc">' . $loc . '</div></div>';
                 echo '<div class="frame-b">';
+                // Locals
+                $localsOut = $this->dumpArgs(isset($frame['locals']) && is_array($frame['locals']) ? $frame['locals'] : []);
+                echo '<div class="section"><strong>' . $lLocals . '</strong><div class="kv">' . htmlspecialchars($localsOut, ENT_QUOTES, 'UTF-8') . '</div></div>';
                 // Arguments
                 $argsOut = $this->dumpArgs(isset($frame['args']) && is_array($frame['args']) ? $frame['args'] : []);
                 echo '<div class="section"><strong>' . $lArgs . '</strong><div class="kv">' . htmlspecialchars($argsOut, ENT_QUOTES, 'UTF-8') . '</div></div>';

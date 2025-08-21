@@ -109,7 +109,10 @@ final class ErrorHandler
         $file = isset($err['file']) ? (string)$err['file'] : null;
         $line = isset($err['line']) ? (int)$err['line'] : null;
 
-        $exp = $this->explainer->explain('shutdown', $message, $file, $line, null, $severity, $this->config);
+        // Build a backtrace at shutdown to aid debugging
+        $trace = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT);
+        if (!empty($trace)) { array_shift($trace); }
+        $exp = $this->explainer->explain('shutdown', $message, $file, $line, $trace, $severity, $this->config);
         $this->renderer->render($exp, $this->config, 'shutdown', true);
     }
 

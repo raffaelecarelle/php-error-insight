@@ -24,6 +24,7 @@
     },
     "labels": {
       "arguments": "Argomenti",
+      "locals": "Locali",
       "code": "Estratto codice",
       "get": "GET",
       "post": "POST",
