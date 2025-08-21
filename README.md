@@ -1,167 +1,97 @@
-# Documento tecnico/funzionale
 ## PHP Error Explainer
 
-### **1. Introduzione**
-PHP Error Explainer è una libreria modulare che intercetta errori ed eccezioni negli applicativi PHP e fornisce spiegazioni didattiche e suggerimenti di risoluzione, sfruttando sia una base locale che modelli AI (LLM) locali o API esterne. Il tool punta a migliorare la comprensione degli errori e la produttività degli sviluppatori, integrandosi facilmente con framework come **Symfony** e **Laravel**.
+### **1. Introduction**
+PHP Error Explainer is a modular library that intercepts errors and exceptions in PHP applications and provides educational explanations and resolution suggestions, leveraging both a local database and AI models (LLM) either local or external APIs. The tool aims to improve error understanding and developer productivity, easily integrating with frameworks like **Symfony** and **Laravel**.
 
 ---
 
-### **2. Obiettivi**
-- Migliorare la leggibilità e la comprensione degli errori PHP.
-- Fornire spiegazioni dettagliate, didattiche e contestualizzate.
-- Sfruttare modelli AI per suggerimenti avanzati.
-- Integrare facilmente il tool in applicativi vanilla PHP, Symfony e Laravel.
+### **2. Objectives**
+- Improve readability and understanding of PHP errors.
+- Provide detailed, educational, and contextualized explanations.
+- Leverage AI models for advanced suggestions.
+- Easily integrate the tool into vanilla PHP, Symfony, and Laravel applications.
 
 ---
 
-### **3. Architettura e Moduli**
-Il sistema è suddiviso in tre pacchetti principali:
+### **3. Architecture and Modules**
+The system is divided into three main packages:
 
 #### **3.1. Core**
-- **Intercettazione Errori:** Gestione di errori, warning, eccezioni tramite handler personalizzati.
-- **Spiegazione:** Analisi del messaggio d’errore e generazione di una spiegazione testuale (base e/o AI).
-- **LLM Integration:** Interfaccia verso modelli AI locali (es. Ollama, LocalAI) e API esterne (OpenAI, Anthropic).
-- **Configurazione:** Possibilità di configurare backend AI, lingua, livello di dettaglio, ecc.
+- **Error Interception:** Management of errors, warnings, exceptions through custom handlers.
+- **Explanation:** Analysis of error message and generation of textual explanation (basic and/or AI).
+- **LLM Integration:** Interface to local AI models (e.g., Ollama, LocalAI) and external APIs (OpenAI, Anthropic).
+- **Configuration:** Ability to configure AI backend, language, detail level, etc.
 
 #### **3.2. Symfony Adapter**
-- **Bundle Symfony:** Integrazione tramite bundle, aggancio agli eventi di errore (`kernel.exception`).
-- **Configurazione via YAML/Env:** Permette di configurare il tool tramite file di configurazione Symfony.
-- **Output personalizzato:** Mostra la spiegazione all’interno delle pagine di errore Symfony.
+- **Symfony Bundle:** Integration through bundle, hooking into error events (`kernel.exception`).
+- **YAML/Env Configuration:** Allows configuring the tool through Symfony configuration files.
+- **Custom Output:** Shows explanation within Symfony error pages.
 
 #### **3.3. Laravel Adapter**
-- **Service Provider:** Integrazione tramite provider, aggancio ai global error handler di Laravel.
-- **Configurazione via config:** Supporto per file di configurazione Laravel.
-- **Output personalizzato:** Mostra la spiegazione all’interno delle pagine di errore Laravel.
+- **Service Provider:** Integration through provider, hooking into Laravel's global error handler.
+- **Config Configuration:** Support for Laravel configuration files.
+- **Custom Output:** Shows explanation within Laravel error pages.
 
 ---
 
-### **4. Funzionalità**
+### **4. Features**
 
-- **Intercettazione automatica:** Errori e eccezioni vengono intercettati e analizzati.
-- **Spiegazione base:** Messaggi didattici predefiniti per i principali errori PHP.
-- **Spiegazione AI:** Invio del messaggio d’errore al backend AI (locale/API) per una spiegazione avanzata.
-- **Supporto framework:** Adattatori per Symfony e Laravel.
-- **Configurabilità:** Scelta del backend AI, lingua, output HTML/text, modalità verbose/sintetica.
-- **Estendibilità:** Possibilità di aggiungere nuovi adapter per altri framework o ambienti.
+- **Automatic Interception:** Errors and exceptions are intercepted and analyzed.
+- **Basic Explanation:** Predefined educational messages for main PHP errors.
+- **AI Explanation:** Sending error message to AI backend (local/API) for advanced explanation.
+- **Framework Support:** Adapters for Symfony and Laravel.
+- **Configurability:** Choice of AI backend, language, HTML/text output, verbose/synthetic mode.
+- **Extensibility:** Ability to add new adapters for other frameworks or environments.
 
 ---
 
-### **5. Requisiti Tecnici**
+### **5. Technical Requirements**
 
 - PHP >= 7.4
-- Composer per la gestione delle dipendenze
-- (Opzionale) Connessione a Ollama/LocalAI per LLM locale
-- (Opzionale) API key per OpenAI/Anthropic
-- Symfony >= 5.0 (per adapter)
-- Laravel >= 8.0 (per adapter)
+- Composer for dependency management
+- (Optional) Connection to Ollama/LocalAI for local LLM
+- (Optional) API key for OpenAI/Anthropic
+- Symfony >= 5.0 (for adapter)
+- Laravel >= 8.0 (for adapter)
 
 ---
 
-### **6. Flusso di funzionamento**
+### **6. Operation Flow**
 
-1. Registrazione degli handler per errori ed eccezioni.
-2. Alla ricezione di un errore/exception:
-    - Il core analizza il messaggio.
-    - Se configurato, invia il messaggio al backend AI.
-    - Riceve una spiegazione testuale.
-    - Visualizza la spiegazione nella pagina di errore o log.
-3. Nel caso di framework:
-    - Gli adapter si agganciano agli hook/eventi di errore e chiamano il core.
+1. Registration of handlers for errors and exceptions.
+2. Upon receiving an error/exception:
+    - The core analyzes the message.
+    - If configured, sends the message to AI backend.
+    - Receives a textual explanation.
+    - Displays the explanation in error page or log.
+3. For frameworks:
+    - Adapters hook into error hooks/events and call the core.
 
 ---
 
 ### **7. Output**
 
-- HTML personalizzato per pagine di errore.
-- Output testuale per CLI/log.
-- Possibilità di esportare la spiegazione come JSON per altri utilizzi.
+- Custom HTML for error pages.
+- Textual output for CLI/log.
+- Ability to export explanation as JSON for other uses.
 
 ---
 
-### **8. Sicurezza & Privacy**
+### **8. Security & Privacy**
 
-- Possibilità di filtrare o anonimizzare i dati inviati ai servizi esterni.
-- Configurazione per evitare invio di dati sensibili.
-
----
-
-### **9. Estensioni**
-- Statistiche sugli errori più frequenti.
-- Dashboard web di analisi errori.
-- Plugin per IDE (VS Code, PhpStorm).
-- Community per la condivisione di soluzioni.
+- Ability to filter or anonymize data sent to external services.
+- Configuration to avoid sending sensitive data.
 
 ---
 
-### **10. Esempio di utilizzo**
+### **9. Next Extensions **
+- Statistics on most frequent errors.
+- Web dashboard for error analysis.
+- IDE plugins (VS Code, PhpStorm).
+- Community for sharing solutions.
+
+---
+
+### **10. Usage Example**
 
 **Vanilla PHP:**
-```php
-use ErrorExplainer\ErrorExplainer;
-ErrorExplainer::register();
-```
-
-**Symfony:**
-```yaml
-# config/packages/error_explainer.yaml
-error_explainer:
-    enabled: true
-    backend: 'local'
-    model: 'llama2'
-```
-
-**Laravel:**
-```php
-// config/error_explainer.php
-return [
-    'enabled' => true,
-    'backend' => 'api',
-    'api_key' => env('ERROR_EXPLAINER_API_KEY'),
-];
-```
-
----
-
-### AI e Configurazione
-
-Variabili d'ambiente supportate (possono essere override da opzioni passate a ErrorExplainer::register):
-- ERROR_EXPLAINER_ENABLED: 1|0 abilita/disabilita il tool (default: 1)
-- ERROR_EXPLAINER_BACKEND: none|local|api
-  - none: solo spiegazioni base locali (default)
-  - local: invia la richiesta ad un LLM locale (es. Ollama/LocalAI)
-  - api: usa un provider API compatibile con OpenAI (es. OpenAI)
-- ERROR_EXPLAINER_MODEL: nome modello (es. "llama2", "gpt-4o-mini")
-- ERROR_EXPLAINER_API_URL: URL dell'endpoint
-  - Local (Ollama): http://localhost:11434 (verrà usato /api/generate)
-  - OpenAI: https://api.openai.com/v1/chat/completions
-- ERROR_EXPLAINER_API_KEY: chiave API per provider esterni (es. OpenAI)
-- ERROR_EXPLAINER_LANG: lingua delle spiegazioni (default: it)
-- ERROR_EXPLAINER_OUTPUT: auto|html|text|json (default: auto)
-- ERROR_EXPLAINER_VERBOSE: 1|0 include trace dettagliato e messaggi extra (default: 0)
-
-Esempi rapidi
-- Solo locale (senza AI):
-  ERROR_EXPLAINER_BACKEND=none php examples/vanilla/index.php
-
-- LLM locale (Ollama):
-  ERROR_EXPLAINER_BACKEND=local \
-  ERROR_EXPLAINER_MODEL=llama2 \
-  ERROR_EXPLAINER_API_URL=http://localhost:11434 \
-  php examples/vanilla/index.php
-
-- OpenAI:
-  ERROR_EXPLAINER_BACKEND=api \
-  ERROR_EXPLAINER_MODEL=gpt-4o-mini \
-  ERROR_EXPLAINER_API_URL=https://api.openai.com/v1/chat/completions \
-  ERROR_EXPLAINER_API_KEY=sk-... \
-  php examples/vanilla/index.php
-
-Note tecniche
-- L'integrazione AI usa cURL con timeout e fallback silenzioso in caso di errore.
-- Per Ollama viene chiamato /api/generate con stream=false; per endpoint compatibili OpenAI si usa /v1/chat/completions.
-- Il testo AI viene aggregato ai dettagli e, se rilevati, i punti elenco vengono aggiunti ai suggerimenti.
-
-### **11. Licenza**
-MIT (proposta)
-
----
