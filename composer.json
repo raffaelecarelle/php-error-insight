@@ -1,0 +1,14 @@
+{
+  "name": "raffaelecarelle/php-error-explainer",
+  "description": "A PHP library that intercepts errors/exceptions and explains them with educational messages, optionally via AI backends.",
+  "type": "library",
+  "license": "MIT",
+  "require": {
+    "php": ">=7.4"
+  },
+  "autoload": {
+    "psr-4": {
+      "ErrorExplainer\\": "src/"
+    }
+  }
+}

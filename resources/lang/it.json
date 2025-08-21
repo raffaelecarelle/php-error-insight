@@ -1,0 +1,128 @@
+{
+  "title": {
+    "basic": "Spiegazione errore PHP",
+    "ai": "Spiegazione errore PHP (con AI)"
+  },
+  "labels": {
+    "in": "In:",
+    "summary": "Riepilogo:",
+    "details": "Dettagli:",
+    "suggestions": "Suggerimenti:"
+  },
+  "details": {
+    "message": "Messaggio:",
+    "position": "Posizione:",
+    "trace": "Trace:",
+    "unknown": "n/d"
+  },
+  "html": {
+    "headings": {
+      "details": "Dettagli",
+      "suggestions": "Suggerimenti",
+      "stack": "Stack trace",
+      "globals": "Stato globale"
+    },
+    "labels": {
+      "arguments": "Argomenti",
+      "code": "Estratto codice",
+      "get": "GET",
+      "post": "POST",
+      "cookie": "COOKIE",
+      "session": "SESSIONE"
+    }
+  },
+  "ai": {
+    "system_role": "Sei un assistente che spiega errori PHP in modo didattico e conciso.",
+    "prompt": "Sei un assistente che spiega errori PHP in modo didattico in lingua {lang}.\nMessaggio: {message}\nGravità: {severity}\nPosizione: {where}\nSpiega la causa probabile e fornisci consigli pratici per risolvere. Mantieni la risposta concisa con punti elenco dove utile."
+  },
+  "suggestion": {
+    "ai_unavailable": "Impossibile ottenere la spiegazione AI al momento (controlla configurazione backend/modello/API)."
+  },
+  "errors": {
+    "undefined_variable": {
+      "summary": "Variabile non definita: stai usando una variabile prima di averla definita o fuori scope.",
+      "suggestions": [
+        "Inizializza la variabile prima dell'uso.",
+        "Controlla lo scope (funzioni/closure) o il nome della variabile per errori di battitura."
+      ]
+    },
+    "undefined_index": {
+      "summary": "Indice/chiave di array non definita: stai accedendo a una chiave che non esiste nell'array.",
+      "suggestions": [
+        "Verifica l'esistenza della chiave con isset() o array_key_exists() prima di accedere.",
+        "Inizializza l'array con la chiave necessaria o gestisci il valore di default."
+      ]
+    },
+    "undefined_function": {
+      "summary": "Funzione non definita: la funzione chiamata non esiste o non è caricata.",
+      "suggestions": [
+        "Controlla il namespace e gli use.",
+        "Includi/require il file dove è definita la funzione o carica l'estensione necessaria."
+      ]
+    },
+    "class_not_found": {
+      "summary": "Classe non trovata: la classe non è caricata o il namespace è errato.",
+      "suggestions": [
+        "Verifica il namespace e l'autoloader di Composer (composer dump-autoload).",
+        "Controlla che il file della classe esista ed abbia il namespace corretto."
+      ]
+    },
+    "division_by_zero": {
+      "summary": "Divisione per zero: stai dividendo un numero per 0.",
+      "suggestions": [
+        "Verifica il divisore prima di effettuare l'operazione.",
+        "Gestisci i casi limite (0 o null) con condizionali."
+      ]
+    },
+    "memory_exhausted": {
+      "summary": "Memoria esaurita: lo script ha superato il limite di memoria consentito.",
+      "suggestions": [
+        "Ottimizza l'uso di memoria (streaming, chunking, unset di variabili grandi).",
+        "Aumenta memory_limit in php.ini o via ini_set per ambienti di sviluppo."
+      ]
+    },
+    "maximum_execution_time": {
+      "summary": "Tempo massimo di esecuzione superato: lo script impiega troppo tempo.",
+      "suggestions": [
+        "Ottimizza l'algoritmo o usa job asincroni.",
+        "Aumenta max_execution_time in php.ini o set_time_limit in sviluppo."
+      ]
+    },
+    "cannot_redeclare": {
+      "summary": "Ridichiarazione: una funzione o classe è stata definita più volte.",
+      "suggestions": [
+        "Evita include/require multipli usando require_once.",
+        "Controlla i nomi duplicati nel codice e nel caricamento automatico."
+      ]
+    },
+    "headers_already_sent": {
+      "summary": "Header già inviati: l'output è iniziato prima dell'invio degli header HTTP.",
+      "suggestions": [
+        "Rimuovi spazi o output prima di header(), session_start(), ecc.",
+        "Usa output buffering o sposta le chiamate agli header all'inizio dello script."
+      ]
+    },
+    "call_on_null": {
+      "summary": "Metodo chiamato su null: la variabile oggetto non è stata istanziata.",
+      "suggestions": [
+        "Verifica che la variabile sia un oggetto valido prima della chiamata.",
+        "Traccia il flusso per capire dove perdi l'istanza."
+      ]
+    },
+    "syntax_error": {
+      "summary": "Errore di sintassi: il parser PHP ha trovato un costrutto non valido.",
+      "suggestions": [
+        "Controlla parentesi, punti e virgola, virgolette e versioni di PHP.",
+        "Usa php -l per validare i file e un IDE per evidenziare la sintassi."
+      ]
+    },
+    "generic": {
+      "summary": "Si è verificato un errore. Di seguito alcune possibili cause e passi per indagare.",
+      "suggestions": [
+        "Leggi attentamente il messaggio e identifica variabili/file coinvolti.",
+        "Aggiungi log o dump mirati per isolare il problema.",
+        "Consulta la documentazione di PHP o del framework utilizzato."
+      ]
+    }
+  }
+}

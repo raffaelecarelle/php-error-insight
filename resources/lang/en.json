@@ -1,0 +1,128 @@
+{
+  "title": {
+    "basic": "PHP Error Explanation",
+    "ai": "PHP Error Explanation (with AI)"
+  },
+  "labels": {
+    "in": "In:",
+    "summary": "Summary:",
+    "details": "Details:",
+    "suggestions": "Suggestions:"
+  },
+  "details": {
+    "message": "Message:",
+    "position": "Location:",
+    "trace": "Trace:",
+    "unknown": "n/a"
+  },
+  "html": {
+      "headings": {
+        "details": "Details",
+        "suggestions": "Suggestions",
+        "stack": "Stack trace",
+        "globals": "Globals"
+      },
+      "labels": {
+        "arguments": "Arguments",
+        "code": "Code excerpt",
+        "get": "GET",
+        "post": "POST",
+        "cookie": "COOKIE",
+        "session": "SESSION"
+      }
+    },
+  "ai": {
+    "system_role": "You are an assistant that explains PHP errors in an educational and concise way.",
+    "prompt": "You are an assistant that explains PHP errors in {lang}.\nMessage: {message}\nSeverity: {severity}\nLocation: {where}\nExplain the likely cause and provide practical steps to fix it. Keep the answer concise and use bullet points when useful."
+  },
+  "suggestion": {
+    "ai_unavailable": "Unable to obtain the AI explanation at the moment (check backend/model/API configuration)."
+  },
+  "errors": {
+    "undefined_variable": {
+      "summary": "Undefined variable: you are using a variable before defining it or outside of its scope.",
+      "suggestions": [
+        "Initialize the variable before using it.",
+        "Check the scope (functions/closures) or typos in the variable name."
+      ]
+    },
+    "undefined_index": {
+      "summary": "Undefined index/array key: you are accessing a key that does not exist in the array.",
+      "suggestions": [
+        "Check for the key with isset() or array_key_exists() before accessing.",
+        "Initialize the array with the needed key or handle a default value."
+      ]
+    },
+    "undefined_function": {
+      "summary": "Undefined function: the called function does not exist or is not loaded.",
+      "suggestions": [
+        "Check the namespace and use statements.",
+        "Include/require the file where the function is defined or load the required extension."
+      ]
+    },
+    "class_not_found": {
+      "summary": "Class not found: the class is not loaded or the namespace is wrong.",
+      "suggestions": [
+        "Verify the namespace and Composer autoloader (composer dump-autoload).",
+        "Ensure the class file exists and has the correct namespace."
+      ]
+    },
+    "division_by_zero": {
+      "summary": "Division by zero: you are dividing a number by 0.",
+      "suggestions": [
+        "Validate the divisor before performing the operation.",
+        "Handle edge cases (0 or null) with conditionals."
+      ]
+    },
+    "memory_exhausted": {
+      "summary": "Out of memory: the script exceeded the allowed memory limit.",
+      "suggestions": [
+        "Optimize memory usage (streaming, chunking, unset large variables).",
+        "Increase memory_limit in php.ini or via ini_set for development environments."
+      ]
+    },
+    "maximum_execution_time": {
+      "summary": "Maximum execution time exceeded: the script takes too long.",
+      "suggestions": [
+        "Optimize the algorithm or use asynchronous jobs.",
+        "Increase max_execution_time in php.ini or use set_time_limit in development."
+      ]
+    },
+    "cannot_redeclare": {
+      "summary": "Redeclare error: a function or class has been defined more than once.",
+      "suggestions": [
+        "Avoid multiple includes/requires by using require_once.",
+        "Check for duplicate names in the code and in the autoloading."
+      ]
+    },
+    "headers_already_sent": {
+      "summary": "Headers already sent: output started before sending HTTP headers.",
+      "suggestions": [
+        "Remove spaces or output before header(), session_start(), etc.",
+        "Use output buffering or move header calls to the beginning of the script."
+      ]
+    },
+    "call_on_null": {
+      "summary": "Method called on null: the object variable has not been instantiated.",
+      "suggestions": [
+        "Ensure the variable is a valid object before the call.",
+        "Trace the flow to understand where the instance is lost."
+      ]
+    },
+    "syntax_error": {
+      "summary": "Syntax error: the PHP parser encountered an invalid construct.",
+      "suggestions": [
+        "Check parentheses, semicolons, quotes, and PHP versions.",
+        "Use php -l to validate files and an IDE to highlight syntax."
+      ]
+    },
+    "generic": {
+      "summary": "An error occurred. Below are some possible causes and steps to investigate.",
+      "suggestions": [
+        "Read the message carefully and identify variables/files involved.",
+        "Add targeted logs or dumps to isolate the issue.",
+        "Consult PHP or your framework documentation."
+      ]
+    }
+  }
+}
