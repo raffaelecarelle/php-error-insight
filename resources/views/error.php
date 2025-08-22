@@ -4,49 +4,12 @@ $e = static function ($v): string { return htmlspecialchars((string)$v, ENT_QUOT
 $docLang = $docLang ?? 'it';
 $title = $title ?? 'PHP Exception Viewer';
 $subtitle = $subtitle ?? '';
-$severity = $severity ?? 'Error';
 $where = $where ?? '';
-$summary = $summary ?? '';
 $verbose = $verbose ?? false;
 $details = $details ?? '';
 $suggestions = $suggestions ?? [];
 $frames = $frames ?? [];
 $labels = $labels ?? ['headings' => [], 'labels' => []];
-
-$dumpLines = static function ($arr): string {
-    if (!is_array($arr)) return '';
-    $lines = [];
-    foreach ($arr as $k => $v) {
-        $vv = $v;
-        if (is_array($v) || is_object($v)) {
-            $vv = json_encode($v, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_PARTIAL_OUTPUT_ON_ERROR);
-        } elseif (is_bool($v)) {
-            $vv = $v ? 'true' : 'false';
-        } elseif ($v === null) {
-            $vv = 'null';
-        }
-        $lines[] = (string)$k . ' = ' . (string)$vv;
-    }
-    return implode("\n", $lines);
-};
-
-$serverDump = $dumpLines(isset($_SERVER) ? $_SERVER : []);
-$envDump = $dumpLines(isset($_ENV) ? $_ENV : []);
-$cookieDump = $dumpLines(isset($_COOKIE) ? $_COOKIE : []);
-$sessionArr = (function () { return (function_exists('session_status') && session_status() === PHP_SESSION_ACTIVE && isset($_SESSION)) ? (array)$_SESSION : []; })();
-$sessionDump = $dumpLines($sessionArr);
-$getDump = $dumpLines(isset($_GET) ? $_GET : []);
-$postArr = isset($_POST) ? $_POST : [];
-if (is_array($postArr)) {
-    foreach ($postArr as $k => &$v) {
-        if (is_string($k) && preg_match('/pass(word)?|secret|token|key/i', (string)$k)) {
-            $v = '********';
-        }
-    }
-    unset($v);
-}
-$postDump = $dumpLines($postArr);
-$filesDump = $dumpLines(isset($_FILES) ? $_FILES : []);
 $copyText = json_encode(trim(($title !== '' ? $title : 'Error') . ($where !== '' ? ' in ' . $where : '')), JSON_UNESCAPED_UNICODE);
 ?>
 <!DOCTYPE html>
@@ -119,25 +82,25 @@ $copyText = json_encode(trim(($title !== '' ? $title : 'Error') . ($where !== ''
         </div>
 
         <div id="tab-server" class="tab-content">
-            <pre class="bg-gray-900 text-gray-100 p-3 rounded text-xs"><?= $e($serverDump) ?></pre>
+            <pre class="bg-gray-900 text-gray-100 p-3 rounded text-xs"><?= dump($_SERVER) ?></pre>
         </div>
         <div id="tab-env" class="tab-content hidden">
-            <pre class="bg-gray-900 text-gray-100 p-3 rounded text-xs"><?= $e($envDump) ?></pre>
+            <pre class="bg-gray-900 text-gray-100 p-3 rounded text-xs"><?= dump($_ENV) ?></pre>
         </div>
         <div id="tab-cookies" class="tab-content hidden">
-            <pre class="bg-gray-900 text-gray-100 p-3 rounded text-xs"><?= $e($cookieDump) ?></pre>
+            <pre class="bg-gray-900 text-gray-100 p-3 rounded text-xs"><?= dump($_COOKIE) ?></pre>
         </div>
         <div id="tab-session" class="tab-content hidden">
-            <pre class="bg-gray-900 text-gray-100 p-3 rounded text-xs"><?= $e($sessionDump) ?></pre>
+            <pre class="bg-gray-900 text-gray-100 p-3 rounded text-xs"><?= dump($_SESSION) ?></pre>
         </div>
         <div id="tab-get" class="tab-content hidden">
-            <pre class="bg-gray-900 text-gray-100 p-3 rounded text-xs"><?= $e($getDump) ?></pre>
+            <pre class="bg-gray-900 text-gray-100 p-3 rounded text-xs"><?= dump($_GET) ?></pre>
         </div>
         <div id="tab-post" class="tab-content hidden">
-            <pre class="bg-gray-900 text-gray-100 p-3 rounded text-xs"><?= $e($postDump) ?></pre>
+            <pre class="bg-gray-900 text-gray-100 p-3 rounded text-xs"><?= dump($_POST) ?></pre>
         </div>
         <div id="tab-files" class="tab-content hidden">
-            <pre class="bg-gray-900 text-gray-100 p-3 rounded text-xs"><?= $e($filesDump) ?></pre>
+            <pre class="bg-gray-900 text-gray-100 p-3 rounded text-xs"><?= dump($_FILES) ?></pre>
         </div>
     </section>
 
