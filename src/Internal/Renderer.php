@@ -195,6 +195,7 @@ final class Renderer
         $labels = [
             'headings' => [
                 'details' => Translator::t($config, 'html.headings.details'),
+                'env_details' => Translator::t($config, 'html.headings.env_details'),
                 'suggestions' => Translator::t($config, 'html.headings.suggestions'),
                 'stack' => Translator::t($config, 'html.headings.stack'),
                 'globals' => Translator::t($config, 'html.headings.globals'),

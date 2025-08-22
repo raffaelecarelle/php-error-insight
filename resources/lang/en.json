@@ -18,6 +18,7 @@
   "html": {
       "headings": {
         "details": "Details",
+        "env_details": "Environment Details",
         "suggestions": "Suggestions",
         "stack": "Stack trace",
         "globals": "Globals",

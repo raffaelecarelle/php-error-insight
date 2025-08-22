@@ -66,11 +66,7 @@ $copyText = json_encode(trim(($title !== '' ? $title : 'Error') . ($where !== ''
 <!-- Header -->
 <div class="bg-red-600 text-white px-6 py-4 flex justify-between items-center shadow">
     <div>
-        <h1 class="text-xl font-bold">🚨 Eccezione non gestita</h1>
-        <p class="text-sm">
-            <?= $e($title) ?>
-            <?php if ($where !== ''): ?> in <code><?= $e($where) ?></code><?php endif; ?>
-        </p>
+        <h1 class="text-xl font-bold">🚨 <?= $e($title) ?> <?php if ($where !== ''): ?> in <code><?= $e($where) ?></code><?php endif; ?></h1>
     </div>
     <div class="flex space-x-2">
         <button id="copyBtn" class="bg-white text-red-600 px-3 py-1 rounded shadow hover:bg-gray-200">
@@ -111,7 +107,7 @@ $copyText = json_encode(trim(($title !== '' ? $title : 'Error') . ($where !== ''
 
     <!-- Tabs -->
     <section class="mb-6">
-        <h2 class="text-lg font-semibold mb-2">Dettagli Ambiente</h2>
+        <h2 class="text-lg font-semibold mb-2"><?= $e($labels['headings']['env_details'] ?? 'Environment Details') ?></h2>
         <div class="border-b border-gray-300 dark:border-gray-700 flex flex-wrap space-x-2 mb-4">
             <button class="tab-btn font-medium py-2 px-3 border-b-2 border-red-600" data-tab="server">Server/Request</button>
             <button class="tab-btn font-medium py-2 px-3" data-tab="env">Env Vars</button>
