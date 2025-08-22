@@ -31,9 +31,10 @@ $copyText = json_encode(trim(($title !== '' ? $title : 'Error') . ($where !== ''
     <div>
         <h1 class="text-xl font-bold">🚨 <?= $e($title) ?> <?php if ($where !== ''): ?> in <code><?= $e($where) ?></code><?php endif; ?></h1>
     </div>
+
     <div class="flex space-x-2">
         <button id="copyBtn" class="bg-white text-red-600 px-3 py-1 rounded shadow hover:bg-gray-200">
-            Copy error
+            <?= $e($labels['headings']['copy'] ?? 'Copy to clipboard') ?>
         </button>
         <button id="toggleTheme" class="bg-white text-gray-700 px-3 py-1 rounded shadow hover:bg-gray-200">
             🌙/☀️
@@ -165,8 +166,12 @@ $copyText = json_encode(trim(($title !== '' ? $title : 'Error') . ($where !== ''
     // Copy to clipboard
     document.getElementById('copyBtn').addEventListener('click', () => {
         const text = <?= $copyText ?>;
+        const btnText = '<?= $e($labels['headings']['copy'] ?? 'Copy to clipboard') ?>';
         navigator.clipboard.writeText(text).then(() => {
-            alert("Errore copiato negli appunti!");
+            document.getElementById('copyBtn').textContent = '<?= $e($labels['headings']['copied'] ?? 'Copied!') ?>';
+            setTimeout(() => {
+                document.getElementById('copyBtn').textContent = btnText;
+            }, 3000);
         });
     });
 

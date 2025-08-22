@@ -18,6 +18,8 @@
   "html": {
   "headings": {
       "details": "Dettagli",
+      "copied": "Copiato!",
+      "copy": "Copia errore",
       "env_details": "Dattagli Ambiente",
       "suggestions": "Suggerimenti",
       "stack": "Stack trace",

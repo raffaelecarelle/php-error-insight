@@ -293,6 +293,12 @@ Explain the likely cause and provide practical steps to fix it. Keep the answer 
         if ($backend === 'api' || $backend === 'openai') {
             return $this->aiOpenAI($prompt, $config);
         }
+        if ($backend === 'anthropic') {
+            return $this->aiAnthropic($prompt, $config);
+        }
+        if ($backend === 'google' || $backend === 'gemini') {
+            return $this->aiGoogle($prompt, $config);
+        }
         return null;
     }
 
@@ -350,6 +356,74 @@ Explain the likely cause and provide practical steps to fix it. Keep the answer 
         }
         if (isset($resp['error']['message']) && is_string($resp['error']['message'])) {
             return null; // avoid exposing API errors to end-user
+        }
+        return null;
+    }
+
+    private function aiAnthropic(string $prompt, Config $config): ?string
+    {
+        if (!$config->apiKey || !$config->model) {
+            return null;
+        }
+        $url = $config->apiUrl ?: 'https://api.anthropic.com/v1/messages';
+        $headers = [
+            'x-api-key: ' . $config->apiKey,
+            'anthropic-version: 2023-06-01',
+        ];
+        $payload = [
+            'model' => $config->model,
+            'max_tokens' => 400,
+            'messages' => [
+                ['role' => 'user', 'content' => [ ['type' => 'text', 'text' => $prompt] ]],
+            ],
+            'system' => 'You are an assistant that explains PHP errors in an educational and concise way.',
+            'temperature' => 0.2,
+        ];
+        $resp = $this->httpJson('POST', $url, $payload, $headers, 12);
+        if (!is_array($resp)) {
+            return null;
+        }
+        // Anthropic Messages API: content is array of blocks with type=text
+        if (isset($resp['content'][0]['text']) && is_string($resp['content'][0]['text'])) {
+            return trim((string)$resp['content'][0]['text']);
+        }
+        // Some SDKs nest under content[0]['type' => 'text']
+        if (isset($resp['content'][0]) && is_array($resp['content'][0]) && isset($resp['content'][0]['type']) && $resp['content'][0]['type'] === 'text' && isset($resp['content'][0]['text'])) {
+            return trim((string)$resp['content'][0]['text']);
+        }
+        return null;
+    }
+
+    private function aiGoogle(string $prompt, Config $config): ?string
+    {
+        if (!$config->apiKey || !$config->model) {
+            return null;
+        }
+        $base = $config->apiUrl ?: 'https://generativelanguage.googleapis.com/v1/models';
+        $url = rtrim($base, '/') . '/' . rawurlencode($config->model) . ':generateContent?key=' . urlencode($config->apiKey);
+        $headers = [];
+        $payload = [
+            'contents' => [
+                [
+                    'role' => 'user',
+                    'parts' => [ ['text' => $prompt] ],
+                ],
+            ],
+            'generationConfig' => [
+                'temperature' => 0.2,
+            ],
+        ];
+        $resp = $this->httpJson('POST', $url, $payload, $headers, 12);
+        if (!is_array($resp)) {
+            return null;
+        }
+        // Gemini API response: candidates[0].content.parts[0].text
+        if (isset($resp['candidates'][0]['content']['parts'][0]['text']) && is_string($resp['candidates'][0]['content']['parts'][0]['text'])) {
+            return trim((string)$resp['candidates'][0]['content']['parts'][0]['text']);
+        }
+        // Some responses may place text at candidates[0].output_text (older beta)
+        if (isset($resp['candidates'][0]['output_text']) && is_string($resp['candidates'][0]['output_text'])) {
+            return trim((string)$resp['candidates'][0]['output_text']);
         }
         return null;
     }

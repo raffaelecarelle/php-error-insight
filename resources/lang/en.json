@@ -17,6 +17,8 @@
   },
   "html": {
       "headings": {
+        "copy": "Copy to clipboard",
+        "copied": "Copied!",
         "details": "Details",
         "env_details": "Environment Details",
         "suggestions": "Suggestions",

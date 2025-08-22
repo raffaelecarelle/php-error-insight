@@ -3,10 +3,10 @@
 // Minimal example demonstrating PHP Error Explainer
 // Run with: php examples/vanilla/index.php
 // Optional AI config (env):
-//   ERROR_EXPLAINER_BACKEND=none|local|api
-//   ERROR_EXPLAINER_MODEL=llama2|gpt-4o-mini|...
-//   ERROR_EXPLAINER_API_URL=http://localhost:11434 (for Ollama) or https://api.openai.com/v1/chat/completions
-//   ERROR_EXPLAINER_API_KEY=sk-... (for OpenAI)
+//   ERROR_EXPLAINER_BACKEND=none|local|api|openai|anthropic|google|gemini
+//   ERROR_EXPLAINER_MODEL=llama3:instruct|gpt-4o-mini|claude-3-5-sonnet-20240620|gemini-1.5-flash|...
+//   ERROR_EXPLAINER_API_URL=http://localhost:11434 (Ollama) | https://api.openai.com/v1/chat/completions (OpenAI) | https://api.anthropic.com/v1/messages (Anthropic) | https://generativelanguage.googleapis.com/v1/models (Google Gemini)
+//   ERROR_EXPLAINER_API_KEY=sk-... (OpenAI) | api-key (Anthropic) | api-key (Google Gemini)
 //   ERROR_EXPLAINER_OUTPUT=auto|text|html|json
 //   ERROR_EXPLAINER_VERBOSE=1
 //   ERROR_EXPLAINER_LANG=it|en

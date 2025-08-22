@@ -7,7 +7,7 @@ Screenshots:
 ![head.png](resources/img/readme/head.png)
 ![ai-section.png](resources/img/readme/ai-section.png)
 
-- Supports local AI backends (e.g. Ollama/LocalAI) and APIs (e.g. OpenAI).
+- Supports local AI backends (e.g. Ollama/LocalAI) and APIs (e.g. OpenAI, Anthropic, Google Gemini).
 - HTML, text or JSON output.
 - Simple configuration via environment variables or by instantiating the Config.
 
@@ -27,10 +27,10 @@ You can configure the tool via environment variables or through code.
 
 Supported environment variables:
 - ERROR_EXPLAINER_ENABLED: true/false (default: true)
-- ERROR_EXPLAINER_BACKEND: none|local|api
-- ERROR_EXPLAINER_MODEL: model name (e.g. llama3:instruct, gpt-4o-mini)
-- ERROR_EXPLAINER_API_KEY: API key (required for api backend)
-- ERROR_EXPLAINER_API_URL: service URL (e.g. http://localhost:11434 for Ollama, or https://api.openai.com/v1/chat/completions)
+- ERROR_EXPLAINER_BACKEND: none|local|api|openai|anthropic|google|gemini
+- ERROR_EXPLAINER_MODEL: model name (e.g. llama3:instruct, gpt-4o-mini, claude-3-5-sonnet-20240620, gemini-1.5-flash)
+- ERROR_EXPLAINER_API_KEY: API key (required for api/openai/anthropic/google backends)
+- ERROR_EXPLAINER_API_URL: service URL (optional override; e.g. http://localhost:11434 for Ollama, https://api.openai.com/v1/chat/completions for OpenAI, https://api.anthropic.com/v1/messages for Anthropic, https://generativelanguage.googleapis.com/v1/models for Google Gemini)
 - ERROR_EXPLAINER_LANG: language for AI prompt (it, en, ...; default: it)
 - ERROR_EXPLAINER_OUTPUT: auto|html|text|json (default: auto)
 - ERROR_EXPLAINER_VERBOSE: true/false (default: false)
@@ -46,9 +46,31 @@ export ERROR_EXPLAINER_BACKEND=local export ERROR_EXPLAINER_MODEL=llama3:instruc
 
 2) API backend (OpenAI compatible):
 
+```bash
+export ERROR_EXPLAINER_BACKEND=api
+export ERROR_EXPLAINER_MODEL=gpt-4o-mini
+export ERROR_EXPLAINER_API_KEY=sk-...
+export ERROR_EXPLAINER_API_URL=https://api.openai.com/v1/chat/completions
+```
+
+3) API backend (Anthropic Claude):
 
 ```bash
-export ERROR_EXPLAINER_BACKEND=api export ERROR_EXPLAINER_MODEL=gpt-4o-mini export ERROR_EXPLAINER_API_KEY=sk-... export ERROR_EXPLAINER_API_URL=[https://api.openai.com/v1/chat/completions](https://api.openai.com/v1/chat/completions)
+export ERROR_EXPLAINER_BACKEND=anthropic
+export ERROR_EXPLAINER_MODEL=claude-3-5-sonnet-20240620
+export ERROR_EXPLAINER_API_KEY=api-key
+# optional override
+# export ERROR_EXPLAINER_API_URL=https://api.anthropic.com/v1/messages
+```
+
+4) API backend (Google Gemini):
+
+```bash
+export ERROR_EXPLAINER_BACKEND=google
+export ERROR_EXPLAINER_MODEL=gemini-1.5-flash
+export ERROR_EXPLAINER_API_KEY=api-key
+# optional override
+# export ERROR_EXPLAINER_API_URL=https://generativelanguage.googleapis.com/v1/models
 ```
 
 ## Usage (Vanilla PHP)
