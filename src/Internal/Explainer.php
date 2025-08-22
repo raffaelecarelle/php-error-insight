@@ -342,7 +342,7 @@ Explain the likely cause and provide practical steps to fix it. Keep the answer 
         $payload = [
             'model' => $config->model,
             'messages' => [
-                ['role' => 'system', 'content' => 'Sei un assistente che spiega errori PHP in modo didattico e conciso.'],
+                ['role' => 'system', 'content' => 'You are an assistant that explains PHP errors in an educational and concise way.'],
                 ['role' => 'user', 'content' => $prompt],
             ],
             'temperature' => 0.2,

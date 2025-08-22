@@ -55,15 +55,15 @@ final class Config
     public static function fromEnvAndArray(array $options = []): self
     {
         $env = [
-            'enabled'  => self::envBool('ERROR_EXPLAINER_ENABLED', true),
-            'backend'  => getenv('ERROR_EXPLAINER_BACKEND') ?: 'none',
-            'model'    => getenv('ERROR_EXPLAINER_MODEL') ?: null,
-            'language' => getenv('ERROR_EXPLAINER_LANG') ?: 'it',
-            'output'   => getenv('ERROR_EXPLAINER_OUTPUT') ?: self::OUTPUT_AUTO,
-            'verbose'  => self::envBool('ERROR_EXPLAINER_VERBOSE', false),
-            'apiKey'   => getenv('ERROR_EXPLAINER_API_KEY') ?: null,
-            'apiUrl'   => getenv('ERROR_EXPLAINER_API_URL') ?: null,
-            'template' => getenv('ERROR_EXPLAINER_TEMPLATE') ?: null,
+            'enabled'  => self::envBool('PHP_ERROR_INSIGHT_ENABLED', true),
+            'backend'  => getenv('PHP_ERROR_INSIGHT_BACKEND') ?: 'none',
+            'model'    => getenv('PHP_ERROR_INSIGHT_MODEL') ?: null,
+            'language' => getenv('PHP_ERROR_INSIGHT_LANG') ?: 'it',
+            'output'   => getenv('PHP_ERROR_INSIGHT_OUTPUT') ?: self::OUTPUT_AUTO,
+            'verbose'  => self::envBool('PHP_ERROR_INSIGHT_VERBOSE', false),
+            'apiKey'   => getenv('PHP_ERROR_INSIGHT_API_KEY') ?: null,
+            'apiUrl'   => getenv('PHP_ERROR_INSIGHT_API_URL') ?: null,
+            'template' => getenv('PHP_ERROR_INSIGHT_TEMPLATE') ?: null,
         ];
         // Options override env
         $merged = array_merge($env, $options);

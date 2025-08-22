@@ -115,7 +115,7 @@ final class Renderer
             http_response_code(500);
         }
 
-        $template = $config->template ?? (getenv('ERROR_EXPLAINER_TEMPLATE') ?: null);
+        $template = $config->template ?? (getenv('PHP_ERROR_INSIGHT_TEMPLATE') ?: null);
         if (!$template) {
             $template = dirname(__DIR__, 2) . '/resources/views/error.php';
         }
