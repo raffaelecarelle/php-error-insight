@@ -20,7 +20,8 @@
         "details": "Details",
         "suggestions": "Suggestions",
         "stack": "Stack trace",
-        "globals": "Globals"
+        "globals": "Globals",
+        "state": "Full state"
       },
       "labels": {
         "arguments": "Arguments",
@@ -29,7 +30,12 @@
         "get": "GET",
         "post": "POST",
         "cookie": "COOKIE",
-        "session": "SESSION"
+        "session": "SESSION",
+        "object": "Current object",
+        "globals_all": "All globals",
+        "defined_vars": "Defined vars (scope)",
+        "raw_trace": "Raw trace",
+        "xdebug": "Xdebug"
       }
     },
   "ai": {

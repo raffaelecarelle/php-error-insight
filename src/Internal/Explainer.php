@@ -44,7 +44,7 @@ final class Explainer
                 'get' => isset($_GET) ? $_GET : [],
                 'post' => isset($_POST) ? $_POST : [],
                 'cookie' => isset($_COOKIE) ? $_COOKIE : [],
-                'session' => (function() { return (function_exists('session_status') && session_status() === PHP_SESSION_ACTIVE && isset($_SESSION)) ? $_SESSION : []; })(),
+                'session' => (function () { return (function_exists('session_status') && session_status() === PHP_SESSION_ACTIVE && isset($_SESSION)) ? $_SESSION : []; })(),
             ],
         ];
 
@@ -96,7 +96,9 @@ final class Explainer
                 $bullets = [];
                 foreach ($aiLines as $ln) {
                     $t = trim($ln);
-                    if ($t === '') { continue; }
+                    if ($t === '') {
+                        continue;
+                    }
                     if (preg_match('/^[-*•]\s+(.+)/u', $t, $m)) {
                         $bullets[] = trim($m[1]);
                     } elseif (preg_match('/^\d+\.?\s+(.+)/', $t, $m)) {
@@ -157,7 +159,9 @@ final class Explainer
     {
         $out = [];
         foreach ($trace as $f) {
-            if (!is_array($f)) { continue; }
+            if (!is_array($f)) {
+                continue;
+            }
             $fn = isset($f['function']) ? (string)$f['function'] : '';
             $cls = isset($f['class']) ? (string)$f['class'] : '';
             $type = isset($f['type']) ? (string)$f['type'] : '';
@@ -211,14 +215,24 @@ final class Explainer
                         }
                     }
                 }
-            } catch (\Throwable $e) { $named = null; }
+            } catch (\Throwable $e) {
+                $named = null;
+            }
 
             $locals = [];
-            if (isset($f['object'])) { $locals['$this'] = $f['object']; }
+            if (isset($f['object'])) {
+                $locals['$this'] = $f['object'];
+            }
             if (is_array($named)) {
-                foreach ($named as $k => $v) { $locals[$k] = $v; }
+                foreach ($named as $k => $v) {
+                    $locals[$k] = $v;
+                }
             } elseif (!empty($args)) {
-                $i = 0; foreach ($args as $v) { $locals['$' . $i] = $v; $i++; }
+                $i = 0;
+                foreach ($args as $v) {
+                    $locals['$' . $i] = $v;
+                    $i++;
+                }
             }
 
             $out[] = [

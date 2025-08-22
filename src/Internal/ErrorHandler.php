@@ -54,6 +54,8 @@ final class ErrorHandler
         array_shift($trace);
 
         $exp = $this->explainer->explain('error', (string)$message, (string)$file, (int)$line, $trace, (int)$severity, $this->config);
+        // Attach extended state dump
+        $exp['state'] = StateDumper::collect($trace);
         $this->renderer->render($exp, $this->config, 'error', false);
 
         // Chain to previous handler if exists
@@ -80,6 +82,7 @@ final class ErrorHandler
         }
 
         $exp = $this->explainer->explain('exception', $e->getMessage(), $e->getFile(), $e->getLine(), $e->getTrace(), null, $this->config);
+        $exp['state'] = StateDumper::collect($e->getTrace());
         $this->renderer->render($exp, $this->config, 'exception', false);
 
         // Chain to previous handler if exists
@@ -111,8 +114,11 @@ final class ErrorHandler
 
         // Build a backtrace at shutdown to aid debugging
         $trace = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT);
-        if (!empty($trace)) { array_shift($trace); }
+        if (!empty($trace)) {
+            array_shift($trace);
+        }
         $exp = $this->explainer->explain('shutdown', $message, $file, $line, $trace, $severity, $this->config);
+        $exp['state'] = StateDumper::collect($trace);
         $this->renderer->render($exp, $this->config, 'shutdown', true);
     }
 

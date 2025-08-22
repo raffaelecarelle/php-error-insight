@@ -13,6 +13,7 @@
  * - array  $frames (idx, sig, loc, localsDump, argsDump, codeHtml)
  * - array  $labels (headings{}, labels{})
  * - array  $globalsDumps (get, post, cookie, session)
+ * - array  $stateDumps (object, globals_all, defined_vars, raw_trace, xdebug)
  */
 
 // Basic escaping helper
@@ -27,8 +28,9 @@ $verbose = $verbose ?? false;
 $details = $details ?? '';
 $suggestions = $suggestions ?? [];
 $frames = $frames ?? [];
-$labels = $labels ?? ['headings'=>[],'labels'=>[]];
+$labels = $labels ?? ['headings' => [],'labels' => []];
 $globalsDumps = $globalsDumps ?? [];
+$stateDumps = $stateDumps ?? [];
 ?>
 <!DOCTYPE html>
 <html lang="<?= $e($docLang) ?>">
@@ -139,6 +141,44 @@ $globalsDumps = $globalsDumps ?? [];
                 <div class="text-xs font-semibold text-slate-600 mb-1"><?= $e($labels['labels']['cookie'] ?? 'COOKIE') ?></div>
                 <pre class="mono text-xs bg-slate-50 ring-1 ring-slate-200 rounded p-2 overflow-auto"><?= $e($globalsDumps['cookie'] ?? '') ?></pre>
               </div>
+            </div>
+          </section>
+        <?php endif; ?>
+
+        <?php if (!empty($stateDumps)): ?>
+          <section>
+            <h2 class="text-sm font-semibold text-slate-700 mb-2"><?= $e($labels['headings']['state'] ?? 'State') ?></h2>
+            <div class="space-y-4">
+              <?php if (!empty($stateDumps['object'] ?? '')): ?>
+                <div>
+                  <div class="text-xs font-semibold text-slate-600 mb-1"><?= $e($labels['labels']['object'] ?? 'Current object') ?></div>
+                  <pre class="mono text-xs bg-slate-50 ring-1 ring-slate-200 rounded p-2 overflow-auto"><?= $e($stateDumps['object']) ?></pre>
+                </div>
+              <?php endif; ?>
+              <?php if (!empty($stateDumps['globals_all'] ?? '')): ?>
+                <div>
+                  <div class="text-xs font-semibold text-slate-600 mb-1"><?= $e($labels['labels']['globals_all'] ?? 'All globals') ?></div>
+                  <pre class="mono text-xs bg-slate-50 ring-1 ring-slate-200 rounded p-2 overflow-auto"><?= $e($stateDumps['globals_all']) ?></pre>
+                </div>
+              <?php endif; ?>
+              <?php if (!empty($stateDumps['defined_vars'] ?? '')): ?>
+                <div>
+                  <div class="text-xs font-semibold text-slate-600 mb-1"><?= $e($labels['labels']['defined_vars'] ?? 'Defined vars (scope)') ?></div>
+                  <pre class="mono text-xs bg-slate-50 ring-1 ring-slate-200 rounded p-2 overflow-auto"><?= $e($stateDumps['defined_vars']) ?></pre>
+                </div>
+              <?php endif; ?>
+              <?php if (!empty($stateDumps['raw_trace'] ?? '')): ?>
+                <div>
+                  <div class="text-xs font-semibold text-slate-600 mb-1"><?= $e($labels['labels']['raw_trace'] ?? 'Raw trace') ?></div>
+                  <pre class="mono text-xs bg-slate-50 ring-1 ring-slate-200 rounded p-2 overflow-auto"><?= $e($stateDumps['raw_trace']) ?></pre>
+                </div>
+              <?php endif; ?>
+              <?php if (!empty($stateDumps['xdebug'] ?? '')): ?>
+                <div>
+                  <div class="text-xs font-semibold text-slate-600 mb-1"><?= $e($labels['labels']['xdebug'] ?? 'Xdebug') ?></div>
+                  <pre class="mono text-xs bg-slate-50 ring-1 ring-slate-200 rounded p-2 overflow-auto"><?= $e($stateDumps['xdebug']) ?></pre>
+                </div>
+              <?php endif; ?>
             </div>
           </section>
         <?php endif; ?>

@@ -75,6 +75,33 @@ final class Renderer
                 $lines[] = ' - ' . (string)$s;
             }
         }
+
+        // Always include extended state as per requirement
+        $state = isset($explanation['state']) && is_array($explanation['state']) ? $explanation['state'] : [];
+        if (!empty($state)) {
+            $lines[] = Translator::t($config, 'html.headings.state');
+            if (isset($state['object'])) {
+                $lines[] = '- ' . Translator::t($config, 'html.labels.object');
+                $lines[] = $this->dumpArgs($state['object']);
+            }
+            if (isset($state['globalsAll'])) {
+                $lines[] = '- ' . Translator::t($config, 'html.labels.globals_all');
+                $lines[] = $this->dumpArgs($state['globalsAll']);
+            }
+            if (isset($state['definedVars'])) {
+                $lines[] = '- ' . Translator::t($config, 'html.labels.defined_vars');
+                $lines[] = $this->dumpArgs($state['definedVars']);
+            }
+            if (isset($state['rawTrace'])) {
+                $lines[] = '- ' . Translator::t($config, 'html.labels.raw_trace');
+                $lines[] = $this->dumpArgs($state['rawTrace']);
+            }
+            if (!empty($state['xdebugText'])) {
+                $lines[] = '- ' . Translator::t($config, 'html.labels.xdebug');
+                $lines[] = (string)$state['xdebugText'];
+            }
+        }
+
         echo implode("\n", $lines), "\n";
     }
 
@@ -96,12 +123,16 @@ final class Renderer
 
         if (!is_file($template)) {
             // Safe minimal fallback if template is missing
-            $esc = static fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
+            $esc = static fn ($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
             echo '<!DOCTYPE html><html lang="' . $esc($data['docLang']) . '"><head><meta charset="utf-8"><title>' . $esc($data['title']) . '</title></head><body style="font-family:system-ui;padding:24px">';
             echo '<h1 style="margin:0 0 8px 0">' . $esc($data['title']) . '</h1>';
             echo '<div style="color:#6b7280;font-size:12px">' . $esc($data['severity']) . '</div>';
-            if ($data['where'] !== '') { echo '<div style="margin:8px 0;font-family:monospace">' . $esc($data['where']) . '</div>'; }
-            if ($data['summary'] !== '') { echo '<p>' . $esc($data['summary']) . '</p>'; }
+            if ($data['where'] !== '') {
+                echo '<div style="margin:8px 0;font-family:monospace">' . $esc($data['where']) . '</div>';
+            }
+            if ($data['summary'] !== '') {
+                echo '<p>' . $esc($data['summary']) . '</p>';
+            }
             echo '</body></html>';
             return;
         }
@@ -156,6 +187,7 @@ final class Renderer
                 'suggestions' => Translator::t($config, 'html.headings.suggestions'),
                 'stack' => Translator::t($config, 'html.headings.stack'),
                 'globals' => Translator::t($config, 'html.headings.globals'),
+                'state' => Translator::t($config, 'html.headings.state'),
             ],
             'labels' => [
                 'arguments' => Translator::t($config, 'html.labels.arguments'),
@@ -165,6 +197,11 @@ final class Renderer
                 'post' => Translator::t($config, 'html.labels.post'),
                 'cookie' => Translator::t($config, 'html.labels.cookie'),
                 'session' => Translator::t($config, 'html.labels.session'),
+                'object' => Translator::t($config, 'html.labels.object'),
+                'globals_all' => Translator::t($config, 'html.labels.globals_all'),
+                'defined_vars' => Translator::t($config, 'html.labels.defined_vars'),
+                'raw_trace' => Translator::t($config, 'html.labels.raw_trace'),
+                'xdebug' => Translator::t($config, 'html.labels.xdebug'),
             ],
         ];
 
@@ -175,6 +212,27 @@ final class Renderer
             'cookie' => $this->dumpArgs(isset($globals['cookie']) ? $globals['cookie'] : []),
             'session' => $this->dumpArgs(isset($globals['session']) ? $globals['session'] : []),
         ];
+
+        // Build state dumps if present
+        $state = isset($explanation['state']) && is_array($explanation['state']) ? $explanation['state'] : [];
+        $stateDumps = [];
+        if (!empty($state)) {
+            if (isset($state['object'])) {
+                $stateDumps['object'] = $this->dumpArgs($state['object']);
+            }
+            if (isset($state['globalsAll'])) {
+                $stateDumps['globals_all'] = $this->dumpArgs($state['globalsAll']);
+            }
+            if (isset($state['definedVars'])) {
+                $stateDumps['defined_vars'] = $this->dumpArgs($state['definedVars']);
+            }
+            if (isset($state['rawTrace'])) {
+                $stateDumps['raw_trace'] = $this->dumpArgs($state['rawTrace']);
+            }
+            if (!empty($state['xdebugText'])) {
+                $stateDumps['xdebug'] = (string)$state['xdebugText'];
+            }
+        }
 
         return [
             'docLang' => $docLang,
@@ -188,6 +246,7 @@ final class Renderer
             'frames' => $frames,
             'labels' => $labels,
             'globalsDumps' => $globalsDumps,
+            'stateDumps' => $stateDumps,
         ];
     }
 
@@ -198,10 +257,18 @@ final class Renderer
 
     private function dumpValue($value, int $depth, int $maxItems, int $maxString, array &$seen = []): string
     {
-        if ($depth < 0) { return '…'; }
-        if (is_null($value)) { return 'null'; }
-        if (is_bool($value)) { return $value ? 'true' : 'false'; }
-        if (is_int($value) || is_float($value)) { return (string)$value; }
+        if ($depth < 0) {
+            return '…';
+        }
+        if (is_null($value)) {
+            return 'null';
+        }
+        if (is_bool($value)) {
+            return $value ? 'true' : 'false';
+        }
+        if (is_int($value) || is_float($value)) {
+            return (string)$value;
+        }
         if (is_string($value)) {
             $s = $value;
             if (strlen($s) > $maxString) {
@@ -211,9 +278,13 @@ final class Renderer
         }
         if (is_array($value)) {
             $out = "[\n";
-            $i = 0; $count = count($value);
+            $i = 0;
+            $count = count($value);
             foreach ($value as $k => $v) {
-                if ($i >= $maxItems) { $out .= "  …(+" . ($count - $i) . " items)\n"; break; }
+                if ($i >= $maxItems) {
+                    $out .= "  …(+" . ($count - $i) . " items)\n";
+                    break;
+                }
                 $out .= '  [' . (is_int($k) ? $k : var_export($k, true)) . '] => ' . $this->dumpValue($v, $depth - 1, $maxItems, $maxString, $seen) . "\n";
                 $i++;
             }
@@ -222,18 +293,28 @@ final class Renderer
         }
         if (is_object($value)) {
             $id = spl_object_hash($value);
-            if (isset($seen[$id])) { return 'Object(' . get_class($value) . ') {…recursion…}'; }
+            if (isset($seen[$id])) {
+                return 'Object(' . get_class($value) . ') {…recursion…}';
+            }
             $seen[$id] = true;
             $cls = get_class($value);
             $out = 'Object(' . $cls . ')';
             if ($depth > 0) {
                 $props = [];
-                try { $props = get_object_vars($value); } catch (\Throwable $e) { $props = []; }
+                try {
+                    $props = get_object_vars($value);
+                } catch (\Throwable $e) {
+                    $props = [];
+                }
                 if (!empty($props)) {
                     $out .= " {\n";
-                    $i = 0; $count = count($props);
+                    $i = 0;
+                    $count = count($props);
                     foreach ($props as $k => $v) {
-                        if ($i >= $maxItems) { $out .= "  …(+" . ($count - $i) . " props)\n"; break; }
+                        if ($i >= $maxItems) {
+                            $out .= "  …(+" . ($count - $i) . " props)\n";
+                            break;
+                        }
                         $out .= '  [' . $k . '] => ' . $this->dumpValue($v, $depth - 1, $maxItems, $maxString, $seen) . "\n";
                         $i++;
                     }
@@ -250,9 +331,13 @@ final class Renderer
 
     private function renderCodeExcerpt(?string $file, ?int $line, int $radius = 5): string
     {
-        if (!$file || !$line || !is_file($file) || $line < 1) { return ''; }
+        if (!$file || !$line || !is_file($file) || $line < 1) {
+            return '';
+        }
         $lines = @file($file, FILE_IGNORE_NEW_LINES);
-        if ($lines === false) { return ''; }
+        if ($lines === false) {
+            return '';
+        }
         $total = count($lines);
         $start = max(1, $line - $radius);
         $end = min($total, $line + $radius);

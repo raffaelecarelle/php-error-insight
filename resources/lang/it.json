@@ -16,11 +16,12 @@
     "unknown": "n/d"
   },
   "html": {
-    "headings": {
+  "headings": {
       "details": "Dettagli",
       "suggestions": "Suggerimenti",
       "stack": "Stack trace",
-      "globals": "Stato globale"
+      "globals": "Stato globale",
+      "state": "Stato completo"
     },
     "labels": {
       "arguments": "Argomenti",
@@ -29,7 +30,12 @@
       "get": "GET",
       "post": "POST",
       "cookie": "COOKIE",
-      "session": "SESSIONE"
+      "session": "SESSIONE",
+      "object": "Oggetto corrente",
+      "globals_all": "Tutte le globali",
+      "defined_vars": "Variabili definite (scope)",
+      "raw_trace": "Trace grezzo",
+      "xdebug": "Xdebug"
     }
   },
   "ai": {

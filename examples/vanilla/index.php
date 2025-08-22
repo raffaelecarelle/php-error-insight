@@ -1,4 +1,5 @@
 <?php
+
 // Minimal example demonstrating PHP Error Explainer
 // Run with: php examples/vanilla/index.php
 // Optional AI config (env):
@@ -9,6 +10,7 @@
 //   ERROR_EXPLAINER_OUTPUT=auto|text|html|json
 //   ERROR_EXPLAINER_VERBOSE=1
 //   ERROR_EXPLAINER_LANG=it|en
+//   ERROR_EXPLAINER_TEMPLATE=/absolute/path/to/custom/error.php
 
 require __DIR__ . '/../../vendor/autoload.php'; // Ensure you ran `composer dump-autoload`
 
