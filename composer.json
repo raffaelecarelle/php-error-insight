@@ -1,5 +1,5 @@
 {
-  "name": "raffaelecarelle/php-error-explainer",
+  "name": "raffaelecarelle/php-error-insight",
   "description": "A PHP library that intercepts errors/exceptions and explains them with educational messages, optionally via AI backends.",
   "type": "library",
   "license": "MIT",
