@@ -125,7 +125,10 @@ final class Renderer
             // Safe minimal fallback if template is missing
             $esc = static fn ($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
             echo '<!DOCTYPE html><html lang="' . $esc($data['docLang']) . '"><head><meta charset="utf-8"><title>' . $esc($data['title']) . '</title></head><body style="font-family:system-ui;padding:24px">';
-            echo '<h1 style="margin:0 0 8px 0">' . $esc($data['title']) . '</h1>';
+            echo '<h1 style="margin:0 0 4px 0">' . $esc($data['title']) . '</h1>';
+            if (!empty($data['subtitle'])) {
+                echo '<div style="color:#6b7280;font-size:12px;margin:0 0 8px 0">' . $esc($data['subtitle']) . '</div>';
+            }
             echo '<div style="color:#6b7280;font-size:12px">' . $esc($data['severity']) . '</div>';
             if ($data['where'] !== '') {
                 echo '<div style="margin:8px 0;font-family:monospace">' . $esc($data['where']) . '</div>';
@@ -147,13 +150,21 @@ final class Renderer
     private function buildViewData(array $explanation, Config $config): array
     {
         $docLang = $config->language ?: 'it';
-        $title = (string)($explanation['title'] ?? 'PHP Error Explainer');
-        $severity = (string)($explanation['severityLabel'] ?? 'Error');
 
         $original = isset($explanation['original']) && is_array($explanation['original']) ? $explanation['original'] : [];
+        $origMessage = isset($original['message']) ? (string)$original['message'] : '';
         $file = isset($original['file']) ? (string)$original['file'] : '';
         $line = isset($original['line']) ? (string)$original['line'] : '';
         $where = trim($file . ($line !== '' ? ":$line" : ''));
+
+        // Title must be the error/warning message (fallback to previous title if missing)
+        $title = $origMessage !== '' ? $origMessage : (string)($explanation['title'] ?? 'PHP Error Explainer');
+
+        // Subtitle shown when AI was used
+        $aiTitle = Translator::t($config, 'title.ai');
+        $subtitle = ((string)($explanation['title'] ?? '')) === $aiTitle ? $aiTitle : '';
+
+        $severity = (string)($explanation['severityLabel'] ?? 'Error');
 
         $summary = (string)($explanation['summary'] ?? '');
         $details = (string)($explanation['details'] ?? '');
@@ -205,14 +216,6 @@ final class Renderer
             ],
         ];
 
-        $globals = isset($explanation['globals']) && is_array($explanation['globals']) ? $explanation['globals'] : [];
-        $globalsDumps = [
-            'get' => $this->dumpArgs(isset($globals['get']) ? $globals['get'] : []),
-            'post' => $this->dumpArgs(isset($globals['post']) ? $globals['post'] : []),
-            'cookie' => $this->dumpArgs(isset($globals['cookie']) ? $globals['cookie'] : []),
-            'session' => $this->dumpArgs(isset($globals['session']) ? $globals['session'] : []),
-        ];
-
         // Build state dumps if present
         $state = isset($explanation['state']) && is_array($explanation['state']) ? $explanation['state'] : [];
         $stateDumps = [];
@@ -234,18 +237,39 @@ final class Renderer
             }
         }
 
+        // Attach full state to each frame and prepend origin as frame #0 (so it's part of the stack)
+        $framesOut = [];
+        if ($where !== '') {
+            $framesOut[] = [
+                'idx' => 0,
+                'sig' => '(origin)',
+                'loc' => $where,
+                'localsDump' => '',
+                'argsDump' => '',
+                'codeHtml' => $this->renderCodeExcerpt($file, (int)$line),
+                'state' => $stateDumps,
+            ];
+        }
+        $startIdx = count($framesOut);
+        foreach ($frames as $f) {
+            // ensure numeric idx and shift by startIdx
+            $f['idx'] = (isset($f['idx']) ? (int)$f['idx'] : 0) + $startIdx;
+            $f['state'] = $stateDumps;
+            $framesOut[] = $f;
+        }
+
         return [
             'docLang' => $docLang,
             'title' => $title,
+            'subtitle' => $subtitle,
             'severity' => $severity,
             'where' => $where,
             'summary' => $summary,
             'verbose' => (bool)$config->verbose,
             'details' => $details,
             'suggestions' => $suggestions,
-            'frames' => $frames,
+            'frames' => $framesOut,
             'labels' => $labels,
-            'globalsDumps' => $globalsDumps,
             'stateDumps' => $stateDumps,
         ];
     }
