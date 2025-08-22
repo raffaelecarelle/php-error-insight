@@ -1,6 +1,6 @@
 {
     "name": "raffaelecarelle/php-error-insight",
-    "description": "A PHP library that intercepts errors/exceptions and explains them with educational messages, optionally via AI backends.",
+    "description": "AI-powered helper for PHP errors, warnings and exceptions: practical, context-aware explanations and suggestions via local or API LLMs.",
     "type": "library",
     "license": "MIT",
     "require": {
