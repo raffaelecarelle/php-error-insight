@@ -45,7 +45,7 @@ final class StateDumper
                 }
                 if (function_exists('xdebug_get_declared_vars')) {
                     $decl = @xdebug_get_declared_vars();
-                    var_dump($decl);
+                    dump($decl);
                 }
                 $xdebugText = (string)ob_get_clean();
             } catch (\Throwable $e) {

@@ -56,7 +56,7 @@ $copyText = json_encode(trim(($title !== '' ? $title : 'Error') . ($where !== ''
                         </button>
                         <div class="hidden mt-2 text-sm bg-gray-50 dark:bg-gray-700 p-2 rounded">
                             <p><strong><?= $e($labels['labels']['locals'] ?? 'Locals') ?>:</strong></p>
-                            <pre class="bg-gray-900 text-green-200 p-2 rounded text-xs"><?= $e(($f['localsDump'] ?? '') !== '' ? $f['localsDump'] : '∅') ?></pre>
+                            <pre class="bg-gray-900 text-green-200 p-2 rounded text-xs"><?= $e(($f['localsDump'] ?? '') !== '' ? $f['localsDump'] : '[]') ?></pre>
                             <?php if (!empty($f['argsDump'] ?? '')): ?>
                                 <p class="mt-2"><strong><?= $e($labels['labels']['arguments'] ?? 'Arguments') ?>:</strong></p>
                                 <pre class="bg-gray-900 text-green-200 p-2 rounded text-xs"><?= $e($f['argsDump']) ?></pre>
@@ -82,25 +82,25 @@ $copyText = json_encode(trim(($title !== '' ? $title : 'Error') . ($where !== ''
         </div>
 
         <div id="tab-server" class="tab-content">
-            <pre class="bg-gray-900 text-gray-100 p-3 rounded text-xs"><?= dump($_SERVER) ?></pre>
+            <pre class="bg-gray-900 text-gray-100 p-3 rounded text-xs"><?php dump($_SERVER ?? []) ?></pre>
         </div>
         <div id="tab-env" class="tab-content hidden">
-            <pre class="bg-gray-900 text-gray-100 p-3 rounded text-xs"><?= dump($_ENV) ?></pre>
+            <pre class="bg-gray-900 text-gray-100 p-3 rounded text-xs"><?php dump($_ENV ?? []) ?></pre>
         </div>
         <div id="tab-cookies" class="tab-content hidden">
-            <pre class="bg-gray-900 text-gray-100 p-3 rounded text-xs"><?= dump($_COOKIE) ?></pre>
+            <pre class="bg-gray-900 text-gray-100 p-3 rounded text-xs"><?php dump($_COOKIE ?? []) ?></pre>
         </div>
         <div id="tab-session" class="tab-content hidden">
-            <pre class="bg-gray-900 text-gray-100 p-3 rounded text-xs"><?= dump($_SESSION) ?></pre>
+            <pre class="bg-gray-900 text-gray-100 p-3 rounded text-xs"><?php dump($_SESSION ?? []) ?></pre>
         </div>
         <div id="tab-get" class="tab-content hidden">
-            <pre class="bg-gray-900 text-gray-100 p-3 rounded text-xs"><?= dump($_GET) ?></pre>
+            <pre class="bg-gray-900 text-gray-100 p-3 rounded text-xs"><?php dump($_GET ?? []) ?></pre>
         </div>
         <div id="tab-post" class="tab-content hidden">
-            <pre class="bg-gray-900 text-gray-100 p-3 rounded text-xs"><?= dump($_POST) ?></pre>
+            <pre class="bg-gray-900 text-gray-100 p-3 rounded text-xs"><?php dump($_POST ?? []) ?></pre>
         </div>
         <div id="tab-files" class="tab-content hidden">
-            <pre class="bg-gray-900 text-gray-100 p-3 rounded text-xs"><?= dump($_FILES) ?></pre>
+            <pre class="bg-gray-900 text-gray-100 p-3 rounded text-xs"><?php dump($_FILES ?? []) ?></pre>
         </div>
     </section>
 
