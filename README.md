@@ -31,7 +31,7 @@ Supported environment variables:
 - PHP_ERROR_INSIGHT_MODEL: model name (e.g. llama3:instruct, gpt-4o-mini, claude-3-5-sonnet-20240620, gemini-1.5-flash)
 - PHP_ERROR_INSIGHT_API_KEY: API key (required for api/openai/anthropic/google backends)
 - PHP_ERROR_INSIGHT_API_URL: service URL (optional override; e.g. http://localhost:11434 for Ollama, https://api.openai.com/v1/chat/completions for OpenAI, https://api.anthropic.com/v1/messages for Anthropic, https://generativelanguage.googleapis.com/v1/models for Google Gemini)
-- PHP_ERROR_INSIGHT_LANG: language for AI prompt (it, en, ...; default: it)
+- PHP_ERROR_INSIGHT_LANG: language for AI prompt (it, en, ...; default: en)
 - PHP_ERROR_INSIGHT_OUTPUT: auto|html|text|json (default: auto)
 - PHP_ERROR_INSIGHT_VERBOSE: true/false (default: false)
 - PHP_ERROR_INSIGHT_TEMPLATE: path to a custom HTML template (optional)
