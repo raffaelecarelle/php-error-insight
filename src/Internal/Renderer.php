@@ -87,134 +87,108 @@ final class Renderer
             header('Content-Type: text/html; charset=utf-8');
             http_response_code(500);
         }
-        $title = htmlspecialchars((string)($explanation['title'] ?? 'PHP Error Explainer'), ENT_QUOTES, 'UTF-8');
-        $summary = htmlspecialchars((string)($explanation['summary'] ?? ''), ENT_QUOTES, 'UTF-8');
-        $severity = htmlspecialchars((string)($explanation['severityLabel'] ?? 'Error'), ENT_QUOTES, 'UTF-8');
+
+        $template = $config->template ?? (getenv('ERROR_EXPLAINER_TEMPLATE') ?: null);
+        if (!$template) {
+            $template = dirname(__DIR__, 2) . '/resources/views/error.php';
+        }
+        $data = $this->buildViewData($explanation, $config);
+
+        if (!is_file($template)) {
+            // Safe minimal fallback if template is missing
+            $esc = static fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
+            echo '<!DOCTYPE html><html lang="' . $esc($data['docLang']) . '"><head><meta charset="utf-8"><title>' . $esc($data['title']) . '</title></head><body style="font-family:system-ui;padding:24px">';
+            echo '<h1 style="margin:0 0 8px 0">' . $esc($data['title']) . '</h1>';
+            echo '<div style="color:#6b7280;font-size:12px">' . $esc($data['severity']) . '</div>';
+            if ($data['where'] !== '') { echo '<div style="margin:8px 0;font-family:monospace">' . $esc($data['where']) . '</div>'; }
+            if ($data['summary'] !== '') { echo '<p>' . $esc($data['summary']) . '</p>'; }
+            echo '</body></html>';
+            return;
+        }
+
+        // Isolated scope include, expose $data keys as variables to the template
+        (static function (string $__template, array $__data): void {
+            extract($__data, EXTR_SKIP);
+            require $__template;
+        })($template, $data);
+    }
+
+    private function buildViewData(array $explanation, Config $config): array
+    {
+        $docLang = $config->language ?: 'it';
+        $title = (string)($explanation['title'] ?? 'PHP Error Explainer');
+        $severity = (string)($explanation['severityLabel'] ?? 'Error');
+
         $original = isset($explanation['original']) && is_array($explanation['original']) ? $explanation['original'] : [];
         $file = isset($original['file']) ? (string)$original['file'] : '';
         $line = isset($original['line']) ? (string)$original['line'] : '';
-        $where = htmlspecialchars(trim($file . ($line !== '' ? ":$line" : '')), ENT_QUOTES, 'UTF-8');
+        $where = trim($file . ($line !== '' ? ":$line" : ''));
+
+        $summary = (string)($explanation['summary'] ?? '');
         $details = (string)($explanation['details'] ?? '');
-        $detailsHtml = '<pre style="white-space:pre-wrap;margin:0">' . htmlspecialchars($details, ENT_QUOTES, 'UTF-8') . '</pre>';
-
-        $suggestionsHtml = '';
-        if (!empty($explanation['suggestions']) && is_array($explanation['suggestions'])) {
-            $suggestionsHtml .= '<ul style="margin:0 0 0 1.2em">';
-            foreach ($explanation['suggestions'] as $s) {
-                $suggestionsHtml .= '<li>' . htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8') . '</li>';
-            }
-            $suggestionsHtml .= '</ul>';
-        }
-
-        $docLang = htmlspecialchars($config->language ?: 'it', ENT_QUOTES, 'UTF-8');
-        $hDetails = htmlspecialchars(Translator::t($config, 'html.headings.details'), ENT_QUOTES, 'UTF-8');
-        $hSuggestions = htmlspecialchars(Translator::t($config, 'html.headings.suggestions'), ENT_QUOTES, 'UTF-8');
-        $hStack = htmlspecialchars(Translator::t($config, 'html.headings.stack'), ENT_QUOTES, 'UTF-8');
-        $hGlobals = htmlspecialchars(Translator::t($config, 'html.headings.globals'), ENT_QUOTES, 'UTF-8');
-        $lArgs = htmlspecialchars(Translator::t($config, 'html.labels.arguments'), ENT_QUOTES, 'UTF-8');
-        $lLocals = htmlspecialchars(Translator::t($config, 'html.labels.locals'), ENT_QUOTES, 'UTF-8');
-        $lCode = htmlspecialchars(Translator::t($config, 'html.labels.code'), ENT_QUOTES, 'UTF-8');
-        $lGET = htmlspecialchars(Translator::t($config, 'html.labels.get'), ENT_QUOTES, 'UTF-8');
-        $lPOST = htmlspecialchars(Translator::t($config, 'html.labels.post'), ENT_QUOTES, 'UTF-8');
-        $lCOOKIE = htmlspecialchars(Translator::t($config, 'html.labels.cookie'), ENT_QUOTES, 'UTF-8');
-        $lSESSION = htmlspecialchars(Translator::t($config, 'html.labels.session'), ENT_QUOTES, 'UTF-8');
+        $suggestions = isset($explanation['suggestions']) && is_array($explanation['suggestions']) ? $explanation['suggestions'] : [];
 
         $trace = isset($explanation['trace']) && is_array($explanation['trace']) ? $explanation['trace'] : [];
-        $globals = isset($explanation['globals']) && is_array($explanation['globals']) ? $explanation['globals'] : [];
+        $frames = [];
+        $idx = 0;
+        foreach ($trace as $frame) {
+            $fn = isset($frame['function']) ? (string)$frame['function'] : 'unknown';
+            $cls = isset($frame['class']) ? (string)$frame['class'] : '';
+            $type = isset($frame['type']) ? (string)$frame['type'] : '';
+            $ff = isset($frame['file']) ? (string)$frame['file'] : '';
+            $ll = isset($frame['line']) ? (int)$frame['line'] : 0;
+            $sig = trim($cls . $type . $fn . '()');
+            $loc = $ff !== '' ? ($ff . ($ll ? ':' . $ll : '')) : '';
+            $frames[] = [
+                'idx' => $idx,
+                'sig' => $sig,
+                'loc' => $loc,
+                'localsDump' => $this->dumpArgs(isset($frame['locals']) && is_array($frame['locals']) ? $frame['locals'] : []),
+                'argsDump' => $this->dumpArgs(isset($frame['args']) && is_array($frame['args']) ? $frame['args'] : []),
+                'codeHtml' => $this->renderCodeExcerpt($ff, $ll),
+            ];
+            $idx++;
+        }
 
-        echo '<!DOCTYPE html><html lang="' . $docLang . '"><head><meta charset="utf-8"><title>' . $title . '</title>' .
-            '<style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, sans-serif;padding:24px;background:#fafafa;color:#222}' .
-            '.card{max-width:1000px;margin:auto;background:#fff;border:1px solid #e5e7eb;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.06)}' .
-            '.hdr{padding:16px 20px;border-bottom:1px solid #f0f0f0;background:#f9fafb;border-radius:10px 10px 0 0}' .
-            '.title{margin:0;font-size:20px;font-weight:700}' .
-            '.sev{font-size:12px;color:#6b7280}' .
-            '.body{padding:20px}' .
-            '.where{font-family:monospace;color:#374151;margin:4px 0 12px 0}' .
-            '.summary{margin:12px 0;font-size:16px}' .
-            '.section{margin-top:14px}' .
-            '.section h3{margin:0 0 6px 0;font-size:14px;color:#374151}' .
-            '.stack{border:1px solid #eee;border-radius:8px;overflow:hidden}' .
-            '.frame{border-top:1px solid #f3f4f6}' .
-            '.frame:first-child{border-top:none}' .
-            '.frame-h{padding:10px 12px;display:flex;gap:10px;align-items:center;cursor:pointer;background:#fafafa;font-family:system-ui;font-size:13px}' .
-            '.frame-h.active{background:#eef2ff}' .
-            '.frame-h .idx{font-weight:700;color:#6b7280;width:28px;text-align:right}' .
-            '.frame-h .sig{flex:1 1 auto;overflow:auto;white-space:nowrap}' .
-            '.frame-h .loc{color:#6b7280;font-family:monospace}' .
-            '.frame-b{display:none;padding:12px;border-top:1px solid #e5e7eb;background:#fff}' .
-            '.frame-b.active{display:block}' .
-            '.code{border:1px solid #e5e7eb;border-radius:6px;background:#0b1021;color:#d6deeb;font-family:monospace;font-size:12px;overflow:auto}' .
-            '.code .ln{display:inline-block;width:3em;padding:0 8px 0 8px;color:#9aa4b2;background:#0a0e1a;text-align:right;user-select:none}' .
-            '.code .line{display:block;padding:0 8px}' .
-            '.code .hl{background:#1f2937}' .
-            '.kv{font-family:monospace;font-size:12px;white-space:pre-wrap;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:8px;overflow:auto}' .
-            '</style>' .
-            '<script>function __ee_sel(i){var h=document.querySelectorAll(".frame-h"),b=document.querySelectorAll(".frame-b");h.forEach(function(e,idx){if(idx===i){e.classList.add("active");}else{e.classList.remove("active");}});b.forEach(function(e,idx){if(idx===i){e.classList.add("active");}else{e.classList.remove("active");}});}</script>' .
-            '</head><body><div class="card">';
-        echo '<div class="hdr"><div class="title">' . $title . '</div><div class="sev">' . $severity . '</div></div>';
-        echo '<div class="body">';
-        if ($where !== '') {
-            echo '<div class="where">' . $where . '</div>';
-        }
-        if ($summary !== '') {
-            echo '<div class="summary">' . $summary . '</div>';
-        }
-        // Stack trace UI
-        if (!empty($trace)) {
-            echo '<div class="section"><h3>' . $hStack . '</h3><div class="stack">';
-            $idx = 0;
-            foreach ($trace as $frame) {
-                $fn = isset($frame['function']) ? (string)$frame['function'] : 'unknown';
-                $cls = isset($frame['class']) ? (string)$frame['class'] : '';
-                $type = isset($frame['type']) ? (string)$frame['type'] : '';
-                $sig = htmlspecialchars(trim($cls . $type . $fn . '()'), ENT_QUOTES, 'UTF-8');
-                $ff = isset($frame['file']) ? (string)$frame['file'] : '';
-                $ll = isset($frame['line']) ? (int)$frame['line'] : 0;
-                $loc = htmlspecialchars(($ff !== '' ? ($ff . ($ll ? ':' . $ll : '')) : ''), ENT_QUOTES, 'UTF-8');
-                echo '<div class="frame">';
-                echo '<div class="frame-h" onclick="__ee_sel(' . $idx . ')"><div class="idx">#' . $idx . '</div><div class="sig">' . $sig . '</div><div class="loc">' . $loc . '</div></div>';
-                echo '<div class="frame-b">';
-                // Locals
-                $localsOut = $this->dumpArgs(isset($frame['locals']) && is_array($frame['locals']) ? $frame['locals'] : []);
-                echo '<div class="section"><strong>' . $lLocals . '</strong><div class="kv">' . htmlspecialchars($localsOut, ENT_QUOTES, 'UTF-8') . '</div></div>';
-                // Arguments
-                $argsOut = $this->dumpArgs(isset($frame['args']) && is_array($frame['args']) ? $frame['args'] : []);
-                echo '<div class="section"><strong>' . $lArgs . '</strong><div class="kv">' . htmlspecialchars($argsOut, ENT_QUOTES, 'UTF-8') . '</div></div>';
-                // Code excerpt
-                $codeHtml = $this->renderCodeExcerpt($ff, $ll);
-                if ($codeHtml !== '') {
-                    echo '<div class="section"><strong>' . $lCode . '</strong><div class="code">' . $codeHtml . '</div></div>';
-                }
-                echo '</div>';
-                echo '</div>';
-                $idx++;
-            }
-            echo '</div></div>';
-            // Activate first frame by default
-            echo '<script>__ee_sel(0);</script>';
-        }
-        // Verbose textual details as fallback
-        if ($config->verbose && $details !== '') {
-            echo '<div class="section"><h3>' . $hDetails . '</h3>' . $detailsHtml . '</div>';
-        }
-        // Suggestions
-        if ($suggestionsHtml !== '') {
-            echo '<div class="section"><h3>' . $hSuggestions . '</h3>' . $suggestionsHtml . '</div>';
-        }
-        // Globals snapshot
-        if (!empty($globals)) {
-            echo '<div class="section"><h3>' . $hGlobals . '</h3>';
-            $gget = isset($globals['get']) ? $globals['get'] : [];
-            $gpost = isset($globals['post']) ? $globals['post'] : [];
-            $gsess = isset($globals['session']) ? $globals['session'] : [];
-            $gcook = isset($globals['cookie']) ? $globals['cookie'] : [];
-            echo '<div class="section"><strong>' . $lGET . '</strong><div class="kv">' . htmlspecialchars($this->dumpArgs($gget), ENT_QUOTES, 'UTF-8') . '</div></div>';
-            echo '<div class="section"><strong>' . $lPOST . '</strong><div class="kv">' . htmlspecialchars($this->dumpArgs($gpost), ENT_QUOTES, 'UTF-8') . '</div></div>';
-            echo '<div class="section"><strong>' . $lSESSION . '</strong><div class="kv">' . htmlspecialchars($this->dumpArgs($gsess), ENT_QUOTES, 'UTF-8') . '</div></div>';
-            echo '<div class="section"><strong>' . $lCOOKIE . '</strong><div class="kv">' . htmlspecialchars($this->dumpArgs($gcook), ENT_QUOTES, 'UTF-8') . '</div></div>';
-            echo '</div>';
-        }
-        echo '</div></div></body></html>';
+        $labels = [
+            'headings' => [
+                'details' => Translator::t($config, 'html.headings.details'),
+                'suggestions' => Translator::t($config, 'html.headings.suggestions'),
+                'stack' => Translator::t($config, 'html.headings.stack'),
+                'globals' => Translator::t($config, 'html.headings.globals'),
+            ],
+            'labels' => [
+                'arguments' => Translator::t($config, 'html.labels.arguments'),
+                'locals' => Translator::t($config, 'html.labels.locals'),
+                'code' => Translator::t($config, 'html.labels.code'),
+                'get' => Translator::t($config, 'html.labels.get'),
+                'post' => Translator::t($config, 'html.labels.post'),
+                'cookie' => Translator::t($config, 'html.labels.cookie'),
+                'session' => Translator::t($config, 'html.labels.session'),
+            ],
+        ];
+
+        $globals = isset($explanation['globals']) && is_array($explanation['globals']) ? $explanation['globals'] : [];
+        $globalsDumps = [
+            'get' => $this->dumpArgs(isset($globals['get']) ? $globals['get'] : []),
+            'post' => $this->dumpArgs(isset($globals['post']) ? $globals['post'] : []),
+            'cookie' => $this->dumpArgs(isset($globals['cookie']) ? $globals['cookie'] : []),
+            'session' => $this->dumpArgs(isset($globals['session']) ? $globals['session'] : []),
+        ];
+
+        return [
+            'docLang' => $docLang,
+            'title' => $title,
+            'severity' => $severity,
+            'where' => $where,
+            'summary' => $summary,
+            'verbose' => (bool)$config->verbose,
+            'details' => $details,
+            'suggestions' => $suggestions,
+            'frames' => $frames,
+            'labels' => $labels,
+            'globalsDumps' => $globalsDumps,
+        ];
     }
 
     private function dumpArgs($value, int $depthLimit = 3, int $maxItems = 20, int $maxString = 200): string

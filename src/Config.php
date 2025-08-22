@@ -19,6 +19,7 @@ final class Config
     public bool $verbose = false;
     public ?string $apiKey = null;
     public ?string $apiUrl = null;
+    public ?string $template = null; // path to external HTML template
 
     public function __construct(array $options = [])
     {
@@ -46,6 +47,9 @@ final class Config
         if (array_key_exists('apiUrl', $options)) {
             $this->apiUrl = $options['apiUrl'] !== null ? (string)$options['apiUrl'] : null;
         }
+        if (array_key_exists('template', $options)) {
+            $this->template = $options['template'] !== null ? (string)$options['template'] : null;
+        }
     }
 
     public static function fromEnvAndArray(array $options = []): self
@@ -59,6 +63,7 @@ final class Config
             'verbose'  => self::envBool('ERROR_EXPLAINER_VERBOSE', false),
             'apiKey'   => getenv('ERROR_EXPLAINER_API_KEY') ?: null,
             'apiUrl'   => getenv('ERROR_EXPLAINER_API_URL') ?: null,
+            'template' => getenv('ERROR_EXPLAINER_TEMPLATE') ?: null,
         ];
         // Options override env
         $merged = array_merge($env, $options);
