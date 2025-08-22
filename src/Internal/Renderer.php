@@ -185,8 +185,8 @@ final class Renderer
                 'idx' => $idx,
                 'sig' => $sig,
                 'loc' => $loc,
-                'localsDump' => $this->dumpArgs(isset($frame['locals']) && is_array($frame['locals']) ? $frame['locals'] : []),
-                'argsDump' => $this->dumpArgs(isset($frame['args']) && is_array($frame['args']) ? $frame['args'] : []),
+                'locals' => isset($frame['locals']) && is_array($frame['locals']) ? $frame['locals'] : [],
+                'args' => isset($frame['args']) && is_array($frame['args']) ? $frame['args'] : [],
                 'codeHtml' => $this->renderCodeExcerpt($ff, $ll),
             ];
             $idx++;
@@ -249,17 +249,17 @@ final class Renderer
                 'idx' => 0,
                 'sig' => '(origin)',
                 'loc' => $where,
-                'localsDump' => '',
-                'argsDump' => '',
+                'locals' => [],
+                'args' => [],
                 'codeHtml' => $this->renderCodeExcerpt($file, (int)$line),
-                'state' => $stateDumps,
+                'state' => $state,
             ];
         }
         $startIdx = count($framesOut);
         foreach ($frames as $f) {
             // ensure numeric idx and shift by startIdx
             $f['idx'] = (isset($f['idx']) ? (int)$f['idx'] : 0) + $startIdx;
-            $f['state'] = $stateDumps;
+            $f['state'] = $state;
             $framesOut[] = $f;
         }
 
