@@ -58,8 +58,8 @@ final class StateDumper
 
         // Note: get_defined_vars() here reflects only the scope within this function, but included for completeness
         $definedVars = get_defined_vars();
-        // Avoid putting large entries in definedVars
-        unset($definedVars['traceFromHandler'], $definedVars['frames'], $definedVars['currentObject']);
+        // Clean and filter noisy/internal entries from definedVars
+        $definedVars = self::filterDefinedVars($definedVars);
 
         // Prepare sanitized globals to avoid recursive reference explosion
         $globalsAll = [];
@@ -77,6 +77,41 @@ final class StateDumper
             'object' => $objectInfo,
             'xdebugText' => $xdebugText,
         ];
+    }
+
+    /**
+     * Keep only important keys and provide short summaries for complex values.
+     * @param array<string,mixed> $vars
+     * @return array<string,mixed>
+     */
+    private static function filterDefinedVars(array $vars): array
+    {
+        // Remove internal keys and superglobals-like entries
+        $exclude = [
+            'traceFromHandler','frames','currentObject','objectInfo','xdebugText','rawTrace',
+            'globalsAll','definedVars','GLOBALS','_GET','_POST','_COOKIE','_SERVER','_ENV','_FILES','_REQUEST','_SESSION'
+        ];
+        foreach ($exclude as $k) {
+            if (array_key_exists($k, $vars)) {
+                unset($vars[$k]);
+            }
+        }
+
+        $out = [];
+        $maxItems = 20; // show at most N variables
+        $i = 0;
+        foreach ($vars as $k => $v) {
+            if ($i >= $maxItems) {
+                $out['…'] = '…(more vars omitted)';
+                break;
+            }
+            // Keep values as-is so Renderer/VarDumper can present them nicely
+            $out[$k] = $v;
+            $i++;
+        }
+
+        ksort($out);
+        return $out;
     }
 
     /**

@@ -228,6 +228,10 @@ final class Renderer
             }
             if (isset($state['definedVars'])) {
                 $stateDumps['defined_vars'] = $this->dumpArgs($state['definedVars']);
+                $html = $this->dumpArgsHtml($state['definedVars']);
+                if (is_string($html) && $html !== '') {
+                    $stateDumps['defined_vars_html'] = $html;
+                }
             }
             if (isset($state['rawTrace'])) {
                 $stateDumps['raw_trace'] = $this->dumpArgs($state['rawTrace']);
@@ -277,6 +281,31 @@ final class Renderer
     private function dumpArgs($value, int $depthLimit = 3, int $maxItems = 20, int $maxString = 200): string
     {
         return $this->dumpValue($value, $depthLimit, $maxItems, $maxString);
+    }
+
+    private function dumpArgsHtml($value): ?string
+    {
+        if (!class_exists('\\Symfony\\Component\\VarDumper\\Cloner\\VarCloner') || !class_exists('\\Symfony\\Component\\VarDumper\\Dumper\\HtmlDumper')) {
+            return null;
+        }
+        try {
+            $cloner = new \Symfony\Component\VarDumper\Cloner\VarCloner();
+            $dumper = new \Symfony\Component\VarDumper\Dumper\HtmlDumper();
+            if (method_exists($dumper, 'setMaxStringLength')) {
+                $dumper->setMaxStringLength(200);
+            }
+            if (method_exists($dumper, 'setMaxItemsPerDepth')) {
+                $dumper->setMaxItemsPerDepth(20);
+            }
+            ob_start();
+            $dumper->dump($cloner->cloneVar($value));
+            return (string)ob_get_clean();
+        } catch (\Throwable $e) {
+            if (ob_get_level() > 0) {
+                @ob_end_clean();
+            }
+            return null;
+        }
     }
 
     private function dumpValue($value, int $depth, int $maxItems, int $maxString, array &$seen = []): string
