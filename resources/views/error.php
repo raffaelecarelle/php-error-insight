@@ -62,7 +62,6 @@ $copyText = json_encode(trim(($title !== '' ? $title : 'Error') . ($where !== ''
                             <p class="mt-2"><strong><?= $e($labels['labels']['arguments'] ?? 'Arguments') ?>:</strong></p>
                             <pre class="bg-gray-900 text-green-200 p-2 rounded text-xs"><?php dump($f['args'] ?? []) ?></pre>
 
-
                             <?php if (isset($f['state']['definedVars'])): ?>
                                 <p class="mt-2"><strong><?= $e($labels['labels']['defined_vars'] ?? 'Defined vars') ?>:</strong></p>
                                 <pre class="bg-gray-900 text-green-200 p-2 rounded text-xs"><?php dump($f['state']['definedVars']) ?></pre>

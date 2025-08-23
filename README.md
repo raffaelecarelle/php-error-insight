@@ -5,6 +5,7 @@ A tool that intercepts PHP errors, warnings, and exceptions and provides practic
 Screenshots:
 
 ![head.png](resources/img/readme/head.png)
+![envvar.png](resources/img/readme/envvar.png)
 ![ai-section.png](resources/img/readme/ai-section.png)
 
 - Supports local AI backends (e.g. Ollama/LocalAI) and APIs (e.g. OpenAI, Anthropic, Google Gemini).
