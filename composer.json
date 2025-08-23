@@ -12,6 +12,11 @@
             "ErrorExplainer\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "ErrorExplainer\\Tests\\": "tests/"
+        }
+    },
     "authors": [
         {
             "name": "Raffaele Carelle",

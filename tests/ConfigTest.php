@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+namespace ErrorExplainer\Tests;
+
 use ErrorExplainer\Config;
 use PHPUnit\Framework\TestCase;
 
@@ -26,8 +28,16 @@ final class ConfigTest extends TestCase
             $this->assertTrue($cfg->verbose);
         } finally {
             // restore env
-            if ($prevBackend === false) { putenv('PHP_ERROR_INSIGHT_BACKEND'); } else { putenv('PHP_ERROR_INSIGHT_BACKEND=' . $prevBackend); }
-            if ($prevLang === false) { putenv('PHP_ERROR_INSIGHT_LANG'); } else { putenv('PHP_ERROR_INSIGHT_LANG=' . $prevLang); }
+            if ($prevBackend === false) {
+                putenv('PHP_ERROR_INSIGHT_BACKEND');
+            } else {
+                putenv('PHP_ERROR_INSIGHT_BACKEND=' . $prevBackend);
+            }
+            if ($prevLang === false) {
+                putenv('PHP_ERROR_INSIGHT_LANG');
+            } else {
+                putenv('PHP_ERROR_INSIGHT_LANG=' . $prevLang);
+            }
         }
     }
 }

@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+namespace ErrorExplainer\Tests;
+
 use ErrorExplainer\Internal\StateDumper;
 use PHPUnit\Framework\TestCase;
 

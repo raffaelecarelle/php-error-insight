@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+namespace ErrorExplainer\Tests;
+
 use ErrorExplainer\Config;
 use ErrorExplainer\Contracts\ExplainerInterface;
 use ErrorExplainer\Contracts\RendererInterface;
@@ -15,7 +17,7 @@ final class ErrorHandlerDumperInjectionTest extends TestCase
     {
         $captured = (object)['explanation' => null];
 
-        $fakeExplainer = new class implements ExplainerInterface {
+        $fakeExplainer = new class () implements ExplainerInterface {
             public function explain(string $kind, string $message, ?string $file, ?int $line, ?array $trace, ?int $severity, Config $config): array
             {
                 return [
@@ -30,16 +32,19 @@ final class ErrorHandlerDumperInjectionTest extends TestCase
             }
         };
 
-        $fakeRenderer = new class($captured) implements RendererInterface {
+        $fakeRenderer = new class ($captured) implements RendererInterface {
             private $captured;
-            public function __construct($captured) { $this->captured = $captured; }
+            public function __construct($captured)
+            {
+                $this->captured = $captured;
+            }
             public function render(array $explanation, Config $config, string $kind, bool $isShutdown): void
             {
                 $this->captured->explanation = $explanation;
             }
         };
 
-        $fakeDumper = new class implements StateDumperInterface {
+        $fakeDumper = new class () implements StateDumperInterface {
             public array $lastTrace = [];
             public function collectState(?array $traceFromHandler = null): array
             {

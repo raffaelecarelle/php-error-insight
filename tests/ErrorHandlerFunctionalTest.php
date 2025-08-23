@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+namespace ErrorExplainer\Tests;
+
 use ErrorExplainer\Config;
 use ErrorExplainer\Internal\ErrorHandler;
 use ErrorExplainer\Contracts\ExplainerInterface;
@@ -14,7 +16,7 @@ final class ErrorHandlerFunctionalTest extends TestCase
     {
         $captured = (object)['explanation' => null, 'kind' => null, 'isShutdown' => null];
 
-        $fakeExplainer = new class implements ExplainerInterface {
+        $fakeExplainer = new class () implements ExplainerInterface {
             public array $lastArgs;
             public function explain(string $kind, string $message, ?string $file, ?int $line, ?array $trace, ?int $severity, Config $config): array
             {
@@ -31,9 +33,12 @@ final class ErrorHandlerFunctionalTest extends TestCase
             }
         };
 
-        $fakeRenderer = new class($captured) implements RendererInterface {
+        $fakeRenderer = new class ($captured) implements RendererInterface {
             private $captured;
-            public function __construct($captured) { $this->captured = $captured; }
+            public function __construct($captured)
+            {
+                $this->captured = $captured;
+            }
             public function render(array $explanation, Config $config, string $kind, bool $isShutdown): void
             {
                 $this->captured->explanation = $explanation;

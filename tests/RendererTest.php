@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+namespace ErrorExplainer\Tests;
+
 use ErrorExplainer\Config;
 use ErrorExplainer\Internal\Renderer;
 use PHPUnit\Framework\TestCase;
