@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace ErrorExplainer\Internal;
 
 use ErrorExplainer\Config;
+use ErrorExplainer\Contracts\RendererInterface;
 
-final class Renderer
+final class Renderer implements RendererInterface
 {
     /**
      * @param array<string,mixed> $explanation
@@ -110,7 +111,7 @@ final class Renderer
      */
     private function renderHtml(array $explanation, Config $config): void
     {
-        if (!headers_sent()) {
+        if (PHP_SAPI !== 'cli' && PHP_SAPI !== 'phpdbg' && !headers_sent()) {
             header('Content-Type: text/html; charset=utf-8');
             http_response_code(500);
         }

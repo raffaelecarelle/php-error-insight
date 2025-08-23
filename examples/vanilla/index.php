@@ -15,18 +15,18 @@
 require __DIR__ . '/../../vendor/autoload.php'; // Ensure you ran `composer dump-autoload`
 
 use ErrorExplainer\ErrorExplainer;
+use ErrorExplainer\Foo;
 
 ErrorExplainer::register([
     'enabled' => true,
     'output' => 'html',   // auto|text|html|json
     'verbose' => true,
-    'backend'  => 'api',
-    'model'    => 'gpt-4o-mini',
-    'language' => 'en',
-    'apiKey'   => 'xxxxx',]);
+    // Default to no AI to avoid network calls in example; configure via env to enable
+    'backend'  => getenv('PHP_ERROR_INSIGHT_BACKEND') ?: 'none',
+    'model'    => getenv('PHP_ERROR_INSIGHT_MODEL') ?: null,
+    'language' => getenv('PHP_ERROR_INSIGHT_LANG') ?: 'en',
+    'apiKey'   => getenv('PHP_ERROR_INSIGHT_API_KEY') ?: null,
+    'apiUrl'   => getenv('PHP_ERROR_INSIGHT_API_URL') ?: null,
+]);
 
-// Trigger a notice: undefined variable
 echo $undefinedVar;
-
-// Trigger an exception
-throw new RuntimeException('Example exception to demonstrate ErrorExplainer');

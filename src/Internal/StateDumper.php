@@ -4,8 +4,20 @@ declare(strict_types=1);
 
 namespace ErrorExplainer\Internal;
 
-final class StateDumper
+use ErrorExplainer\Contracts\StateDumperInterface;
+
+final class StateDumper implements StateDumperInterface
 {
+    /**
+     * Instance variant to adhere to the StateDumperInterface while reusing the static implementation.
+     *
+     * @param array<int, array<string, mixed>>|null $traceFromHandler
+     * @return array<string, mixed>
+     */
+    public function collectState(?array $traceFromHandler = null): array
+    {
+        return self::collect($traceFromHandler);
+    }
     /**
      * Collect extended state information at the time of an error/exception.
      *

@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace ErrorExplainer\Internal;
 
 use ErrorExplainer\Config;
+use ErrorExplainer\Contracts\ExplainerInterface;
+use ErrorExplainer\Contracts\RendererInterface;
+use ErrorExplainer\Contracts\StateDumperInterface;
 use Throwable;
 
 final class ErrorHandler
@@ -15,21 +18,26 @@ final class ErrorHandler
     private $prevExceptionHandler;
 
     private Config $config;
-    private Explainer $explainer;
-    private Renderer $renderer;
+    private ExplainerInterface $explainer;
+    private RendererInterface $renderer;
+    private StateDumperInterface $stateDumper;
 
     /**
      * @param Config $config
      * @param callable|null $prevErrorHandler
      * @param callable|null $prevExceptionHandler
+     * @param ExplainerInterface|null $explainer
+     * @param RendererInterface|null $renderer
+     * @param StateDumperInterface|null $stateDumper
      */
-    public function __construct(Config $config, $prevErrorHandler, $prevExceptionHandler)
+    public function __construct(Config $config, $prevErrorHandler, $prevExceptionHandler, ?ExplainerInterface $explainer = null, ?RendererInterface $renderer = null, ?StateDumperInterface $stateDumper = null)
     {
         $this->config = $config;
         $this->prevErrorHandler = $prevErrorHandler;
         $this->prevExceptionHandler = $prevExceptionHandler;
-        $this->explainer = new Explainer();
-        $this->renderer = new Renderer();
+        $this->explainer = $explainer ?? new Explainer();
+        $this->renderer = $renderer ?? new Renderer();
+        $this->stateDumper = $stateDumper ?? new StateDumper();
     }
 
     /**
@@ -55,7 +63,7 @@ final class ErrorHandler
 
         $exp = $this->explainer->explain('error', (string)$message, (string)$file, (int)$line, $trace, (int)$severity, $this->config);
         // Attach extended state dump
-        $exp['state'] = StateDumper::collect($trace);
+        $exp['state'] = $this->stateDumper->collectState($trace);
         $this->renderer->render($exp, $this->config, 'error', false);
 
         // Chain to previous handler if exists
@@ -82,7 +90,7 @@ final class ErrorHandler
         }
 
         $exp = $this->explainer->explain('exception', $e->getMessage(), $e->getFile(), $e->getLine(), $e->getTrace(), null, $this->config);
-        $exp['state'] = StateDumper::collect($e->getTrace());
+        $exp['state'] = $this->stateDumper->collectState($e->getTrace());
         $this->renderer->render($exp, $this->config, 'exception', false);
 
         // Chain to previous handler if exists
@@ -118,7 +126,7 @@ final class ErrorHandler
             array_shift($trace);
         }
         $exp = $this->explainer->explain('shutdown', $message, $file, $line, $trace, $severity, $this->config);
-        $exp['state'] = StateDumper::collect($trace);
+        $exp['state'] = $this->stateDumper->collectState($trace);
         $this->renderer->render($exp, $this->config, 'shutdown', true);
     }
 

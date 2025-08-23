@@ -5,9 +5,17 @@ declare(strict_types=1);
 namespace ErrorExplainer\Internal;
 
 use ErrorExplainer\Config;
+use ErrorExplainer\Contracts\ExplainerInterface;
+use ErrorExplainer\Contracts\AIClientInterface;
 
-final class Explainer
+final class Explainer implements ExplainerInterface
 {
+    private ?AIClientInterface $aiClient;
+
+    public function __construct(?AIClientInterface $aiClient = null)
+    {
+        $this->aiClient = $aiClient;
+    }
     /**
      * Build an educational explanation based on the given error/exception data.
      * Returns an associative array with keys: title, summary, details, suggestions, severityLabel, original
@@ -47,45 +55,6 @@ final class Explainer
                 'session' => (function () { return (function_exists('session_status') && session_status() === PHP_SESSION_ACTIVE && isset($_SESSION)) ? $_SESSION : []; })(),
             ],
         ];
-
-        // Mapping of common errors
-        if (strpos($message, 'Undefined variable') !== false) {
-            $explanation['summary'] = Translator::t($config, 'errors.undefined_variable.summary');
-            $explanation['suggestions'] = Translator::tList($config, 'errors.undefined_variable.suggestions');
-        } elseif (strpos($message, 'Undefined index') !== false || strpos($message, 'Undefined array key') !== false) {
-            $explanation['summary'] = Translator::t($config, 'errors.undefined_index.summary');
-            $explanation['suggestions'] = Translator::tList($config, 'errors.undefined_index.suggestions');
-        } elseif (strpos($message, 'Call to undefined function') !== false) {
-            $explanation['summary'] = Translator::t($config, 'errors.undefined_function.summary');
-            $explanation['suggestions'] = Translator::tList($config, 'errors.undefined_function.suggestions');
-        } elseif (strpos($message, 'Class') !== false && strpos($message, 'not found') !== false) {
-            $explanation['summary'] = Translator::t($config, 'errors.class_not_found.summary');
-            $explanation['suggestions'] = Translator::tList($config, 'errors.class_not_found.suggestions');
-        } elseif (strpos($lower, 'division by zero') !== false) {
-            $explanation['summary'] = Translator::t($config, 'errors.division_by_zero.summary');
-            $explanation['suggestions'] = Translator::tList($config, 'errors.division_by_zero.suggestions');
-        } elseif (strpos($lower, 'allowed memory size') !== false) {
-            $explanation['summary'] = Translator::t($config, 'errors.memory_exhausted.summary');
-            $explanation['suggestions'] = Translator::tList($config, 'errors.memory_exhausted.suggestions');
-        } elseif (strpos($lower, 'maximum execution time') !== false) {
-            $explanation['summary'] = Translator::t($config, 'errors.maximum_execution_time.summary');
-            $explanation['suggestions'] = Translator::tList($config, 'errors.maximum_execution_time.suggestions');
-        } elseif (strpos($lower, 'cannot redeclare') !== false) {
-            $explanation['summary'] = Translator::t($config, 'errors.cannot_redeclare.summary');
-            $explanation['suggestions'] = Translator::tList($config, 'errors.cannot_redeclare.suggestions');
-        } elseif (strpos($lower, 'headers already sent') !== false) {
-            $explanation['summary'] = Translator::t($config, 'errors.headers_already_sent.summary');
-            $explanation['suggestions'] = Translator::tList($config, 'errors.headers_already_sent.suggestions');
-        } elseif (strpos($lower, 'call to a member function') !== false && strpos($lower, 'on null') !== false) {
-            $explanation['summary'] = Translator::t($config, 'errors.call_on_null.summary');
-            $explanation['suggestions'] = Translator::tList($config, 'errors.call_on_null.suggestions');
-        } elseif (strpos($lower, 'syntax error') !== false) {
-            $explanation['summary'] = Translator::t($config, 'errors.syntax_error.summary');
-            $explanation['suggestions'] = Translator::tList($config, 'errors.syntax_error.suggestions');
-        } else {
-            $explanation['summary'] = Translator::t($config, 'errors.generic.summary');
-            $explanation['suggestions'] = Translator::tList($config, 'errors.generic.suggestions');
-        }
 
         if ($config->backend !== 'none') {
             $aiText = $this->aiExplain($kind, $message, $file, $line, $severity, $config);
@@ -286,6 +255,12 @@ Severity: $sev
 Location: $where
 Explain the likely cause and provide practical steps to fix it. Keep the answer concise and use bullet points when useful.";
 
+        // If an AI client has been injected, delegate to it (for DI/testing/extension)
+        if ($this->aiClient) {
+            return $this->aiClient->generateExplanation($prompt, $config);
+        }
+
+        // Fallback to built-in simple backends to preserve backward compatibility
         $backend = strtolower(trim($config->backend));
         if ($backend === 'local') {
             return $this->aiLocal($prompt, $config);
