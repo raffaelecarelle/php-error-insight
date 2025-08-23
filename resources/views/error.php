@@ -23,6 +23,58 @@ $copyText = json_encode(trim(($title !== '' ? $title : 'Error') . ($where !== ''
             darkMode: 'class',
         }
     </script>
+    <style>
+        /* Symfony VarDumper overrides to match the error page (Tailwind-based) */
+        .sf-dump, .sf-dump pre {
+            background-color: #111827 !important; /* gray-900 */
+            color: #e5e7eb !important; /* gray-200 */
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+            font-size: 0.75rem !important; /* text-xs */
+            line-height: 1.25rem !important;
+            border-radius: 0.5rem !important; /* rounded */
+            padding: 0.5rem 0.75rem !important; /* p-2 px-3 */
+            overflow: auto;
+        }
+        .sf-dump { box-shadow: none !important; border: 1px solid rgba(255,255,255,0.08) !important; }
+        .sf-dump a { color: #93c5fd !important; text-decoration: underline; }
+        .sf-dump .sf-dump-num { color: #60a5fa !important; } /* blue-400 */
+        .sf-dump .sf-dump-str { color: #34d399 !important; } /* emerald-400 */
+        .sf-dump .sf-dump-key { color: #f472b6 !important; } /* pink-400 */
+        .sf-dump .sf-dump-note { color: #fbbf24 !important; } /* amber-300 */
+        .sf-dump .sf-dump-ref { color: #a78bfa !important; } /* violet-400 */
+        .sf-dump .sf-dump-meta { color: #9ca3af !important; } /* gray-400 */
+        .sf-dump .sf-dump-public { color: #10b981 !important; } /* emerald-500 */
+        .sf-dump .sf-dump-protected { color: #f59e0b !important; } /* amber-500 */
+        .sf-dump .sf-dump-private { color: #ef4444 !important; } /* red-500 */
+        .sf-dump .sf-dump-index { color: #93c5fd !important; } /* blue-300 */
+        .sf-dump .sf-dump-ellipsis { color: #9ca3af !important; }
+        .sf-dump .sf-dump-toggle { color: #e5e7eb !important; text-decoration: none !important; }
+
+        /* Light mode variants */
+        :root:not(.dark) .sf-dump, :root:not(.dark) .sf-dump pre {
+            background-color: #f3f4f6 !important; /* gray-100 */
+            color: #111827 !important; /* gray-900 */
+            border: 1px solid rgba(0,0,0,0.06) !important;
+        }
+        :root:not(.dark) .sf-dump a { color: #1d4ed8 !important; }
+        :root:not(.dark) .sf-dump .sf-dump-num { color: #1d4ed8 !important; } /* blue-700 */
+        :root:not(.dark) .sf-dump .sf-dump-str { color: #047857 !important; } /* green-700 */
+        :root:not(.dark) .sf-dump .sf-dump-key { color: #9d174d !important; } /* pink-800 */
+        :root:not(.dark) .sf-dump .sf-dump-note { color: #92400e !important; } /* amber-700 */
+        :root:not(.dark) .sf-dump .sf-dump-ref { color: #6d28d9 !important; } /* violet-700 */
+        :root:not(.dark) .sf-dump .sf-dump-meta { color: #4b5563 !important; } /* gray-600 */
+
+        /* When a dump is wrapped in a <pre>, make the inner sf-dump appear as the display block */
+        pre > .sf-dump {
+            background: transparent !important;
+            padding: 10px !important;\
+            border: 0 !important;
+        }
+
+        pre.sf-dump, pre.sf-dump .sf-dump-default {
+            background: transparent !important;
+        }
+    </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-sans">
 
@@ -57,20 +109,20 @@ $copyText = json_encode(trim(($title !== '' ? $title : 'Error') . ($where !== ''
                         </button>
                         <div class="hidden mt-2 text-sm bg-gray-50 dark:bg-gray-700 p-2 rounded">
                             <p><strong><?= $e($labels['labels']['locals'] ?? 'Locals') ?>:</strong></p>
-                            <pre class="bg-gray-900 text-green-200 p-2 rounded text-xs"><?php dump($f['locals'] ?? []) ?></pre>
+                            <pre class="text-green-200 rounded text-xs"><?php dump($f['locals'] ?? []) ?></pre>
 
                             <p class="mt-2"><strong><?= $e($labels['labels']['arguments'] ?? 'Arguments') ?>:</strong></p>
-                            <pre class="bg-gray-900 text-green-200 p-2 rounded text-xs"><?php dump($f['args'] ?? []) ?></pre>
+                            <pre class="text-green-200 rounded text-xs"><?php dump($f['args'] ?? []) ?></pre>
 
                             <?php if (isset($f['state']['definedVars'])): ?>
                                 <p class="mt-2"><strong><?= $e($labels['labels']['defined_vars'] ?? 'Defined vars') ?>:</strong></p>
-                                <pre class="bg-gray-900 text-green-200 p-2 rounded text-xs"><?php dump($f['state']['definedVars']) ?></pre>
+                                <pre class="text-green-200 rounded text-xs"><?php dump($f['state']['definedVars']) ?></pre>
                                 <?php if (isset($f['locals']['$this'])): ?>
                                     <p class="mt-2"><strong><?= $e($labels['labels']['object'] ?? 'Object ($this)') ?>:</strong></p>
-                                    <pre class="bg-gray-900 text-green-200 p-2 rounded text-xs"><?php dump($f['locals']['$this']) ?></pre>
+                                    <pre class="text-green-200 rounded text-xs"><?php dump($f['locals']['$this']) ?></pre>
                                 <?php elseif (isset($f['state']['object'])): ?>
                                     <p class="mt-2"><strong><?= $e($labels['labels']['object'] ?? 'Object') ?>:</strong></p>
-                                    <pre class="bg-gray-900 text-green-200 p-2 rounded text-xs"><?php dump($f['state']['object']) ?></pre>
+                                    <pre class="text-green-200 rounded text-xs"><?php dump($f['state']['object']) ?></pre>
                                 <?php endif; ?>
                             <?php endif; ?>
                         </div>
@@ -94,25 +146,25 @@ $copyText = json_encode(trim(($title !== '' ? $title : 'Error') . ($where !== ''
         </div>
 
         <div id="tab-server" class="tab-content">
-            <pre class="bg-gray-900 text-gray-100 p-3 rounded text-xs"><?php dump($_SERVER ?? []) ?></pre>
+            <pre class="text-gray-100 rounded text-xs"><?php dump($_SERVER ?? []) ?></pre>
         </div>
         <div id="tab-env" class="tab-content hidden">
-            <pre class="bg-gray-900 text-gray-100 p-3 rounded text-xs"><?php dump($_ENV ?? []) ?></pre>
+            <pre class="text-gray-100 rounded text-xs"><?php dump($_ENV ?? []) ?></pre>
         </div>
         <div id="tab-cookies" class="tab-content hidden">
-            <pre class="bg-gray-900 text-gray-100 p-3 rounded text-xs"><?php dump($_COOKIE ?? []) ?></pre>
+            <pre class="text-gray-100 rounded text-xs"><?php dump($_COOKIE ?? []) ?></pre>
         </div>
         <div id="tab-session" class="tab-content hidden">
-            <pre class="bg-gray-900 text-gray-100 p-3 rounded text-xs"><?php dump($_SESSION ?? []) ?></pre>
+            <pre class="text-gray-100 rounded text-xs"><?php dump($_SESSION ?? []) ?></pre>
         </div>
         <div id="tab-get" class="tab-content hidden">
-            <pre class="bg-gray-900 text-gray-100 p-3 rounded text-xs"><?php dump($_GET ?? []) ?></pre>
+            <pre class="text-gray-100 rounded text-xs"><?php dump($_GET ?? []) ?></pre>
         </div>
         <div id="tab-post" class="tab-content hidden">
-            <pre class="bg-gray-900 text-gray-100 p-3 rounded text-xs"><?php dump($_POST ?? []) ?></pre>
+            <pre class="text-gray-100 rounded text-xs"><?php dump($_POST ?? []) ?></pre>
         </div>
         <div id="tab-files" class="tab-content hidden">
-            <pre class="bg-gray-900 text-gray-100 p-3 rounded text-xs"><?php dump($_FILES ?? []) ?></pre>
+            <pre class="text-gray-100 rounded text-xs"><?php dump($_FILES ?? []) ?></pre>
         </div>
     </section>
 
@@ -120,7 +172,7 @@ $copyText = json_encode(trim(($title !== '' ? $title : 'Error') . ($where !== ''
     <?php if ($subtitle !== '' && $verbose && $details !== ''): ?>
         <section class="bg-blue-50 dark:bg-blue-900 border-l-4 border-blue-500 p-4 rounded shadow mb-6">
             <h2 class="text-lg font-semibold mb-2 text-blue-700 dark:text-blue-300">📝 <?= $e($labels['headings']['details'] ?? 'Details') ?></h2>
-            <pre class="bg-gray-900 text-gray-100 p-3 rounded text-xs whitespace-pre-wrap"><?= $e($details) ?></pre>
+            <pre class="text-gray-100 rounded text-xs whitespace-pre-wrap"><?= $e($details) ?></pre>
         </section>
     <?php endif; ?>
 
