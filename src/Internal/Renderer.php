@@ -75,20 +75,6 @@ final class Renderer implements RendererInterface
             $lines[] = $section(Translator::t($config, 'labels.summary')) . ' ' . (string)$data['summary'];
         }
 
-        // Details (only when verbose)
-        if (!empty($data['details']) && (bool)$data['verbose']) {
-            $lines[] = $section(Translator::t($config, 'labels.details'));
-            $lines[] = (string)$data['details'];
-        }
-
-        // Suggestions
-        if (!empty($data['suggestions'])) {
-            $lines[] = $section(Translator::t($config, 'labels.suggestions'));
-            foreach ($data['suggestions'] as $s) {
-                $lines[] = ' ' . $bullet('•') . ' ' . (string)$s;
-            }
-        }
-
         // Stack (show top frames with code excerpt)
         if (!empty($data['frames'])) {
             $lines[] = '';
@@ -120,6 +106,20 @@ final class Renderer implements RendererInterface
                     }
                 }
                 $i++;
+            }
+        }
+
+        // Details (only when verbose)
+        if (!empty($data['details']) && (bool)$data['verbose']) {
+            $lines[] = $section(Translator::t($config, 'labels.details'));
+            $lines[] = (string)$data['details'];
+        }
+
+        // Suggestions
+        if (!empty($data['suggestions'])) {
+            $lines[] = $section(Translator::t($config, 'labels.suggestions'));
+            foreach ($data['suggestions'] as $s) {
+                $lines[] = ' ' . $bullet('•') . ' ' . (string)$s;
             }
         }
 
