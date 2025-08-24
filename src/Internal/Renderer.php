@@ -217,49 +217,15 @@ final class Renderer implements RendererInterface
                 'env_details' => Translator::t($config, 'html.headings.env_details'),
                 'suggestions' => Translator::t($config, 'html.headings.suggestions'),
                 'stack' => Translator::t($config, 'html.headings.stack'),
-                'globals' => Translator::t($config, 'html.headings.globals'),
-                'state' => Translator::t($config, 'html.headings.state'),
             ],
             'labels' => [
-                'arguments' => Translator::t($config, 'html.labels.arguments'),
-                'locals' => Translator::t($config, 'html.labels.locals'),
                 'code' => Translator::t($config, 'html.labels.code'),
                 'get' => Translator::t($config, 'html.labels.get'),
                 'post' => Translator::t($config, 'html.labels.post'),
                 'cookie' => Translator::t($config, 'html.labels.cookie'),
                 'session' => Translator::t($config, 'html.labels.session'),
-                'object' => Translator::t($config, 'html.labels.object'),
-                'globals_all' => Translator::t($config, 'html.labels.globals_all'),
-                'defined_vars' => Translator::t($config, 'html.labels.defined_vars'),
-                'raw_trace' => Translator::t($config, 'html.labels.raw_trace'),
-                'xdebug' => Translator::t($config, 'html.labels.xdebug'),
             ],
         ];
-
-        // Build state dumps if present
-        $state = isset($explanation['state']) && is_array($explanation['state']) ? $explanation['state'] : [];
-        $stateDumps = [];
-        if (!empty($state)) {
-            if (isset($state['object'])) {
-                $stateDumps['object'] = $this->dumpArgs($state['object']);
-            }
-            if (isset($state['globalsAll'])) {
-                $stateDumps['globals_all'] = $this->dumpArgs($state['globalsAll']);
-            }
-            if (isset($state['definedVars'])) {
-                $stateDumps['defined_vars'] = $this->dumpArgs($state['definedVars']);
-                $html = $this->dumpArgsHtml($state['definedVars']);
-                if (is_string($html) && $html !== '') {
-                    $stateDumps['defined_vars_html'] = $html;
-                }
-            }
-            if (isset($state['rawTrace'])) {
-                $stateDumps['raw_trace'] = $this->dumpArgs($state['rawTrace']);
-            }
-            if (!empty($state['xdebugText'])) {
-                $stateDumps['xdebug'] = (string)$state['xdebugText'];
-            }
-        }
 
         // Attach full state to each frame and prepend origin as frame #0 (so it's part of the stack)
         $framesOut = [];
@@ -269,14 +235,12 @@ final class Renderer implements RendererInterface
                 'sig' => '(origin)',
                 'loc' => $where,
                 'codeHtml' => $this->renderCodeExcerpt($file, (int)$line),
-                'state' => $state,
             ];
         }
         $startIdx = count($framesOut);
         foreach ($frames as $f) {
             // ensure numeric idx and shift by startIdx
             $f['idx'] = (isset($f['idx']) ? (int)$f['idx'] : 0) + $startIdx;
-            $f['state'] = $state;
             $framesOut[] = $f;
         }
 
@@ -287,117 +251,12 @@ final class Renderer implements RendererInterface
             'severity' => $severity,
             'where' => $where,
             'summary' => $summary,
-            'verbose' => (bool)$config->verbose,
+            'verbose' => $config->verbose,
             'details' => $details,
             'suggestions' => $suggestions,
             'frames' => $framesOut,
             'labels' => $labels,
-            'stateDumps' => $stateDumps,
         ];
-    }
-
-    private function dumpArgs($value, int $depthLimit = 3, int $maxItems = 20, int $maxString = 200): string
-    {
-        return $this->dumpValue($value, $depthLimit, $maxItems, $maxString);
-    }
-
-    private function dumpArgsHtml($value): ?string
-    {
-        if (!class_exists('\\Symfony\\Component\\VarDumper\\Cloner\\VarCloner') || !class_exists('\\Symfony\\Component\\VarDumper\\Dumper\\HtmlDumper')) {
-            return null;
-        }
-        try {
-            $cloner = new \Symfony\Component\VarDumper\Cloner\VarCloner();
-            $dumper = new \Symfony\Component\VarDumper\Dumper\HtmlDumper();
-            if (method_exists($dumper, 'setMaxStringLength')) {
-                $dumper->setMaxStringLength(200);
-            }
-            if (method_exists($dumper, 'setMaxItemsPerDepth')) {
-                $dumper->setMaxItemsPerDepth(20);
-            }
-            ob_start();
-            $dumper->dump($cloner->cloneVar($value));
-            return (string)ob_get_clean();
-        } catch (\Throwable $e) {
-            if (ob_get_level() > 0) {
-                @ob_end_clean();
-            }
-            return null;
-        }
-    }
-
-    private function dumpValue($value, int $depth, int $maxItems, int $maxString, array &$seen = []): string
-    {
-        if ($depth < 0) {
-            return '…';
-        }
-        if (is_null($value)) {
-            return 'null';
-        }
-        if (is_bool($value)) {
-            return $value ? 'true' : 'false';
-        }
-        if (is_int($value) || is_float($value)) {
-            return (string)$value;
-        }
-        if (is_string($value)) {
-            $s = $value;
-            if (strlen($s) > $maxString) {
-                $s = substr($s, 0, $maxString) . '…';
-            }
-            return '"' . $s . '"';
-        }
-        if (is_array($value)) {
-            $out = "[\n";
-            $i = 0;
-            $count = count($value);
-            foreach ($value as $k => $v) {
-                if ($i >= $maxItems) {
-                    $out .= "  …(+" . ($count - $i) . " items)\n";
-                    break;
-                }
-                $out .= '  [' . (is_int($k) ? $k : var_export($k, true)) . '] => ' . $this->dumpValue($v, $depth - 1, $maxItems, $maxString, $seen) . "\n";
-                $i++;
-            }
-            $out .= ']';
-            return $out;
-        }
-        if (is_object($value)) {
-            $id = spl_object_hash($value);
-            if (isset($seen[$id])) {
-                return 'Object(' . get_class($value) . ') {…recursion…}';
-            }
-            $seen[$id] = true;
-            $cls = get_class($value);
-            $out = 'Object(' . $cls . ')';
-            if ($depth > 0) {
-                $props = [];
-                try {
-                    $props = get_object_vars($value);
-                } catch (\Throwable $e) {
-                    $props = [];
-                }
-                if (!empty($props)) {
-                    $out .= " {\n";
-                    $i = 0;
-                    $count = count($props);
-                    foreach ($props as $k => $v) {
-                        if ($i >= $maxItems) {
-                            $out .= "  …(+" . ($count - $i) . " props)\n";
-                            break;
-                        }
-                        $out .= '  [' . $k . '] => ' . $this->dumpValue($v, $depth - 1, $maxItems, $maxString, $seen) . "\n";
-                        $i++;
-                    }
-                    $out .= '}';
-                }
-            }
-            return $out;
-        }
-        if (is_resource($value)) {
-            return 'resource(' . get_resource_type($value) . ')';
-        }
-        return 'unknown';
     }
 
     private function renderCodeExcerpt(?string $file, ?int $line, int $radius = 5): string
