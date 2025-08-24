@@ -186,8 +186,6 @@ final class Renderer implements RendererInterface
                 'idx' => $idx,
                 'sig' => $sig,
                 'loc' => $loc,
-                'locals' => isset($frame['locals']) && is_array($frame['locals']) ? $frame['locals'] : [],
-                'args' => isset($frame['args']) && is_array($frame['args']) ? $frame['args'] : [],
                 'codeHtml' => $this->renderCodeExcerpt($ff, $ll),
             ];
             $idx++;
@@ -250,8 +248,6 @@ final class Renderer implements RendererInterface
                 'idx' => 0,
                 'sig' => '(origin)',
                 'loc' => $where,
-                'locals' => [],
-                'args' => [],
                 'codeHtml' => $this->renderCodeExcerpt($file, (int)$line),
                 'state' => $state,
             ];
@@ -396,12 +392,17 @@ final class Renderer implements RendererInterface
         $total = count($lines);
         $start = max(1, $line - $radius);
         $end = min($total, $line + $radius);
-        $html = '';
-        for ($i = $start; $i <= $end; $i++) {
-            $content = isset($lines[$i - 1]) ? htmlspecialchars($lines[$i - 1], ENT_QUOTES, 'UTF-8') : '';
-            $hl = ($i === $line) ? ' hl' : '';
-            $html .= '<div class="line' . $hl . '"><span class="ln">' . $i . '</span>' . $content . '</div>';
+        $snippetLines = array_slice($lines, $start - 1, $end - $start + 1);
+        $code = implode("\n", $snippetLines);
+        // Prepend opening tag to force PHP syntax highlighting
+        $toHighlight = "<?php\n" . $code;
+        $html = @highlight_string($toHighlight, true);
+        if (!is_string($html)) {
+            // Fallback: plain escaped code
+            return '<pre><code>' . htmlspecialchars($code, ENT_QUOTES, 'UTF-8') . '</code></pre>';
         }
+        // Remove the injected opening tag line from the highlighted HTML
+        $html = preg_replace('#&lt;\?php<br\s*/?>#i', '', $html, 1) ?? $html;
         return $html;
     }
 }

@@ -108,23 +108,10 @@ $copyText = json_encode(trim(($title !== '' ? $title : 'Error') . ($where !== ''
                             <span>+</span>
                         </button>
                         <div class="hidden mt-2 text-sm bg-gray-50 dark:bg-gray-700 p-2 rounded">
-                            <p><strong><?= $e($labels['labels']['locals'] ?? 'Locals') ?>:</strong></p>
-                            <pre class="text-green-200 rounded text-xs"><?php dump($f['locals'] ?? []) ?></pre>
-
-                            <p class="mt-2"><strong><?= $e($labels['labels']['arguments'] ?? 'Arguments') ?>:</strong></p>
-                            <pre class="text-green-200 rounded text-xs"><?php dump($f['args'] ?? []) ?></pre>
-
-                            <?php if (isset($f['state']['definedVars'])): ?>
-                                <p class="mt-2"><strong><?= $e($labels['labels']['defined_vars'] ?? 'Defined vars') ?>:</strong></p>
-                                <pre class="text-green-200 rounded text-xs"><?php dump($f['state']['definedVars']) ?></pre>
-                                <?php if (isset($f['locals']['$this'])): ?>
-                                    <p class="mt-2"><strong><?= $e($labels['labels']['object'] ?? 'Object ($this)') ?>:</strong></p>
-                                    <pre class="text-green-200 rounded text-xs"><?php dump($f['locals']['$this']) ?></pre>
-                                <?php elseif (isset($f['state']['object'])): ?>
-                                    <p class="mt-2"><strong><?= $e($labels['labels']['object'] ?? 'Object') ?>:</strong></p>
-                                    <pre class="text-green-200 rounded text-xs"><?php dump($f['state']['object']) ?></pre>
-                                <?php endif; ?>
-                            <?php endif; ?>
+                            <p><strong><?= $e($labels['labels']['code'] ?? 'Code') ?>:</strong></p>
+                            <div class="text-xs font-mono bg-white text-gray-900 rounded p-2 overflow-auto dark:bg-white dark:text-gray-900">
+                                <?= $f['codeHtml'] ?? '' ?>
+                            </div>
                         </div>
                     </li>
                 <?php endforeach; ?>

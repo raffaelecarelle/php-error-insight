@@ -19,7 +19,7 @@ use ErrorExplainer\Foo;
 
 ErrorExplainer::register([
     'enabled' => true,
-    'output' => 'html',   // auto|text|html|json
+    'output' => 'auto',   // auto|text|html|json
     'verbose' => true,
     // Default to no AI to avoid network calls in example; configure via env to enable
     'backend'  => getenv('PHP_ERROR_INSIGHT_BACKEND') ?: 'none',

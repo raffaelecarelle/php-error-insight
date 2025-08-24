@@ -136,73 +136,6 @@ final class Explainer implements ExplainerInterface
             $type = isset($f['type']) ? (string)$f['type'] : '';
             $file = isset($f['file']) ? (string)$f['file'] : null;
             $line = isset($f['line']) ? (int)$f['line'] : null;
-            $args = isset($f['args']) && is_array($f['args']) ? $f['args'] : [];
-            $named = null;
-            try {
-                if ($fn !== '') {
-                    if ($cls !== '') {
-                        if (class_exists($cls, false) && method_exists($cls, $fn)) {
-                            $ref = new \ReflectionMethod($cls, $fn);
-                            $params = $ref->getParameters();
-                            $namedTmp = [];
-                            $i = 0;
-                            foreach ($params as $p) {
-                                $name = '$' . $p->getName();
-                                if (array_key_exists($i, $args)) {
-                                    $namedTmp[$name] = $args[$i];
-                                } else {
-                                    $namedTmp[$name] = '[missing]';
-                                }
-                                $i++;
-                            }
-                            $total = count($args);
-                            for (; $i < $total; $i++) {
-                                $namedTmp['$' . $i] = $args[$i];
-                            }
-                            $named = $namedTmp;
-                        }
-                    } else {
-                        if (function_exists($fn)) {
-                            $ref = new \ReflectionFunction($fn);
-                            $params = $ref->getParameters();
-                            $namedTmp = [];
-                            $i = 0;
-                            foreach ($params as $p) {
-                                $name = '$' . $p->getName();
-                                if (array_key_exists($i, $args)) {
-                                    $namedTmp[$name] = $args[$i];
-                                } else {
-                                    $namedTmp[$name] = '[missing]';
-                                }
-                                $i++;
-                            }
-                            $total = count($args);
-                            for (; $i < $total; $i++) {
-                                $namedTmp['$' . $i] = $args[$i];
-                            }
-                            $named = $namedTmp;
-                        }
-                    }
-                }
-            } catch (\Throwable $e) {
-                $named = null;
-            }
-
-            $locals = [];
-            if (isset($f['object'])) {
-                $locals['$this'] = $f['object'];
-            }
-            if (is_array($named)) {
-                foreach ($named as $k => $v) {
-                    $locals[$k] = $v;
-                }
-            } elseif (!empty($args)) {
-                $i = 0;
-                foreach ($args as $v) {
-                    $locals['$' . $i] = $v;
-                    $i++;
-                }
-            }
 
             $out[] = [
                 'function' => $fn,
@@ -210,8 +143,6 @@ final class Explainer implements ExplainerInterface
                 'type' => $type,
                 'file' => $file,
                 'line' => $line,
-                'args' => is_array($named) ? $named : $args,
-                'locals' => $locals,
             ];
         }
         return $out;
