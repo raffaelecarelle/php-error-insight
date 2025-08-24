@@ -104,4 +104,6 @@ Note: the tool no longer uses static translated texts for details/suggestions. I
 Avoid sending sensitive data to the backend. You can anonymize messages and paths, or use a local backend.
 
 ## License
-MIT
+GPL-3.0-or-later
+
+This project is licensed under the GNU General Public License v3.0 or later. See the LICENSE file for details.
