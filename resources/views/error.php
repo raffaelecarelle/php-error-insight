@@ -159,7 +159,7 @@ $copyText = json_encode(trim(($title !== '' ? $title : 'Error') . ($where !== ''
     <?php if ($subtitle !== '' && $verbose && $details !== ''): ?>
         <section class="bg-blue-50 dark:bg-blue-900 border-l-4 border-blue-500 p-4 rounded shadow mb-6">
             <h2 class="text-lg font-semibold mb-2 text-blue-700 dark:text-blue-300">📝 <?= $e($labels['headings']['details'] ?? 'Details') ?></h2>
-            <pre class="text-gray-100 rounded text-xs whitespace-pre-wrap"><?= $e($details) ?></pre>
+            <pre class="rounded text-xs whitespace-pre-wrap"><?= $e($details) ?></pre>
         </section>
     <?php endif; ?>
 
