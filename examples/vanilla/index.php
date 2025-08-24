@@ -15,7 +15,6 @@
 require __DIR__ . '/../../vendor/autoload.php'; // Ensure you ran `composer dump-autoload`
 
 use ErrorExplainer\ErrorExplainer;
-use ErrorExplainer\Foo;
 
 ErrorExplainer::register([
     'enabled' => true,
