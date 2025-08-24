@@ -51,55 +51,75 @@ final class Renderer implements RendererInterface
      */
     private function renderText(array $explanation, Config $config): void
     {
+        $data = $this->buildViewData($explanation, $config);
         $lines = [];
-        $lines[] = '[PHP Error Explainer] ' . ($explanation['severityLabel'] ?? 'Error');
-        $original = isset($explanation['original']) && is_array($explanation['original']) ? $explanation['original'] : [];
-        $where = '';
-        if (!empty($original)) {
-            $file = isset($original['file']) ? (string)$original['file'] : '';
-            $line = isset($original['line']) ? (string)$original['line'] : '';
-            $where = $file . ($line !== '' ? ":$line" : '');
+
+        $ansi = $this->supportsAnsi();
+        $muted = static fn (string $s) => $ansi ? "\033[90m{$s}\033[0m" : $s;
+        $bold = static fn (string $s) => $ansi ? "\033[1m{$s}\033[0m" : $s;
+        $titleC = static fn (string $s) => $ansi ? "\033[1;31m{$s}\033[0m" : $s; // bold red
+        $section = static fn (string $s) => $ansi ? "\033[1;34m{$s}\033[0m" : $s; // bold blue
+        $bullet = static fn (string $s) => $ansi ? "\033[36m{$s}\033[0m" : $s; // cyan
+        $fileC = static fn (string $s) => $ansi ? "\033[33m{$s}\033[0m" : $s; // yellow
+
+        // Header
+        $header = '🚨 ' . $data['title'];
+        if ($data['where'] !== '') {
+            $header .= ' ' . Translator::t($config, 'labels.in') . ' ' . $data['where'];
         }
-        if ($where !== '') {
-            $lines[] = Translator::t($config, 'labels.in') . ' ' . $where;
+        $lines[] = $titleC($header);
+        $lines[] = $muted((string)$data['severity']);
+
+        // Summary
+        if ($data['summary'] !== '') {
+            $lines[] = $section(Translator::t($config, 'labels.summary')) . ' ' . (string)$data['summary'];
         }
-        if (!empty($explanation['summary'])) {
-            $lines[] = Translator::t($config, 'labels.summary') . ' ' . (string)$explanation['summary'];
+
+        // Details (only when verbose)
+        if (!empty($data['details']) && (bool)$data['verbose']) {
+            $lines[] = $section(Translator::t($config, 'labels.details'));
+            $lines[] = (string)$data['details'];
         }
-        if ($config->verbose && !empty($explanation['details'])) {
-            $lines[] = Translator::t($config, 'labels.details');
-            $lines[] = (string)$explanation['details'];
-        }
-        if (!empty($explanation['suggestions']) && is_array($explanation['suggestions'])) {
-            $lines[] = Translator::t($config, 'labels.suggestions');
-            foreach ($explanation['suggestions'] as $s) {
-                $lines[] = ' - ' . (string)$s;
+
+        // Suggestions
+        if (!empty($data['suggestions'])) {
+            $lines[] = $section(Translator::t($config, 'labels.suggestions'));
+            foreach ($data['suggestions'] as $s) {
+                $lines[] = ' ' . $bullet('•') . ' ' . (string)$s;
             }
         }
 
-        // Always include extended state as per requirement
-        $state = isset($explanation['state']) && is_array($explanation['state']) ? $explanation['state'] : [];
-        if (!empty($state)) {
-            $lines[] = Translator::t($config, 'html.headings.state');
-            if (isset($state['object'])) {
-                $lines[] = '- ' . Translator::t($config, 'html.labels.object');
-                $lines[] = $this->dumpArgs($state['object']);
-            }
-            if (isset($state['globalsAll'])) {
-                $lines[] = '- ' . Translator::t($config, 'html.labels.globals_all');
-                $lines[] = $this->dumpArgs($state['globalsAll']);
-            }
-            if (isset($state['definedVars'])) {
-                $lines[] = '- ' . Translator::t($config, 'html.labels.defined_vars');
-                $lines[] = $this->dumpArgs($state['definedVars']);
-            }
-            if (isset($state['rawTrace'])) {
-                $lines[] = '- ' . Translator::t($config, 'html.labels.raw_trace');
-                $lines[] = $this->dumpArgs($state['rawTrace']);
-            }
-            if (!empty($state['xdebugText'])) {
-                $lines[] = '- ' . Translator::t($config, 'html.labels.xdebug');
-                $lines[] = (string)$state['xdebugText'];
+        // Stack (show top frames with code excerpt)
+        if (!empty($data['frames'])) {
+            $lines[] = '';
+            $lines[] = $section((string)($data['labels']['headings']['stack'] ?? 'Stack trace'));
+            $maxFrames = 3; // keep concise
+            $i = 0;
+            foreach ($data['frames'] as $f) {
+                $sig = (string)($f['sig'] ?? '');
+                $loc = (string)($f['loc'] ?? '');
+                $idx = (int)($f['idx'] ?? 0);
+                $locOut = $loc !== '' ? $fileC($loc) : '';
+                $lines[] = sprintf('#%d %s %s%s', $idx, $sig !== '' ? $bold($sig) : '(unknown)', $locOut !== '' ? '— ' : '', $locOut);
+
+                if ($i < $maxFrames && $loc !== '') {
+                    // derive file and line from loc "path:line"
+                    $file = $loc;
+                    $line = null;
+                    $pos = strrpos($loc, ':');
+                    if ($pos !== false) {
+                        $file = substr($loc, 0, $pos);
+                        $lineStr = substr($loc, $pos + 1);
+                        $line = ctype_digit($lineStr) ? (int)$lineStr : null;
+                    }
+                    $excerpt = $this->renderCodeExcerptText($file, $line ?? 0, 3);
+                    if ($excerpt !== '') {
+                        foreach (explode("\n", $excerpt) as $l) {
+                            $lines[] = '   ' . $l;
+                        }
+                    }
+                }
+                $i++;
             }
         }
 
@@ -404,5 +424,60 @@ final class Renderer implements RendererInterface
         // Remove the injected opening tag line from the highlighted HTML
         $html = preg_replace('#&lt;\?php<br\s*/?>#i', '', $html, 1) ?? $html;
         return $html;
+    }
+
+    private function renderCodeExcerptText(?string $file, ?int $line, int $radius = 5): string
+    {
+        if (!$file || !$line || !is_file($file) || $line < 1) {
+            return '';
+        }
+        $rows = @file($file, FILE_IGNORE_NEW_LINES);
+        if ($rows === false) {
+            return '';
+        }
+        $ansi = $this->supportsAnsi();
+        $hl = static fn (string $s) => $ansi ? "\033[1;37;41m{$s}\033[0m" : $s; // white on red for current line number gutter
+        $dim = static fn (string $s) => $ansi ? "\033[90m{$s}\033[0m" : $s;
+        $total = count($rows);
+        $start = max(1, $line - $radius);
+        $end = min($total, $line + $radius);
+        $numWidth = strlen((string)$end);
+        $out = [];
+        for ($ln = $start; $ln <= $end; $ln++) {
+            $prefix = $ln === $line ? '>' : ' ';
+            $num = str_pad((string)$ln, $numWidth, ' ', STR_PAD_LEFT);
+            $gutter = $ln === $line ? $hl($num) : $dim($num);
+            $code = $rows[$ln - 1];
+            // show tabs as spaces
+            $code = str_replace("\t", '    ', $code);
+            $out[] = sprintf('%s %s | %s', $prefix, $gutter, $code);
+        }
+        return implode("\n", $out);
+    }
+
+    private function supportsAnsi(): bool
+    {
+        if (PHP_SAPI !== 'cli' && PHP_SAPI !== 'phpdbg') {
+            return false;
+        }
+        if (getenv('NO_COLOR')) {
+            return false;
+        }
+        $force = getenv('FORCE_COLOR');
+        if ($force && in_array(strtolower((string)$force), ['1','true','yes','on'], true)) {
+            return true;
+        }
+        // Check TTY if possible
+        if (function_exists('stream_isatty')) {
+            /** @noinspection PhpComposerExtensionStubsInspection */
+            return @stream_isatty(STDOUT);
+        }
+        if (function_exists('posix_isatty')) {
+            /** @noinspection PhpComposerExtensionStubsInspection */
+            return @posix_isatty(STDOUT);
+        }
+        // Fall back to TERM
+        $term = getenv('TERM');
+        return is_string($term) && strtolower($term) !== 'dumb';
     }
 }

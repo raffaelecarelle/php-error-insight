@@ -22,8 +22,8 @@ ErrorExplainer::register([
     'output' => 'auto',   // auto|text|html|json
     'verbose' => true,
     // Default to no AI to avoid network calls in example; configure via env to enable
-    'backend'  => getenv('PHP_ERROR_INSIGHT_BACKEND') ?: 'none',
-    'model'    => getenv('PHP_ERROR_INSIGHT_MODEL') ?: null,
+    'backend'  => getenv('PHP_ERROR_INSIGHT_BACKEND') ?: 'api',
+    'model'    => getenv('PHP_ERROR_INSIGHT_MODEL') ?: 'gpt-4o-mini',
     'language' => getenv('PHP_ERROR_INSIGHT_LANG') ?: 'en',
     'apiKey'   => getenv('PHP_ERROR_INSIGHT_API_KEY') ?: null,
     'apiUrl'   => getenv('PHP_ERROR_INSIGHT_API_URL') ?: null,
