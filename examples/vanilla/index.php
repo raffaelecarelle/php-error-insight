@@ -28,4 +28,29 @@ ErrorExplainer::register([
     'apiUrl'   => getenv('PHP_ERROR_INSIGHT_API_URL') ?: null,
 ]);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 echo $undefinedVar;

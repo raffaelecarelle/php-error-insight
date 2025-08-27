@@ -186,6 +186,23 @@ Severity: $sev
 Location: $where
 Explain the likely cause and provide practical steps to fix it. Keep the answer concise and use bullet points when useful.";
 
+        // Sanitize prompt before sending to any AI backend
+        $sanitizer = new DefaultSensitiveDataSanitizer();
+        $sanCfg = new SanitizerConfig();
+        $envSanitize = getenv('PHP_ERROR_INSIGHT_SANITIZE');
+        $shouldSanitize = $envSanitize === false ? true : in_array(strtolower((string)$envSanitize), ['1','true','yes','on'], true);
+        if ($shouldSanitize) {
+            $rules = getenv('PHP_ERROR_INSIGHT_SANITIZE_RULES');
+            if (is_string($rules) && $rules !== '') {
+                $sanCfg->enabledRules = array_map('trim', array_filter(explode(',', $rules)));
+            }
+            $mask = getenv('PHP_ERROR_INSIGHT_SANITIZE_MASK');
+            if (is_string($mask) && $mask !== '') {
+                $sanCfg->masks['default'] = $mask;
+            }
+            $prompt = $sanitizer->sanitize($prompt, $sanCfg);
+        }
+
         // If an AI client has been injected, delegate to it (for DI/testing/extension)
         if ($this->aiClient) {
             return $this->aiClient->generateExplanation($prompt, $config);
