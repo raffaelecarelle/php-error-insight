@@ -101,8 +101,19 @@ Output:
 
 Note: the tool no longer uses static translated texts for details/suggestions. If the AI backend is not configured or doesn't respond, those sections might remain empty.
 
-## Privacy
-Avoid sending sensitive data to the backend. You can anonymize messages and paths, or use a local backend.
+## Privacy and Data Sanitization
+By default, prompts are sanitized before being sent to any AI backend to reduce the risk of leaking sensitive information (emails, tokens, private IPs, cookies, payment-like numbers, etc.). You can control this behavior via environment variables:
+
+- PHP_ERROR_INSIGHT_SANITIZE: 1|0 (default: 1 when unset)
+- PHP_ERROR_INSIGHT_SANITIZE_RULES: comma-separated list of rules to enable (secrets, pii, payment, network). Example: `secrets,pii,network`
+- PHP_ERROR_INSIGHT_SANITIZE_MASK: override the default mask string (default: ***REDACTED***)
+
+Technical details:
+- Sanitization happens inside Internal/Explainer just after the prompt is built and before any backend/API call.
+- The default sanitizer masks Authorization headers, JWT-like tokens, emails, phone numbers, Italian CF/IBAN, payment-like card numbers, private IPs, and Cookie headers.
+- You can inject your own AI client (AIClientInterface) if you prefer to handle sanitization externally.
+
+For more details, see docs/sanitizzazione-dati-ai.md.
 
 ## License
 GPL-3.0-or-later
