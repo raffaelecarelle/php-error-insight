@@ -69,6 +69,19 @@ final class SanitizerTest extends TestCase
         $this->assertStringContainsString('Cookie: ***REDACTED***', $out);
     }
 
+    public function testFullPrivateIPRangesAreFullyRedacted(): void
+    {
+        $in = 'A 10.0.0.1 B 172.16.0.1 C 172.31.255.255 D 192.168.100.200';
+        $out = $this->sanitize($in);
+        // Ensure each IP is entirely replaced by the default mask, with no leftover octets
+        $this->assertStringNotContainsString('10.0.0.1', $out);
+        $this->assertStringNotContainsString('172.16.0.1', $out);
+        $this->assertStringNotContainsString('172.31.255.255', $out);
+        $this->assertStringNotContainsString('192.168.100.200', $out);
+        // Should contain at least one mask token for each replacement
+        $this->assertSame(4, substr_count($out, '***REDACTED***'));
+    }
+
     public function testCustomMaskAndRulesFromConfig(): void
     {
         $in = 'Contact: a@b.it 4111111111111111';

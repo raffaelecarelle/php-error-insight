@@ -10,6 +10,9 @@ final class DefaultSensitiveDataSanitizer implements SensitiveDataSanitizerInter
 {
     public function sanitize(string $text, SanitizerConfig $config): string
     {
+        if ($text === '') {
+            return '';
+        }
         $out = $text;
 
         // 1) Apply user custom regex first (highest priority)
@@ -42,7 +45,8 @@ final class DefaultSensitiveDataSanitizer implements SensitiveDataSanitizerInter
 
         // 5) Network/metadata
         if (in_array('network', $config->enabledRules, true)) {
-            $out = preg_replace('/\b(10\.|192\.168\.|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}\b)/', $config->masks['default'], $out) ?? $out;
+            // Fully redact private IPv4 ranges: 10.0.0.0/8, 192.168.0.0/16, 172.16.0.0/12
+            $out = preg_replace('/\b(?:10\.(?:\d{1,3}\.){2}\d{1,3}|192\.168\.(?:\d{1,3}\.)\d{1,3}|172\.(?:1[6-9]|2\d|3[0-1])\.(?:\d{1,3}\.)\d{1,3})\b/', $config->masks['default'], $out) ?? $out;
             $out = preg_replace('/(Cookie:).*?(\r?\n)/i', '$1 '.$config->masks['default'].'$2', $out) ?? $out;
         }
 

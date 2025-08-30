@@ -25,17 +25,37 @@ final class ExplainerSanitizationTest extends TestCase
     protected function tearDown(): void
     {
         // restore env
-        if ($this->prevSan === false) putenv('PHP_ERROR_INSIGHT_SANITIZE'); else putenv('PHP_ERROR_INSIGHT_SANITIZE='.(string)$this->prevSan);
-        if ($this->prevRules === false) putenv('PHP_ERROR_INSIGHT_SANITIZE_RULES'); else putenv('PHP_ERROR_INSIGHT_SANITIZE_RULES='.(string)$this->prevRules);
-        if ($this->prevMask === false) putenv('PHP_ERROR_INSIGHT_SANITIZE_MASK'); else putenv('PHP_ERROR_INSIGHT_SANITIZE_MASK='.(string)$this->prevMask);
+        if ($this->prevSan === false) {
+            putenv('PHP_ERROR_INSIGHT_SANITIZE');
+        } else {
+            putenv('PHP_ERROR_INSIGHT_SANITIZE='.(string)$this->prevSan);
+        }
+        if ($this->prevRules === false) {
+            putenv('PHP_ERROR_INSIGHT_SANITIZE_RULES');
+        } else {
+            putenv('PHP_ERROR_INSIGHT_SANITIZE_RULES='.(string)$this->prevRules);
+        }
+        if ($this->prevMask === false) {
+            putenv('PHP_ERROR_INSIGHT_SANITIZE_MASK');
+        } else {
+            putenv('PHP_ERROR_INSIGHT_SANITIZE_MASK='.(string)$this->prevMask);
+        }
     }
 
     public function testPromptIsSanitizedBeforeDelegation(): void
     {
         $captured = (object)['prompt' => null];
         $fakeAi = new class ($captured) implements AIClientInterface {
-            private $c; public function __construct($c){$this->c=$c;}
-            public function generateExplanation(string $prompt, Config $config): ?string { $this->c->prompt = $prompt; return "ok"; }
+            private $c;
+            public function __construct($c)
+            {
+                $this->c = $c;
+            }
+            public function generateExplanation(string $prompt, Config $config): ?string
+            {
+                $this->c->prompt = $prompt;
+                return "ok";
+            }
         };
         $explainer = new Explainer($fakeAi);
         $config = new Config(['backend' => 'api', 'language' => 'en']);
@@ -55,8 +75,16 @@ final class ExplainerSanitizationTest extends TestCase
         putenv('PHP_ERROR_INSIGHT_SANITIZE=0');
         $captured = (object)['prompt' => null];
         $fakeAi = new class ($captured) implements AIClientInterface {
-            private $c; public function __construct($c){$this->c=$c;}
-            public function generateExplanation(string $prompt, Config $config): ?string { $this->c->prompt = $prompt; return "ok"; }
+            private $c;
+            public function __construct($c)
+            {
+                $this->c = $c;
+            }
+            public function generateExplanation(string $prompt, Config $config): ?string
+            {
+                $this->c->prompt = $prompt;
+                return "ok";
+            }
         };
         $explainer = new Explainer($fakeAi);
         $config = new Config(['backend' => 'api', 'language' => 'en']);
