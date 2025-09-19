@@ -13,6 +13,7 @@ $finder = PhpCsFixer\Finder::create()
 
 return (new PhpCsFixer\Config())
     ->setRiskyAllowed(true)
+    ->setUnsupportedPhpVersionAllowed(true)
     ->setRules([
         '@PHP81Migration' => true,
         '@PHP80Migration:risky' => true,
