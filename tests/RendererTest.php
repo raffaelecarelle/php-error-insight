@@ -10,6 +10,9 @@ use PHPUnit\Framework\TestCase;
 
 final class RendererTest extends TestCase
 {
+    /**
+     * @return array<string, mixed>
+     */
     private function baseExplanation(): array
     {
         return [
@@ -35,7 +38,7 @@ final class RendererTest extends TestCase
 
         ob_start();
         $renderer->render($exp, $config, 'error', false);
-        $out = (string)ob_get_clean();
+        $out = (string) ob_get_clean();
 
         $this->assertStringContainsString('Summary:', $out);
         $this->assertStringContainsString('Something went wrong', $out);
@@ -51,7 +54,7 @@ final class RendererTest extends TestCase
 
         ob_start();
         $renderer->render($exp, $config, 'error', false);
-        $out = (string)ob_get_clean();
+        $out = (string) ob_get_clean();
 
         $this->assertStringContainsString('"original"', $out);
         $this->assertStringContainsString('"Test message"', $out);
@@ -65,7 +68,7 @@ final class RendererTest extends TestCase
 
         ob_start();
         $renderer->render($exp, $config, 'error', false);
-        $out = (string)ob_get_clean();
+        $out = (string) ob_get_clean();
 
         $this->assertNotSame('', $out);
         $this->assertStringContainsString('<html', strtolower($out));

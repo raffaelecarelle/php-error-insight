@@ -11,6 +11,12 @@ use PHPUnit\Framework\TestCase;
 
 final class ExplainerSanitizationTest extends TestCase
 {
+    public string|false $prevSan;
+
+    public string|false $prevRules;
+
+    public string|false $prevMask;
+
     protected function setUp(): void
     {
         // Force sanitization on and default mask for predictable assertions
@@ -25,36 +31,38 @@ final class ExplainerSanitizationTest extends TestCase
     protected function tearDown(): void
     {
         // restore env
-        if ($this->prevSan === false) {
+        if (false === $this->prevSan) {
             putenv('PHP_ERROR_INSIGHT_SANITIZE');
         } else {
-            putenv('PHP_ERROR_INSIGHT_SANITIZE='.(string)$this->prevSan);
+            putenv('PHP_ERROR_INSIGHT_SANITIZE=' . $this->prevSan);
         }
-        if ($this->prevRules === false) {
+
+        if (false === $this->prevRules) {
             putenv('PHP_ERROR_INSIGHT_SANITIZE_RULES');
         } else {
-            putenv('PHP_ERROR_INSIGHT_SANITIZE_RULES='.(string)$this->prevRules);
+            putenv('PHP_ERROR_INSIGHT_SANITIZE_RULES=' . $this->prevRules);
         }
-        if ($this->prevMask === false) {
+
+        if (false === $this->prevMask) {
             putenv('PHP_ERROR_INSIGHT_SANITIZE_MASK');
         } else {
-            putenv('PHP_ERROR_INSIGHT_SANITIZE_MASK='.(string)$this->prevMask);
+            putenv('PHP_ERROR_INSIGHT_SANITIZE_MASK=' . $this->prevMask);
         }
     }
 
     public function testPromptIsSanitizedBeforeDelegation(): void
     {
-        $captured = (object)['prompt' => null];
-        $fakeAi = new class ($captured) implements AIClientInterface {
-            private $c;
-            public function __construct($c)
+        $captured = (object) ['prompt' => null];
+        $fakeAi = new class($captured) implements AIClientInterface {
+            public function __construct(private readonly object $c)
             {
-                $this->c = $c;
             }
+
             public function generateExplanation(string $prompt, Config $config): ?string
             {
                 $this->c->prompt = $prompt;
-                return "ok";
+
+                return 'ok';
             }
         };
         $explainer = new Explainer($fakeAi);
@@ -73,17 +81,17 @@ final class ExplainerSanitizationTest extends TestCase
     public function testEnvCanDisableSanitization(): void
     {
         putenv('PHP_ERROR_INSIGHT_SANITIZE=0');
-        $captured = (object)['prompt' => null];
-        $fakeAi = new class ($captured) implements AIClientInterface {
-            private $c;
-            public function __construct($c)
+        $captured = (object) ['prompt' => null];
+        $fakeAi = new class($captured) implements AIClientInterface {
+            public function __construct(private readonly object $c)
             {
-                $this->c = $c;
             }
+
             public function generateExplanation(string $prompt, Config $config): ?string
             {
                 $this->c->prompt = $prompt;
-                return "ok";
+
+                return 'ok';
             }
         };
         $explainer = new Explainer($fakeAi);

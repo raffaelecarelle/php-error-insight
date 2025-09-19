@@ -5,15 +5,17 @@ declare(strict_types=1);
 namespace ErrorExplainer\Tests;
 
 use ErrorExplainer\Config;
-use ErrorExplainer\Internal\Explainer;
 use ErrorExplainer\Contracts\AIClientInterface;
+use ErrorExplainer\Internal\Explainer;
 use PHPUnit\Framework\TestCase;
+
+use const E_USER_NOTICE;
 
 final class ExplainerTest extends TestCase
 {
     public function testExplainUsesInjectedAIClientAndExtractsBullets(): void
     {
-        $fakeAi = new class () implements AIClientInterface {
+        $fakeAi = new class() implements AIClientInterface {
             public function generateExplanation(string $prompt, Config $config): ?string
             {
                 return "* Do A\n* Do B";

@@ -28,12 +28,13 @@ final class ConfigTest extends TestCase
             $this->assertTrue($cfg->verbose);
         } finally {
             // restore env
-            if ($prevBackend === false) {
+            if (false === $prevBackend) {
                 putenv('PHP_ERROR_INSIGHT_BACKEND');
             } else {
                 putenv('PHP_ERROR_INSIGHT_BACKEND=' . $prevBackend);
             }
-            if ($prevLang === false) {
+
+            if (false === $prevLang) {
                 putenv('PHP_ERROR_INSIGHT_LANG');
             } else {
                 putenv('PHP_ERROR_INSIGHT_LANG=' . $prevLang);

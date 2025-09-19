@@ -1,0 +1,23 @@
+parameters:
+    level: 6
+    paths:
+        - src
+        - tests
+    
+    excludePaths:
+        - vendor
+        - var/cache
+
+    reportUnmatchedIgnoredErrors: true
+    
+    ignoreErrors:
+        # Add specific ignores here if needed
+    
+    phpVersion: 80100 # PHP 8.1
+    
+    parallel:
+        jobSize: 20
+        maximumNumberOfProcesses: 32
+        minimumNumberOfJobsPerProcess: 2
+    
+    tmpDir: var/cache/phpstan

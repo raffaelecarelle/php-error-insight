@@ -115,6 +115,60 @@ Technical details:
 
 For more details, see docs/sanitizzazione-dati-ai.md.
 
+## Development
+
+This project uses several development tools to maintain code quality. Use the following composer scripts for easy access to these tools:
+
+### Code Quality Scripts
+
+```bash
+# Check code style (dry-run)
+composer cs-check
+
+# Fix code style issues
+composer cs-fix
+
+# Check for code improvements with Rector (dry-run)
+composer rector-check
+
+# Apply Rector improvements
+composer rector-fix
+
+# Run static analysis with PHPStan
+composer phpstan
+
+# Run tests
+composer test
+
+# Run tests with coverage report (generates HTML in var/coverage)
+composer test-coverage
+```
+
+### Combined Scripts
+
+```bash
+# Run all quality checks (cs-check, rector-check, phpstan, test)
+composer quality
+
+# Apply all automatic fixes (cs-fix, rector-fix)
+composer fix-all
+```
+
+### Development Workflow
+
+1. Install dependencies: `composer install`
+2. Make your changes
+3. Run quality checks: `composer quality`
+4. Fix issues automatically: `composer fix-all`
+5. Run tests with coverage: `composer test-coverage`
+
+The project is configured for PHP 8.1+ and includes:
+- **PHP CS Fixer** for code style enforcement
+- **Rector** for automated code improvements and PHP version upgrades
+- **PHPStan** for static analysis
+- **PHPUnit** for testing
+- **GitHub Actions** with matrix testing for PHP versions 8.1, 8.2, 8.3, 8.4, 8.5
+
 ## License
 GPL-3.0-or-later
 

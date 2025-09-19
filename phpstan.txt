@@ -1,0 +1,159 @@
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Config.php                                                                        
+ ------ -------------------------------------------------------------------------------------- 
+  38     Method ErrorExplainer\Config::__construct() has parameter $options                    
+         with no value type specified in iterable type array.                                  
+         💡 See:                                                                               
+            https://phpstan.org/blog/solving-phpstan-no-value-type-specified-in-iterable-type  
+  77     Method ErrorExplainer\Config::fromEnvAndArray() has parameter                         
+         $options with no value type specified in iterable type array.                         
+         💡 See:                                                                               
+            https://phpstan.org/blog/solving-phpstan-no-value-type-specified-in-iterable-type  
+  99     Strict comparison using === between null and string will always                       
+         evaluate to false.                                                                    
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/ErrorExplainer.php                                                                
+ ------ -------------------------------------------------------------------------------------- 
+  20     Method ErrorExplainer\ErrorExplainer::register() has parameter                        
+         $options with no value type specified in iterable type array.                         
+         💡 See:                                                                               
+            https://phpstan.org/blog/solving-phpstan-no-value-type-specified-in-iterable-type  
+  30     Class ErrorExplainer\ErrorExplainer constructor invoked with 2                        
+         parameters, 1 required.                                                               
+  35     Parameter #1 $callback of function set_error_handler expects                          
+         (callable(int, string, string, int): bool)|null, Closure(): void                      
+         given.                                                                                
+  56     Class ErrorExplainer\ErrorExplainer constructor invoked with 2                        
+         parameters, 1 required.                                                               
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ ----------------------------------------------------------------------- 
+  Line   src/Internal/ErrorHandler.php                                          
+ ------ ----------------------------------------------------------------------- 
+  114    Strict comparison using === between array{type: int, message: string,  
+         file: string, line: int} and array{} will always evaluate to false.    
+  118    Offset 'type' on array{type: int, message: string, file: string,       
+         line: int} on left side of ?? always exists and is not nullable.       
+  123    Offset 'message' on array{type: int, message: string, file: string,    
+         line: int} on left side of ?? always exists and is not nullable.       
+  124    Offset 'file' on array{type: int, message: string, file: string,       
+         line: int} on left side of ?? always exists and is not nullable.       
+  125    Offset 'line' on array{type: int, message: string, file: string,       
+         line: int} on left side of ?? always exists and is not nullable.       
+ ------ ----------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Internal/Explainer.php                                                            
+ ------ -------------------------------------------------------------------------------------- 
+  77     Variable $_GET on left side of ?? always exists and is not nullable.                  
+  78     Variable $_POST on left side of ?? always exists and is not nullable.                 
+  79     Variable $_COOKIE on left side of ?? always exists and is not                         
+         nullable.                                                                             
+  106    Offset 'suggestions' on array{title: string, summary: '', details:                    
+         '', suggestions: array{}, severityLabel: string, original:                            
+         array{message: string, file: string|null, line: int|null}, trace:                     
+         array, globals: array{get: array, post: array, cookie: array,                         
+         session: array}} in isset() always exists and is not nullable.                        
+  106    Right side of && is always true.                                                      
+         💡 Because the type is coming from a PHPDoc, you can turn off this                    
+            check by setting treatPhpDocTypesAsCertain: false in your                          
+            phpstan.neon.                                                                      
+  117    Offset 'details' on array{title: string, summary: '', details: '',                    
+         suggestions: array<int<0, max>, string>, severityLabel: string,                       
+         original: array{message: string, file: string|null, line: int|null},                  
+         trace: array, globals: array{get: array, post: array, cookie: array,                  
+         session: array}} on left side of ??= always exists and is not                         
+         nullable.                                                                             
+  118    Strict comparison using !== between '' and '' will always evaluate to                 
+         false.                                                                                
+  129    Offset 'details' on array{title: string, summary: '', details:                        
+         string, suggestions: array<int<0, max>, string>, severityLabel:                       
+         string, original: array{message: string, file: string|null, line:                     
+         int|null}, trace: array, globals: array{get: array, post: array,                      
+         cookie: array, session: array}} in isset() always exists and is not                   
+         nullable.                                                                             
+  156    Method ErrorExplainer\Internal\Explainer::normalizeTrace() has                        
+         parameter $trace with no value type specified in iterable type array.                 
+         💡 See:                                                                               
+            https://phpstan.org/blog/solving-phpstan-no-value-type-specified-in-iterable-type  
+  156    Method ErrorExplainer\Internal\Explainer::normalizeTrace() return                     
+         type has no value type specified in iterable type array.                              
+         💡 See:                                                                               
+            https://phpstan.org/blog/solving-phpstan-no-value-type-specified-in-iterable-type  
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   src/Internal/Renderer.php                                                             
+ ------ -------------------------------------------------------------------------------------- 
+  164    Strict comparison using === between non-falsy-string|null and array{}                 
+         will always evaluate to false.                                                        
+  200    Method ErrorExplainer\Internal\Renderer::buildViewData() has                          
+         parameter $explanation with no value type specified in iterable type                  
+         array.                                                                                
+         💡 See:                                                                               
+            https://phpstan.org/blog/solving-phpstan-no-value-type-specified-in-iterable-type  
+  200    Method ErrorExplainer\Internal\Renderer::buildViewData() return type                  
+         has no value type specified in iterable type array.                                   
+         💡 See:                                                                               
+            https://phpstan.org/blog/solving-phpstan-no-value-type-specified-in-iterable-type  
+  273    Offset 'idx' on array{idx: int<0, max>, sig: string, loc: string,                     
+         codeHtml: string} on left side of ?? always exists and is not                         
+         nullable.                                                                             
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   tests/ErrorHandlerDumperInjectionTest.php                                             
+ ------ -------------------------------------------------------------------------------------- 
+  38     Method                                                                                
+         class@anonymous/tests/ErrorHandlerDumperInjectionTest.php:37::__construct()           
+         has parameter $captured with no type specified.                                       
+  49     Property                                                                              
+         class@anonymous/tests/ErrorHandlerDumperInjectionTest.php:48::$lastTrace              
+         type has no value type specified in iterable type array.                              
+         💡 See:                                                                               
+            https://phpstan.org/blog/solving-phpstan-no-value-type-specified-in-iterable-type  
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   tests/ErrorHandlerFunctionalTest.php                                                  
+ ------ -------------------------------------------------------------------------------------- 
+  24     Property                                                                              
+         class@anonymous/tests/ErrorHandlerFunctionalTest.php:23::$lastArgs                    
+         type has no value type specified in iterable type array.                              
+         💡 See:                                                                               
+            https://phpstan.org/blog/solving-phpstan-no-value-type-specified-in-iterable-type  
+  43     Method                                                                                
+         class@anonymous/tests/ErrorHandlerFunctionalTest.php:42::__construct()                
+         has parameter $captured with no type specified.                                       
+ ------ -------------------------------------------------------------------------------------- 
+
+ ------ ----------------------------------------------------------------------- 
+  Line   tests/ExplainerSanitizationTest.php                                    
+ ------ ----------------------------------------------------------------------- 
+  14     Property ErrorExplainer\Tests\ExplainerSanitizationTest::$prevSan has  
+         no type specified.                                                     
+  15     Property ErrorExplainer\Tests\ExplainerSanitizationTest::$prevRules    
+         has no type specified.                                                 
+  16     Property ErrorExplainer\Tests\ExplainerSanitizationTest::$prevMask     
+         has no type specified.                                                 
+  54     Method                                                                 
+         class@anonymous/tests/ExplainerSanitizationTest.php:53::__construct()  
+         has parameter $c with no type specified.                               
+  83     Method                                                                 
+         class@anonymous/tests/ExplainerSanitizationTest.php:82::__construct()  
+         has parameter $c with no type specified.                               
+ ------ ----------------------------------------------------------------------- 
+
+ ------ -------------------------------------------------------------------------------------- 
+  Line   tests/RendererTest.php                                                                
+ ------ -------------------------------------------------------------------------------------- 
+  13     Method ErrorExplainer\Tests\RendererTest::baseExplanation() return                    
+         type has no value type specified in iterable type array.                              
+         💡 See:                                                                               
+            https://phpstan.org/blog/solving-phpstan-no-value-type-specified-in-iterable-type  
+ ------ -------------------------------------------------------------------------------------- 
+
+ [ERROR] Found 36 errors                                                        
+

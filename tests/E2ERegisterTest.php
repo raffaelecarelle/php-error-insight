@@ -8,6 +8,8 @@ use ErrorExplainer\Config;
 use ErrorExplainer\ErrorExplainer;
 use PHPUnit\Framework\TestCase;
 
+use const E_USER_WARNING;
+
 final class E2ERegisterTest extends TestCase
 {
     protected function tearDown(): void
@@ -29,7 +31,7 @@ final class E2ERegisterTest extends TestCase
 
         ob_start();
         @trigger_error('Boom E2E', E_USER_WARNING);
-        $out = (string)ob_get_clean();
+        $out = (string) ob_get_clean();
 
         $this->assertNotSame('', $out);
         $this->assertStringContainsString('"original"', $out);

@@ -6,13 +6,16 @@ namespace ErrorExplainer\Internal;
 
 use ErrorExplainer\Contracts\SensitiveDataSanitizerInterface;
 
+use function in_array;
+
 final class DefaultSensitiveDataSanitizer implements SensitiveDataSanitizerInterface
 {
     public function sanitize(string $text, SanitizerConfig $config): string
     {
-        if ($text === '') {
+        if ('' === $text) {
             return '';
         }
+
         $out = $text;
 
         // 1) Apply user custom regex first (highest priority)
@@ -22,7 +25,7 @@ final class DefaultSensitiveDataSanitizer implements SensitiveDataSanitizerInter
 
         // 2) Secrets and credentials
         if (in_array('secrets', $config->enabledRules, true)) {
-            $out = preg_replace('/(Authorization:?\s*)(Bearer|Basic)(\s+)[A-Za-z0-9\-_.=:+\/]+/i', '$1$2$3'.$config->masks['default'], $out) ?? $out;
+            $out = preg_replace('/(Authorization:?\s*)(Bearer|Basic)(\s+)[A-Za-z0-9\-_.=:+\/]+/i', '$1$2$3' . $config->masks['default'], $out) ?? $out;
             // JWT like strings
             $out = preg_replace('/\beyJ[0-9A-Za-z_\-]+\.[0-9A-Za-z_\-]+\.[0-9A-Za-z_\-]+\b/', $config->masks['default'], $out) ?? $out;
         }
@@ -47,7 +50,7 @@ final class DefaultSensitiveDataSanitizer implements SensitiveDataSanitizerInter
         if (in_array('network', $config->enabledRules, true)) {
             // Fully redact private IPv4 ranges: 10.0.0.0/8, 192.168.0.0/16, 172.16.0.0/12
             $out = preg_replace('/\b(?:10\.(?:\d{1,3}\.){2}\d{1,3}|192\.168\.(?:\d{1,3}\.)\d{1,3}|172\.(?:1[6-9]|2\d|3[0-1])\.(?:\d{1,3}\.)\d{1,3})\b/', $config->masks['default'], $out) ?? $out;
-            $out = preg_replace('/(Cookie:).*?(\r?\n)/i', '$1 '.$config->masks['default'].'$2', $out) ?? $out;
+            $out = preg_replace('/(Cookie:).*?(\r?\n)/i', '$1 ' . $config->masks['default'] . '$2', $out) ?? $out;
         }
 
         return $out;

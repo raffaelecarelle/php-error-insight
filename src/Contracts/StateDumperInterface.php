@@ -12,7 +12,8 @@ interface StateDumperInterface
     /**
      * Collect extended state information at the time of an error/exception.
      *
-     * @param array<int, array<string, mixed>>|null $traceFromHandler A debug_backtrace()-like array.
+     * @param array<int, array<string, mixed>>|null $traceFromHandler a debug_backtrace()-like array
+     *
      * @return array<string, mixed>
      */
     public function collectState(?array $traceFromHandler = null): array;

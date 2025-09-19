@@ -5,22 +5,29 @@ declare(strict_types=1);
 namespace ErrorExplainer\Tests;
 
 use ErrorExplainer\Config;
-use ErrorExplainer\Internal\ErrorHandler;
 use ErrorExplainer\Contracts\ExplainerInterface;
 use ErrorExplainer\Contracts\RendererInterface;
+use ErrorExplainer\Internal\ErrorHandler;
 use PHPUnit\Framework\TestCase;
+
+use function func_get_args;
+
+use const E_USER_NOTICE;
 
 final class ErrorHandlerFunctionalTest extends TestCase
 {
     public function testHandleErrorInvokesExplainerAndRenderer(): void
     {
-        $captured = (object)['explanation' => null, 'kind' => null, 'isShutdown' => null];
+        $captured = (object) ['explanation' => null, 'kind' => null, 'isShutdown' => null];
 
-        $fakeExplainer = new class () implements ExplainerInterface {
+        $fakeExplainer = new class() implements ExplainerInterface {
+            /** @var array<int, mixed> */
             public array $lastArgs;
+
             public function explain(string $kind, string $message, ?string $file, ?int $line, ?array $trace, ?int $severity, Config $config): array
             {
                 $this->lastArgs = func_get_args();
+
                 return [
                     'title' => 'T',
                     'summary' => 'S',
@@ -33,12 +40,11 @@ final class ErrorHandlerFunctionalTest extends TestCase
             }
         };
 
-        $fakeRenderer = new class ($captured) implements RendererInterface {
-            private $captured;
-            public function __construct($captured)
+        $fakeRenderer = new class($captured) implements RendererInterface {
+            public function __construct(private readonly object $captured)
             {
-                $this->captured = $captured;
             }
+
             public function render(array $explanation, Config $config, string $kind, bool $isShutdown): void
             {
                 $this->captured->explanation = $explanation;

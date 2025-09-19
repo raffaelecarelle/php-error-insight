@@ -14,9 +14,10 @@ final class SanitizerTest extends TestCase
     {
         $san = new DefaultSensitiveDataSanitizer();
         $cfg = new SanitizerConfig();
-        if ($cfgCb) {
+        if (null !== $cfgCb) {
             $cfgCb($cfg);
         }
+
         return $san->sanitize($text, $cfg);
     }
 
@@ -85,7 +86,7 @@ final class SanitizerTest extends TestCase
     public function testCustomMaskAndRulesFromConfig(): void
     {
         $in = 'Contact: a@b.it 4111111111111111';
-        $out = $this->sanitize($in, function (SanitizerConfig $cfg) {
+        $out = $this->sanitize($in, function (SanitizerConfig $cfg): void {
             $cfg->masks['default'] = '<MASK>';
             $cfg->enabledRules = ['pii']; // disable payment
         });
@@ -97,7 +98,7 @@ final class SanitizerTest extends TestCase
     public function testCustomRegexHasPriority(): void
     {
         $in = 'SecretKey=XYZ-123 and mail x@y.it';
-        $out = $this->sanitize($in, function (SanitizerConfig $cfg) {
+        $out = $this->sanitize($in, function (SanitizerConfig $cfg): void {
             $cfg->customRegex['/SecretKey=\w+-\d+/'] = '<S>'; // custom first
         });
         $this->assertStringContainsString('<S>', $out);

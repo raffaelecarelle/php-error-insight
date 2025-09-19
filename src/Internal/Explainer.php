@@ -5,34 +5,59 @@ declare(strict_types=1);
 namespace ErrorExplainer\Internal;
 
 use ErrorExplainer\Config;
-use ErrorExplainer\Contracts\ExplainerInterface;
 use ErrorExplainer\Contracts\AIClientInterface;
+use ErrorExplainer\Contracts\ExplainerInterface;
+
+use function function_exists;
+use function in_array;
+use function is_array;
+use function is_string;
+use function sprintf;
+use function strlen;
+
+use const CURLINFO_HTTP_CODE;
+use const CURLOPT_CONNECTTIMEOUT;
+use const CURLOPT_CUSTOMREQUEST;
+use const CURLOPT_HTTPHEADER;
+use const CURLOPT_POSTFIELDS;
+use const CURLOPT_RETURNTRANSFER;
+use const CURLOPT_TIMEOUT;
+use const CURLOPT_URL;
+use const E_COMPILE_ERROR;
+use const E_COMPILE_WARNING;
+use const E_CORE_ERROR;
+use const E_CORE_WARNING;
+use const E_DEPRECATED;
+use const E_ERROR;
+use const E_NOTICE;
+use const E_PARSE;
+use const E_RECOVERABLE_ERROR;
+use const E_STRICT;
+use const E_USER_DEPRECATED;
+use const E_USER_ERROR;
+use const E_USER_NOTICE;
+use const E_USER_WARNING;
+use const E_WARNING;
+use const PHP_SESSION_ACTIVE;
 
 final class Explainer implements ExplainerInterface
 {
-    private ?AIClientInterface $aiClient;
-
-    public function __construct(?AIClientInterface $aiClient = null)
+    public function __construct(private readonly ?AIClientInterface $aiClient = null)
     {
-        $this->aiClient = $aiClient;
     }
+
     /**
      * Build an educational explanation based on the given error/exception data.
-     * Returns an associative array with keys: title, summary, details, suggestions, severityLabel, original
+     * Returns an associative array with keys: title, summary, details, suggestions, severityLabel, original.
      *
-     * @param string $kind 'error'|'exception'|'shutdown'
-     * @param string $message
-     * @param string|null $file
-     * @param int|null $line
+     * @param string                              $kind  'error'|'exception'|'shutdown'
      * @param array<int,array<string,mixed>>|null $trace
-     * @param int|null $severity
-     * @param Config $config
+     *
      * @return array<string,mixed>
      */
     public function explain(string $kind, string $message, ?string $file, ?int $line, ?array $trace, ?int $severity, Config $config): array
     {
-        $severityLabel = $severity !== null ? self::severityToString($severity) : ($kind === 'exception' ? 'Exception' : 'Error');
-        $lower = strtolower($message);
+        $severityLabel = null !== $severity ? $this->severityToString($severity) : ('exception' === $kind ? 'Exception' : 'Error');
 
         $explanation = [
             'title' => Translator::t($config, 'title.basic'),
@@ -46,96 +71,100 @@ final class Explainer implements ExplainerInterface
                 'line' => $line,
             ],
             // Attach normalized trace for rich HTML rendering
-            'trace' => is_array($trace) ? self::normalizeTrace($trace) : [],
+            'trace' => is_array($trace) ? $this->normalizeTrace($trace) : [],
             // Capture a minimal snapshot of superglobals to help debugging
             'globals' => [
-                'get' => isset($_GET) ? $_GET : [],
-                'post' => isset($_POST) ? $_POST : [],
-                'cookie' => isset($_COOKIE) ? $_COOKIE : [],
-                'session' => (function () { return (function_exists('session_status') && session_status() === PHP_SESSION_ACTIVE && isset($_SESSION)) ? $_SESSION : []; })(),
+                'get' => $_GET,
+                'post' => $_POST,
+                'cookie' => $_COOKIE,
+                'session' => (fn (): array => (function_exists('session_status') && PHP_SESSION_ACTIVE === session_status() && isset($_SESSION)) ? $_SESSION : [])(),
             ],
         ];
 
-        if ($config->backend !== 'none') {
+        if ('none' !== $config->backend) {
             $aiText = $this->aiExplain($kind, $message, $file, $line, $severity, $config);
-            if (is_string($aiText) && trim($aiText) !== '') {
+            if (is_string($aiText) && '' !== trim($aiText)) {
                 $explanation['title'] = Translator::t($config, 'title.ai');
                 // Try to extract bullet suggestions from AI text
                 $aiLines = preg_split('/\r?\n/', trim($aiText)) ?: [];
                 $bullets = [];
                 foreach ($aiLines as $ln) {
                     $t = trim($ln);
-                    if ($t === '') {
+                    if ('' === $t) {
                         continue;
                     }
+
                     if (preg_match('/^[-*•]\s+(.+)/u', $t, $m)) {
                         $bullets[] = trim($m[1]);
                     } elseif (preg_match('/^\d+\.?\s+(.+)/', $t, $m)) {
                         $bullets[] = trim($m[1]);
                     }
                 }
-                if (!empty($bullets)) {
+
+                if ([] !== $bullets) {
                     // Merge new unique suggestions
-                    $existing = isset($explanation['suggestions']) && is_array($explanation['suggestions']) ? $explanation['suggestions'] : [];
+                    $existing = $explanation['suggestions'];
                     foreach ($bullets as $b) {
                         if (!in_array($b, $existing, true)) {
                             $existing[] = $b;
                         }
                     }
+
                     $explanation['suggestions'] = $existing;
                 }
-                // Append AI explanation to details for visibility
-                $explanation['details'] = ($explanation['details'] ?? '');
-                if ($explanation['details'] !== '') {
-                    $explanation['details'] .= "\n\n";
-                }
+
                 $explanation['details'] .= '[AI] ' . $aiText;
-            } else {
+            } elseif ($config->verbose) {
                 // On failure, add a soft suggestion if verbose
-                if ($config->verbose) {
-                    $explanation['suggestions'][] = Translator::t($config, 'suggestion.ai_unavailable');
-                }
+                $explanation['suggestions'][] = Translator::t($config, 'suggestion.ai_unavailable');
             }
         }
 
-        $explanation['details'] = self::buildDetails($config, $message, $file, $line, $trace, $config->verbose) . ((isset($explanation['details']) && $explanation['details'] !== '') ? "\n\n" . (string)$explanation['details'] : '');
+        $explanation['details'] = $this->buildDetails($config, $message, $file, $line, $trace, $config->verbose) . (('' !== $explanation['details']) ? "\n\n" . $explanation['details'] : '');
+
         return $explanation;
     }
 
-    private static function severityToString(int $severity): string
+    private function severityToString(int $severity): string
     {
-        switch ($severity) {
-            case E_ERROR: return 'E_ERROR';
-            case E_WARNING: return 'E_WARNING';
-            case E_PARSE: return 'E_PARSE';
-            case E_NOTICE: return 'E_NOTICE';
-            case E_CORE_ERROR: return 'E_CORE_ERROR';
-            case E_CORE_WARNING: return 'E_CORE_WARNING';
-            case E_COMPILE_ERROR: return 'E_COMPILE_ERROR';
-            case E_COMPILE_WARNING: return 'E_COMPILE_WARNING';
-            case E_USER_ERROR: return 'E_USER_ERROR';
-            case E_USER_WARNING: return 'E_USER_WARNING';
-            case E_USER_NOTICE: return 'E_USER_NOTICE';
-            case E_STRICT: return 'E_STRICT';
-            case E_RECOVERABLE_ERROR: return 'E_RECOVERABLE_ERROR';
-            case E_DEPRECATED: return 'E_DEPRECATED';
-            case E_USER_DEPRECATED: return 'E_USER_DEPRECATED';
-            default: return 'E_'.(string)$severity;
-        }
+        return match ($severity) {
+            E_ERROR => 'E_ERROR',
+            E_WARNING => 'E_WARNING',
+            E_PARSE => 'E_PARSE',
+            E_NOTICE => 'E_NOTICE',
+            E_CORE_ERROR => 'E_CORE_ERROR',
+            E_CORE_WARNING => 'E_CORE_WARNING',
+            E_COMPILE_ERROR => 'E_COMPILE_ERROR',
+            E_COMPILE_WARNING => 'E_COMPILE_WARNING',
+            E_USER_ERROR => 'E_USER_ERROR',
+            E_USER_WARNING => 'E_USER_WARNING',
+            E_USER_NOTICE => 'E_USER_NOTICE',
+            E_STRICT => 'E_STRICT',
+            E_RECOVERABLE_ERROR => 'E_RECOVERABLE_ERROR',
+            E_DEPRECATED => 'E_DEPRECATED',
+            E_USER_DEPRECATED => 'E_USER_DEPRECATED',
+            default => 'E_' . $severity,
+        };
     }
 
-    private static function normalizeTrace(array $trace): array
+    /**
+     * @param array<int, mixed> $trace
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function normalizeTrace(array $trace): array
     {
         $out = [];
         foreach ($trace as $f) {
             if (!is_array($f)) {
                 continue;
             }
-            $fn = isset($f['function']) ? (string)$f['function'] : '';
-            $cls = isset($f['class']) ? (string)$f['class'] : '';
-            $type = isset($f['type']) ? (string)$f['type'] : '';
-            $file = isset($f['file']) ? (string)$f['file'] : null;
-            $line = isset($f['line']) ? (int)$f['line'] : null;
+
+            $fn = isset($f['function']) ? (string) $f['function'] : '';
+            $cls = isset($f['class']) ? (string) $f['class'] : '';
+            $type = isset($f['type']) ? (string) $f['type'] : '';
+            $file = isset($f['file']) ? (string) $f['file'] : null;
+            $line = isset($f['line']) ? (int) $f['line'] : null;
 
             $out[] = [
                 'function' => $fn,
@@ -145,16 +174,17 @@ final class Explainer implements ExplainerInterface
                 'line' => $line,
             ];
         }
+
         return $out;
     }
 
     /**
      * @param array<int,array<string,mixed>>|null $trace
      */
-    private static function buildDetails(Config $config, string $message, ?string $file, ?int $line, ?array $trace, bool $verbose): string
+    private function buildDetails(Config $config, string $message, ?string $file, ?int $line, ?array $trace, bool $verbose): string
     {
         $unknown = Translator::t($config, 'details.unknown');
-        $where = ($file !== null ? ($file.($line !== null ? ":$line" : '')) : $unknown);
+        $where = (null !== $file ? ($file . (null !== $line ? ":{$line}" : '')) : $unknown);
         $labelMsg = Translator::t($config, 'details.message');
         $labelPos = Translator::t($config, 'details.position');
         $labelTrace = Translator::t($config, 'details.trace');
@@ -163,74 +193,82 @@ final class Explainer implements ExplainerInterface
             $details .= "\n" . $labelTrace . "\n";
             $i = 0;
             foreach ($trace as $frame) {
-                $fn = isset($frame['function']) ? (string)$frame['function'] : 'unknown';
-                $cls = isset($frame['class']) ? (string)$frame['class'] : '';
-                $type = isset($frame['type']) ? (string)$frame['type'] : '';
-                $f = isset($frame['file']) ? (string)$frame['file'] : '';
-                $l = isset($frame['line']) ? (string)$frame['line'] : '';
+                $fn = isset($frame['function']) ? (string) $frame['function'] : 'unknown';
+                $cls = isset($frame['class']) ? (string) $frame['class'] : '';
+                $type = isset($frame['type']) ? (string) $frame['type'] : '';
+                $f = isset($frame['file']) ? (string) $frame['file'] : '';
+                $l = isset($frame['line']) ? (string) $frame['line'] : '';
                 $details .= sprintf('#%d %s%s%s(%s:%s)' . "\n", $i, $cls, $type, $fn, $f, $l);
-                $i++;
+                ++$i;
             }
         }
+
         return $details;
     }
 
     private function aiExplain(string $kind, string $message, ?string $file, ?int $line, ?int $severity, Config $config): ?string
     {
-        $lang = $config->language ?: 'en';
-        $sev = $severity !== null ? self::severityToString($severity) : ($kind === 'exception' ? 'Exception' : 'Error');
-        $where = ($file !== null ? ($file.($line !== null ? ":$line" : '')) : Translator::t($config, 'details.unknown'));
-        $prompt = "You are an assistant that explains PHP errors in $lang.
-Message: $message
-Severity: $sev
-Location: $where
+        $lang = '' !== $config->language && '0' !== $config->language ? $config->language : 'en';
+        $sev = null !== $severity ? $this->severityToString($severity) : ('exception' === $kind ? 'Exception' : 'Error');
+        $where = (null !== $file ? ($file . (null !== $line ? ":{$line}" : '')) : Translator::t($config, 'details.unknown'));
+        $prompt = "You are an assistant that explains PHP errors in {$lang}.
+Message: {$message}
+Severity: {$sev}
+Location: {$where}
 Explain the likely cause and provide practical steps to fix it. Keep the answer concise and use bullet points when useful.";
 
         // Sanitize prompt before sending to any AI backend
         $sanitizer = new DefaultSensitiveDataSanitizer();
         $sanCfg = new SanitizerConfig();
         $envSanitize = getenv('PHP_ERROR_INSIGHT_SANITIZE');
-        $shouldSanitize = $envSanitize === false ? true : in_array(strtolower((string)$envSanitize), ['1','true','yes','on'], true);
+        $shouldSanitize = false === $envSanitize ? true : in_array(strtolower((string) $envSanitize), ['1', 'true', 'yes', 'on'], true);
         if ($shouldSanitize) {
             $rules = getenv('PHP_ERROR_INSIGHT_SANITIZE_RULES');
-            if (is_string($rules) && $rules !== '') {
+            if (is_string($rules) && '' !== $rules) {
                 $sanCfg->enabledRules = array_map('trim', array_filter(explode(',', $rules)));
             }
+
             $mask = getenv('PHP_ERROR_INSIGHT_SANITIZE_MASK');
-            if (is_string($mask) && $mask !== '') {
+            if (is_string($mask) && '' !== $mask) {
                 $sanCfg->masks['default'] = $mask;
             }
+
             $prompt = $sanitizer->sanitize($prompt, $sanCfg);
         }
 
         // If an AI client has been injected, delegate to it (for DI/testing/extension)
-        if ($this->aiClient) {
+        if ($this->aiClient instanceof AIClientInterface) {
             return $this->aiClient->generateExplanation($prompt, $config);
         }
 
         // Fallback to built-in simple backends to preserve backward compatibility
         $backend = strtolower(trim($config->backend));
-        if ($backend === 'local') {
+        if ('local' === $backend) {
             return $this->aiLocal($prompt, $config);
         }
-        if ($backend === 'api' || $backend === 'openai') {
+
+        if ('api' === $backend || 'openai' === $backend) {
             return $this->aiOpenAI($prompt, $config);
         }
-        if ($backend === 'anthropic') {
+
+        if ('anthropic' === $backend) {
             return $this->aiAnthropic($prompt, $config);
         }
-        if ($backend === 'google' || $backend === 'gemini') {
+
+        if ('google' === $backend || 'gemini' === $backend) {
             return $this->aiGoogle($prompt, $config);
         }
+
         return null;
     }
 
     private function aiLocal(string $prompt, Config $config): ?string
     {
-        if (!$config->model) {
+        if (null === $config->model || '' === $config->model || '0' === $config->model) {
             return null;
         }
-        $base = $config->apiUrl ?: 'http://localhost:11434'; // Ollama default
+
+        $base = null !== $config->apiUrl && '' !== $config->apiUrl && '0' !== $config->apiUrl ? $config->apiUrl : 'http://localhost:11434'; // Ollama default
         $url = rtrim($base, '/') . '/api/generate';
         $payload = [
             'model' => $config->model,
@@ -242,23 +280,27 @@ Explain the likely cause and provide practical steps to fix it. Keep the answer 
         if (!is_array($resp)) {
             return null;
         }
+
         // Ollama returns { response: string, ... }
         if (isset($resp['response']) && is_string($resp['response'])) {
             return trim($resp['response']);
         }
+
         // LocalAI OpenAI-compatible servers might be used under 'local' if apiUrl points to /v1
         if (isset($resp['choices'][0]['message']['content']) && is_string($resp['choices'][0]['message']['content'])) {
-            return trim((string)$resp['choices'][0]['message']['content']);
+            return trim($resp['choices'][0]['message']['content']);
         }
+
         return null;
     }
 
     private function aiOpenAI(string $prompt, Config $config): ?string
     {
-        if (!$config->apiKey || !$config->model) {
+        if (null === $config->apiKey || '' === $config->apiKey || '0' === $config->apiKey || (null === $config->model || '' === $config->model || '0' === $config->model)) {
             return null;
         }
-        $url = $config->apiUrl ?: 'https://api.openai.com/v1/chat/completions';
+
+        $url = null !== $config->apiUrl && '' !== $config->apiUrl && '0' !== $config->apiUrl ? $config->apiUrl : 'https://api.openai.com/v1/chat/completions';
         $headers = [
             'Authorization: Bearer ' . $config->apiKey,
         ];
@@ -274,21 +316,25 @@ Explain the likely cause and provide practical steps to fix it. Keep the answer 
         if (!is_array($resp)) {
             return null;
         }
+
         if (isset($resp['choices'][0]['message']['content']) && is_string($resp['choices'][0]['message']['content'])) {
-            return trim((string)$resp['choices'][0]['message']['content']);
+            return trim($resp['choices'][0]['message']['content']);
         }
+
         if (isset($resp['error']['message']) && is_string($resp['error']['message'])) {
             return null; // avoid exposing API errors to end-user
         }
+
         return null;
     }
 
     private function aiAnthropic(string $prompt, Config $config): ?string
     {
-        if (!$config->apiKey || !$config->model) {
+        if (null === $config->apiKey || '' === $config->apiKey || '0' === $config->apiKey || (null === $config->model || '' === $config->model || '0' === $config->model)) {
             return null;
         }
-        $url = $config->apiUrl ?: 'https://api.anthropic.com/v1/messages';
+
+        $url = null !== $config->apiUrl && '' !== $config->apiUrl && '0' !== $config->apiUrl ? $config->apiUrl : 'https://api.anthropic.com/v1/messages';
         $headers = [
             'x-api-key: ' . $config->apiKey,
             'anthropic-version: 2023-06-01',
@@ -297,7 +343,7 @@ Explain the likely cause and provide practical steps to fix it. Keep the answer 
             'model' => $config->model,
             'max_tokens' => 400,
             'messages' => [
-                ['role' => 'user', 'content' => [ ['type' => 'text', 'text' => $prompt] ]],
+                ['role' => 'user', 'content' => [['type' => 'text', 'text' => $prompt]]],
             ],
             'system' => 'You are an assistant that explains PHP errors in an educational and concise way.',
             'temperature' => 0.2,
@@ -306,30 +352,34 @@ Explain the likely cause and provide practical steps to fix it. Keep the answer 
         if (!is_array($resp)) {
             return null;
         }
+
         // Anthropic Messages API: content is array of blocks with type=text
         if (isset($resp['content'][0]['text']) && is_string($resp['content'][0]['text'])) {
-            return trim((string)$resp['content'][0]['text']);
+            return trim($resp['content'][0]['text']);
         }
+
         // Some SDKs nest under content[0]['type' => 'text']
-        if (isset($resp['content'][0]) && is_array($resp['content'][0]) && isset($resp['content'][0]['type']) && $resp['content'][0]['type'] === 'text' && isset($resp['content'][0]['text'])) {
-            return trim((string)$resp['content'][0]['text']);
+        if (isset($resp['content'][0]) && is_array($resp['content'][0]) && isset($resp['content'][0]['type']) && 'text' === $resp['content'][0]['type'] && isset($resp['content'][0]['text'])) {
+            return trim((string) $resp['content'][0]['text']);
         }
+
         return null;
     }
 
     private function aiGoogle(string $prompt, Config $config): ?string
     {
-        if (!$config->apiKey || !$config->model) {
+        if (null === $config->apiKey || '' === $config->apiKey || '0' === $config->apiKey || (null === $config->model || '' === $config->model || '0' === $config->model)) {
             return null;
         }
-        $base = $config->apiUrl ?: 'https://generativelanguage.googleapis.com/v1/models';
+
+        $base = null !== $config->apiUrl && '' !== $config->apiUrl && '0' !== $config->apiUrl ? $config->apiUrl : 'https://generativelanguage.googleapis.com/v1/models';
         $url = rtrim($base, '/') . '/' . rawurlencode($config->model) . ':generateContent?key=' . urlencode($config->apiKey);
         $headers = [];
         $payload = [
             'contents' => [
                 [
                     'role' => 'user',
-                    'parts' => [ ['text' => $prompt] ],
+                    'parts' => [['text' => $prompt]],
                 ],
             ],
             'generationConfig' => [
@@ -340,36 +390,42 @@ Explain the likely cause and provide practical steps to fix it. Keep the answer 
         if (!is_array($resp)) {
             return null;
         }
+
         // Gemini API response: candidates[0].content.parts[0].text
         if (isset($resp['candidates'][0]['content']['parts'][0]['text']) && is_string($resp['candidates'][0]['content']['parts'][0]['text'])) {
-            return trim((string)$resp['candidates'][0]['content']['parts'][0]['text']);
+            return trim($resp['candidates'][0]['content']['parts'][0]['text']);
         }
+
         // Some responses may place text at candidates[0].output_text (older beta)
         if (isset($resp['candidates'][0]['output_text']) && is_string($resp['candidates'][0]['output_text'])) {
-            return trim((string)$resp['candidates'][0]['output_text']);
+            return trim($resp['candidates'][0]['output_text']);
         }
+
         return null;
     }
 
     /**
      * @param array<string,mixed> $payload
-     * @param array<int,string> $headers
+     * @param array<int,string>   $headers
+     *
      * @return array<string,mixed>|null
      */
-    private function httpJson(string $method, string $url, array $payload, array $headers, int $timeoutSec)
+    private function httpJson(string $method, string $url, array $payload, array $headers, int $timeoutSec): ?array
     {
         if (!function_exists('curl_init')) {
             return null;
         }
+
         $ch = curl_init();
-        if ($ch === false) {
+        if (false === $ch) {
             return null;
         }
+
         $json = json_encode($payload);
         $baseHeaders = [
             'Content-Type: application/json',
             'Accept: application/json',
-            'Content-Length: ' . strlen((string)$json),
+            'Content-Length: ' . strlen((string) $json),
         ];
         $allHeaders = array_merge($baseHeaders, $headers);
 
@@ -382,16 +438,20 @@ Explain the likely cause and provide practical steps to fix it. Keep the answer 
         curl_setopt($ch, CURLOPT_HTTPHEADER, $allHeaders);
 
         $result = curl_exec($ch);
-        if ($result === false) {
+        if (false === $result) {
             curl_close($ch);
+
             return null;
         }
-        $status = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+        $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
         if ($status < 200 || $status >= 300) {
             return null;
         }
-        $decoded = json_decode((string)$result, true);
+
+        $decoded = json_decode((string) $result, true);
+
         return is_array($decoded) ? $decoded : null;
     }
 }

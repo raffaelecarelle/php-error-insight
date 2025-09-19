@@ -7,29 +7,49 @@ namespace ErrorExplainer\Internal;
 use ErrorExplainer\Config;
 use ErrorExplainer\Contracts\RendererInterface;
 
+use function array_slice;
+use function count;
+use function dirname;
+use function function_exists;
+use function in_array;
+use function is_array;
+use function is_string;
+use function sprintf;
+use function strlen;
+
+use const ENT_QUOTES;
+use const EXTR_SKIP;
+use const FILE_IGNORE_NEW_LINES;
+use const JSON_PRETTY_PRINT;
+use const JSON_UNESCAPED_UNICODE;
+use const PHP_SAPI;
+use const STDOUT;
+use const STR_PAD_LEFT;
+
 final class Renderer implements RendererInterface
 {
     /**
      * @param array<string,mixed> $explanation
-     * @param Config $config
-     * @param string $kind
-     * @param bool $isShutdown
      */
     public function render(array $explanation, Config $config, string $kind, bool $isShutdown): void
     {
         $format = $config->output;
-        if ($format === Config::OUTPUT_AUTO) {
+        if (Config::OUTPUT_AUTO === $format) {
             $format = (PHP_SAPI === 'cli' || PHP_SAPI === 'phpdbg') ? Config::OUTPUT_TEXT : Config::OUTPUT_HTML;
         }
 
-        if ($format === Config::OUTPUT_JSON) {
+        if (Config::OUTPUT_JSON === $format) {
             $this->renderJson($explanation);
+
             return;
         }
-        if ($format === Config::OUTPUT_TEXT) {
+
+        if (Config::OUTPUT_TEXT === $format) {
             $this->renderText($explanation, $config);
+
             return;
         }
+
         // default to HTML
         $this->renderHtml($explanation, $config);
     }
@@ -43,6 +63,7 @@ final class Renderer implements RendererInterface
             header('Content-Type: application/json; charset=utf-8');
             http_response_code(500);
         }
+
         echo json_encode($explanation, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), (PHP_SAPI === 'cli' ? "\n" : '');
     }
 
@@ -55,71 +76,74 @@ final class Renderer implements RendererInterface
         $lines = [];
 
         $ansi = $this->supportsAnsi();
-        $muted = static fn (string $s) => $ansi ? "\033[90m{$s}\033[0m" : $s;
-        $bold = static fn (string $s) => $ansi ? "\033[1m{$s}\033[0m" : $s;
-        $titleC = static fn (string $s) => $ansi ? "\033[1;31m{$s}\033[0m" : $s; // bold red
-        $section = static fn (string $s) => $ansi ? "\033[1;34m{$s}\033[0m" : $s; // bold blue
-        $bullet = static fn (string $s) => $ansi ? "\033[36m{$s}\033[0m" : $s; // cyan
-        $fileC = static fn (string $s) => $ansi ? "\033[33m{$s}\033[0m" : $s; // yellow
+        $muted = static fn (string $s): string => $ansi ? "\033[90m{$s}\033[0m" : $s;
+        $bold = static fn (string $s): string => $ansi ? "\033[1m{$s}\033[0m" : $s;
+        $titleC = static fn (string $s): string => $ansi ? "\033[1;31m{$s}\033[0m" : $s; // bold red
+        $section = static fn (string $s): string => $ansi ? "\033[1;34m{$s}\033[0m" : $s; // bold blue
+        $bullet = static fn (string $s): string => $ansi ? "\033[36m{$s}\033[0m" : $s; // cyan
+        $fileC = static fn (string $s): string => $ansi ? "\033[33m{$s}\033[0m" : $s; // yellow
 
         // Header
         $header = '🚨 ' . $data['title'];
-        if ($data['where'] !== '') {
+        if ('' !== $data['where']) {
             $header .= ' ' . Translator::t($config, 'labels.in') . ' ' . $data['where'];
         }
+
         $lines[] = $titleC($header);
-        $lines[] = $muted((string)$data['severity']);
+        $lines[] = $muted((string) $data['severity']);
 
         // Summary
-        if ($data['summary'] !== '') {
-            $lines[] = $section(Translator::t($config, 'labels.summary')) . ' ' . (string)$data['summary'];
+        if ('' !== $data['summary']) {
+            $lines[] = $section(Translator::t($config, 'labels.summary')) . ' ' . $data['summary'];
         }
 
         // Stack (show top frames with code excerpt)
         if (!empty($data['frames'])) {
             $lines[] = '';
-            $lines[] = $section((string)($data['labels']['headings']['stack'] ?? 'Stack trace'));
+            $lines[] = $section((string) ($data['labels']['headings']['stack'] ?? 'Stack trace'));
             $maxFrames = 3; // keep concise
             $i = 0;
             foreach ($data['frames'] as $f) {
-                $sig = (string)($f['sig'] ?? '');
-                $loc = (string)($f['loc'] ?? '');
-                $idx = (int)($f['idx'] ?? 0);
-                $locOut = $loc !== '' ? $fileC($loc) : '';
-                $lines[] = sprintf('#%d %s %s%s', $idx, $sig !== '' ? $bold($sig) : '(unknown)', $locOut !== '' ? '— ' : '', $locOut);
+                $sig = (string) ($f['sig'] ?? '');
+                $loc = (string) ($f['loc'] ?? '');
+                $idx = (int) ($f['idx'] ?? 0);
+                $locOut = '' !== $loc ? $fileC($loc) : '';
+                $lines[] = sprintf('#%d %s %s%s', $idx, '' !== $sig ? $bold($sig) : '(unknown)', '' !== $locOut ? '— ' : '', $locOut);
 
-                if ($i < $maxFrames && $loc !== '') {
+                if ($i < $maxFrames && '' !== $loc) {
                     // derive file and line from loc "path:line"
                     $file = $loc;
                     $line = null;
                     $pos = strrpos($loc, ':');
-                    if ($pos !== false) {
+                    if (false !== $pos) {
                         $file = substr($loc, 0, $pos);
                         $lineStr = substr($loc, $pos + 1);
-                        $line = ctype_digit($lineStr) ? (int)$lineStr : null;
+                        $line = ctype_digit($lineStr) ? (int) $lineStr : null;
                     }
+
                     $excerpt = $this->renderCodeExcerptText($file, $line ?? 0, 3);
-                    if ($excerpt !== '') {
+                    if ('' !== $excerpt) {
                         foreach (explode("\n", $excerpt) as $l) {
                             $lines[] = '   ' . $l;
                         }
                     }
                 }
-                $i++;
+
+                ++$i;
             }
         }
 
         // Details (only when verbose)
-        if (!empty($data['details']) && (bool)$data['verbose']) {
+        if (!empty($data['details']) && (bool) $data['verbose']) {
             $lines[] = $section(Translator::t($config, 'labels.details'));
-            $lines[] = (string)$data['details'];
+            $lines[] = (string) $data['details'];
         }
 
         // Suggestions
         if (!empty($data['suggestions'])) {
             $lines[] = $section(Translator::t($config, 'labels.suggestions'));
             foreach ($data['suggestions'] as $s) {
-                $lines[] = ' ' . $bullet('•') . ' ' . (string)$s;
+                $lines[] = ' ' . $bullet('•') . ' ' . $s;
             }
         }
 
@@ -137,27 +161,32 @@ final class Renderer implements RendererInterface
         }
 
         $template = $config->template ?? (getenv('PHP_ERROR_INSIGHT_TEMPLATE') ?: null);
-        if (!$template) {
+        if ('' === $template || '0' === $template || null === $template) {
             $template = dirname(__DIR__, 2) . '/resources/views/error.php';
         }
+
         $data = $this->buildViewData($explanation, $config);
 
         if (!is_file($template)) {
             // Safe minimal fallback if template is missing
-            $esc = static fn ($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
+            $esc = static fn ($v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
             echo '<!DOCTYPE html><html lang="' . $esc($data['docLang']) . '"><head><meta charset="utf-8"><title>' . $esc($data['title']) . '</title></head><body style="font-family:system-ui;padding:24px">';
             echo '<h1 style="margin:0 0 4px 0">' . $esc($data['title']) . '</h1>';
             if (!empty($data['subtitle'])) {
                 echo '<div style="color:#6b7280;font-size:12px;margin:0 0 8px 0">' . $esc($data['subtitle']) . '</div>';
             }
+
             echo '<div style="color:#6b7280;font-size:12px">' . $esc($data['severity']) . '</div>';
-            if ($data['where'] !== '') {
+            if ('' !== $data['where']) {
                 echo '<div style="margin:8px 0;font-family:monospace">' . $esc($data['where']) . '</div>';
             }
-            if ($data['summary'] !== '') {
+
+            if ('' !== $data['summary']) {
                 echo '<p>' . $esc($data['summary']) . '</p>';
             }
+
             echo '</body></html>';
+
             return;
         }
 
@@ -168,47 +197,52 @@ final class Renderer implements RendererInterface
         })($template, $data);
     }
 
+    /**
+     * @param array<string, mixed> $explanation
+     *
+     * @return array<string, mixed>
+     */
     private function buildViewData(array $explanation, Config $config): array
     {
-        $docLang = $config->language ?: 'it';
+        $docLang = '' !== $config->language && '0' !== $config->language ? $config->language : 'it';
 
         $original = isset($explanation['original']) && is_array($explanation['original']) ? $explanation['original'] : [];
-        $origMessage = isset($original['message']) ? (string)$original['message'] : '';
-        $file = isset($original['file']) ? (string)$original['file'] : '';
-        $line = isset($original['line']) ? (string)$original['line'] : '';
-        $where = trim($file . ($line !== '' ? ":$line" : ''));
+        $origMessage = isset($original['message']) ? (string) $original['message'] : '';
+        $file = isset($original['file']) ? (string) $original['file'] : '';
+        $line = isset($original['line']) ? (string) $original['line'] : '';
+        $where = trim($file . ('' !== $line ? ":{$line}" : ''));
 
         // Title must be the error/warning message (fallback to previous title if missing)
-        $title = $origMessage !== '' ? $origMessage : (string)($explanation['title'] ?? 'PHP Error Explainer');
+        $title = '' !== $origMessage ? $origMessage : (string) ($explanation['title'] ?? 'PHP Error Explainer');
 
         // Subtitle shown when AI was used
         $aiTitle = Translator::t($config, 'title.ai');
-        $subtitle = ((string)($explanation['title'] ?? '')) === $aiTitle ? $aiTitle : '';
+        $subtitle = ((string) ($explanation['title'] ?? '')) === $aiTitle ? $aiTitle : '';
 
-        $severity = (string)($explanation['severityLabel'] ?? 'Error');
+        $severity = (string) ($explanation['severityLabel'] ?? 'Error');
 
-        $summary = (string)($explanation['summary'] ?? '');
-        $details = (string)($explanation['details'] ?? '');
+        $summary = (string) ($explanation['summary'] ?? '');
+        $details = (string) ($explanation['details'] ?? '');
         $suggestions = isset($explanation['suggestions']) && is_array($explanation['suggestions']) ? $explanation['suggestions'] : [];
 
         $trace = isset($explanation['trace']) && is_array($explanation['trace']) ? $explanation['trace'] : [];
         $frames = [];
         $idx = 0;
         foreach ($trace as $frame) {
-            $fn = isset($frame['function']) ? (string)$frame['function'] : 'unknown';
-            $cls = isset($frame['class']) ? (string)$frame['class'] : '';
-            $type = isset($frame['type']) ? (string)$frame['type'] : '';
-            $ff = isset($frame['file']) ? (string)$frame['file'] : '';
-            $ll = isset($frame['line']) ? (int)$frame['line'] : 0;
+            $fn = isset($frame['function']) ? (string) $frame['function'] : 'unknown';
+            $cls = isset($frame['class']) ? (string) $frame['class'] : '';
+            $type = isset($frame['type']) ? (string) $frame['type'] : '';
+            $ff = isset($frame['file']) ? (string) $frame['file'] : '';
+            $ll = isset($frame['line']) ? (int) $frame['line'] : 0;
             $sig = trim($cls . $type . $fn . '()');
-            $loc = $ff !== '' ? ($ff . ($ll ? ':' . $ll : '')) : '';
+            $loc = '' !== $ff ? ($ff . (0 !== $ll ? ':' . $ll : '')) : '';
             $frames[] = [
                 'idx' => $idx,
                 'sig' => $sig,
                 'loc' => $loc,
                 'codeHtml' => $this->renderCodeExcerpt($ff, $ll),
             ];
-            $idx++;
+            ++$idx;
         }
 
         $labels = [
@@ -229,18 +263,19 @@ final class Renderer implements RendererInterface
 
         // Attach full state to each frame and prepend origin as frame #0 (so it's part of the stack)
         $framesOut = [];
-        if ($where !== '') {
+        if ('' !== $where) {
             $framesOut[] = [
                 'idx' => 0,
                 'sig' => '(origin)',
                 'loc' => $where,
-                'codeHtml' => $this->renderCodeExcerpt($file, (int)$line),
+                'codeHtml' => $this->renderCodeExcerpt($file, (int) $line),
             ];
         }
+
         $startIdx = count($framesOut);
         foreach ($frames as $f) {
             // ensure numeric idx and shift by startIdx
-            $f['idx'] = (isset($f['idx']) ? (int)$f['idx'] : 0) + $startIdx;
+            $f['idx'] += $startIdx;
             $framesOut[] = $f;
         }
 
@@ -261,13 +296,15 @@ final class Renderer implements RendererInterface
 
     private function renderCodeExcerpt(?string $file, ?int $line, int $radius = 5): string
     {
-        if (!$file || !$line || !is_file($file) || $line < 1) {
+        if (null === $file || '' === $file || '0' === $file || (null === $line || 0 === $line) || !is_file($file) || $line < 1) {
             return '';
         }
+
         $lines = @file($file, FILE_IGNORE_NEW_LINES);
-        if ($lines === false) {
+        if (false === $lines) {
             return '';
         }
+
         $total = count($lines);
         $start = max(1, $line - $radius);
         $end = min($total, $line + $radius);
@@ -280,37 +317,42 @@ final class Renderer implements RendererInterface
             // Fallback: plain escaped code
             return '<pre><code>' . htmlspecialchars($code, ENT_QUOTES, 'UTF-8') . '</code></pre>';
         }
+
         // Remove the injected opening tag line from the highlighted HTML
         $html = preg_replace('#&lt;\?php<br\s*/?>#i', '', $html, 1) ?? $html;
+
         return $html;
     }
 
     private function renderCodeExcerptText(?string $file, ?int $line, int $radius = 5): string
     {
-        if (!$file || !$line || !is_file($file) || $line < 1) {
+        if (null === $file || '' === $file || '0' === $file || (null === $line || 0 === $line) || !is_file($file) || $line < 1) {
             return '';
         }
+
         $rows = @file($file, FILE_IGNORE_NEW_LINES);
-        if ($rows === false) {
+        if (false === $rows) {
             return '';
         }
+
         $ansi = $this->supportsAnsi();
-        $hl = static fn (string $s) => $ansi ? "\033[1;37;41m{$s}\033[0m" : $s; // white on red for current line number gutter
-        $dim = static fn (string $s) => $ansi ? "\033[90m{$s}\033[0m" : $s;
+        $hl = static fn (string $s): string => $ansi ? "\033[1;37;41m{$s}\033[0m" : $s; // white on red for current line number gutter
+        $dim = static fn (string $s): string => $ansi ? "\033[90m{$s}\033[0m" : $s;
         $total = count($rows);
         $start = max(1, $line - $radius);
         $end = min($total, $line + $radius);
-        $numWidth = strlen((string)$end);
+        $numWidth = strlen((string) $end);
         $out = [];
-        for ($ln = $start; $ln <= $end; $ln++) {
+        for ($ln = $start; $ln <= $end; ++$ln) {
             $prefix = $ln === $line ? '>' : ' ';
-            $num = str_pad((string)$ln, $numWidth, ' ', STR_PAD_LEFT);
+            $num = str_pad((string) $ln, $numWidth, ' ', STR_PAD_LEFT);
             $gutter = $ln === $line ? $hl($num) : $dim($num);
             $code = $rows[$ln - 1];
             // show tabs as spaces
             $code = str_replace("\t", '    ', $code);
             $out[] = sprintf('%s %s | %s', $prefix, $gutter, $code);
         }
+
         return implode("\n", $out);
     }
 
@@ -319,24 +361,30 @@ final class Renderer implements RendererInterface
         if (PHP_SAPI !== 'cli' && PHP_SAPI !== 'phpdbg') {
             return false;
         }
+
         if (getenv('NO_COLOR')) {
             return false;
         }
+
         $force = getenv('FORCE_COLOR');
-        if ($force && in_array(strtolower((string)$force), ['1','true','yes','on'], true)) {
+        if ($force && in_array(strtolower((string) $force), ['1', 'true', 'yes', 'on'], true)) {
             return true;
         }
+
         // Check TTY if possible
         if (function_exists('stream_isatty')) {
-            /** @noinspection PhpComposerExtensionStubsInspection */
+            /* @noinspection PhpComposerExtensionStubsInspection */
             return @stream_isatty(STDOUT);
         }
+
         if (function_exists('posix_isatty')) {
-            /** @noinspection PhpComposerExtensionStubsInspection */
+            /* @noinspection PhpComposerExtensionStubsInspection */
             return @posix_isatty(STDOUT);
         }
+
         // Fall back to TERM
         $term = getenv('TERM');
-        return is_string($term) && strtolower($term) !== 'dumb';
+
+        return is_string($term) && 'dumb' !== strtolower($term);
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace ErrorExplainer\Contracts;
 
 use ErrorExplainer\Internal\SanitizerConfig;

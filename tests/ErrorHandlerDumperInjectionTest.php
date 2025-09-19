@@ -11,13 +11,15 @@ use ErrorExplainer\Contracts\StateDumperInterface;
 use ErrorExplainer\Internal\ErrorHandler;
 use PHPUnit\Framework\TestCase;
 
+use const E_USER_NOTICE;
+
 final class ErrorHandlerDumperInjectionTest extends TestCase
 {
     public function testInjectedDumperIsUsed(): void
     {
-        $captured = (object)['explanation' => null];
+        $captured = (object) ['explanation' => null];
 
-        $fakeExplainer = new class () implements ExplainerInterface {
+        $fakeExplainer = new class() implements ExplainerInterface {
             public function explain(string $kind, string $message, ?string $file, ?int $line, ?array $trace, ?int $severity, Config $config): array
             {
                 return [
@@ -32,23 +34,25 @@ final class ErrorHandlerDumperInjectionTest extends TestCase
             }
         };
 
-        $fakeRenderer = new class ($captured) implements RendererInterface {
-            private $captured;
-            public function __construct($captured)
+        $fakeRenderer = new class($captured) implements RendererInterface {
+            public function __construct(private readonly object $captured)
             {
-                $this->captured = $captured;
             }
+
             public function render(array $explanation, Config $config, string $kind, bool $isShutdown): void
             {
                 $this->captured->explanation = $explanation;
             }
         };
 
-        $fakeDumper = new class () implements StateDumperInterface {
+        $fakeDumper = new class() implements StateDumperInterface {
+            /** @var array<int, mixed> */
             public array $lastTrace = [];
+
             public function collectState(?array $traceFromHandler = null): array
             {
                 $this->lastTrace = $traceFromHandler ?? [];
+
                 return ['marker' => 'fake', 'rawTrace' => $this->lastTrace, 'globalsAll' => [], 'definedVars' => [], 'object' => null, 'xdebugText' => ''];
             }
         };

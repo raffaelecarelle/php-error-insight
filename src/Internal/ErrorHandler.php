@@ -10,48 +10,47 @@ use ErrorExplainer\Contracts\RendererInterface;
 use ErrorExplainer\Contracts\StateDumperInterface;
 use Throwable;
 
+use function call_user_func;
+use function in_array;
+use function is_callable;
+
+use const DEBUG_BACKTRACE_PROVIDE_OBJECT;
+use const E_COMPILE_ERROR;
+use const E_CORE_ERROR;
+use const E_ERROR;
+use const E_PARSE;
+
 final class ErrorHandler
 {
     /** @var callable|null */
     private $prevErrorHandler;
+
     /** @var callable|null */
     private $prevExceptionHandler;
 
-    private Config $config;
-    private ExplainerInterface $explainer;
-    private RendererInterface $renderer;
-    private StateDumperInterface $stateDumper;
-
     /**
-     * @param Config $config
      * @param callable|null $prevErrorHandler
      * @param callable|null $prevExceptionHandler
-     * @param ExplainerInterface|null $explainer
-     * @param RendererInterface|null $renderer
-     * @param StateDumperInterface|null $stateDumper
      */
-    public function __construct(Config $config, $prevErrorHandler, $prevExceptionHandler, ?ExplainerInterface $explainer = null, ?RendererInterface $renderer = null, ?StateDumperInterface $stateDumper = null)
+    public function __construct(private readonly Config $config, $prevErrorHandler, $prevExceptionHandler, private readonly ExplainerInterface $explainer = new Explainer(), private readonly RendererInterface $renderer = new Renderer(), private readonly StateDumperInterface $stateDumper = new StateDumper())
     {
-        $this->config = $config;
         $this->prevErrorHandler = $prevErrorHandler;
         $this->prevExceptionHandler = $prevExceptionHandler;
-        $this->explainer = $explainer ?? new Explainer();
-        $this->renderer = $renderer ?? new Renderer();
-        $this->stateDumper = $stateDumper ?? new StateDumper();
     }
 
     /**
-     * @param int $severity
-     * @param string $message
+     * @param int         $severity
+     * @param string      $message
      * @param string|null $file
-     * @param int|null $line
+     * @param int|null    $line
      */
     public function handleError($severity, $message, $file = null, $line = null): bool
     {
         // Respect @-operator
-        if (error_reporting() === 0) {
+        if (0 === error_reporting()) {
             return false;
         }
+
         if (!$this->config->enabled) {
             return false;
         }
@@ -61,7 +60,7 @@ final class ErrorHandler
         // Remove current frame(s)
         array_shift($trace);
 
-        $exp = $this->explainer->explain('error', (string)$message, (string)$file, (int)$line, $trace, (int)$severity, $this->config);
+        $exp = $this->explainer->explain('error', (string) $message, (string) $file, (int) $line, $trace, (int) $severity, $this->config);
         // Attach extended state dump
         $exp['state'] = $this->stateDumper->collectState($trace);
         $this->renderer->render($exp, $this->config, 'error', false);
@@ -70,7 +69,7 @@ final class ErrorHandler
         if (is_callable($this->prevErrorHandler)) {
             try {
                 call_user_func($this->prevErrorHandler, $severity, $message, $file, $line);
-            } catch (Throwable $e) {
+            } catch (Throwable) {
                 // ignore
             }
         }
@@ -83,8 +82,10 @@ final class ErrorHandler
         if (!$this->config->enabled) {
             if (is_callable($this->prevExceptionHandler)) {
                 call_user_func($this->prevExceptionHandler, $e);
+
                 return;
             }
+
             // default behavior if no previous
             throw $e; // rethrow
         }
@@ -97,7 +98,7 @@ final class ErrorHandler
         if (is_callable($this->prevExceptionHandler)) {
             try {
                 call_user_func($this->prevExceptionHandler, $e);
-            } catch (Throwable $chainEx) {
+            } catch (Throwable) {
                 // ignore
             }
         }
@@ -108,29 +109,33 @@ final class ErrorHandler
         if (!$this->config->enabled) {
             return;
         }
+
         $err = error_get_last();
-        if (!$err) {
+        if (null === $err) {
             return;
         }
-        $severity = isset($err['type']) ? (int)$err['type'] : 0;
-        if (!self::isFatal($severity)) {
+
+        $severity = $err['type'];
+        if (!$this->isFatal($severity)) {
             return;
         }
-        $message = isset($err['message']) ? (string)$err['message'] : 'Fatal error';
-        $file = isset($err['file']) ? (string)$err['file'] : null;
-        $line = isset($err['line']) ? (int)$err['line'] : null;
+
+        $message = $err['message'];
+        $file = $err['file'];
+        $line = $err['line'];
 
         // Build a backtrace at shutdown to aid debugging
         $trace = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT);
-        if (!empty($trace)) {
+        if ([] !== $trace) {
             array_shift($trace);
         }
+
         $exp = $this->explainer->explain('shutdown', $message, $file, $line, $trace, $severity, $this->config);
         $exp['state'] = $this->stateDumper->collectState($trace);
         $this->renderer->render($exp, $this->config, 'shutdown', true);
     }
 
-    private static function isFatal(int $type): bool
+    private function isFatal(int $type): bool
     {
         return in_array($type, [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true);
     }
