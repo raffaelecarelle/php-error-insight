@@ -34,7 +34,7 @@ final class ErrorExplainer
             return self::$instance;
         }
 
-        $prevError = set_error_handler(static fn(int $errno, string $errstr, string $errfile, int $errline): bool =>
+        $prevError = set_error_handler(static fn (int $errno, string $errstr, string $errfile, int $errline): bool =>
             // placeholder to read previous, will be replaced immediately
             false);
         if (null !== $prevError) {
