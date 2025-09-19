@@ -28,11 +28,7 @@ final class ErrorHandler
     /** @var callable|null */
     private $prevExceptionHandler;
 
-    /**
-     * @param callable|null $prevErrorHandler
-     * @param callable|null $prevExceptionHandler
-     */
-    public function __construct(private readonly Config $config, $prevErrorHandler, $prevExceptionHandler, private readonly ExplainerInterface $explainer = new Explainer(), private readonly RendererInterface $renderer = new Renderer(), private readonly StateDumperInterface $stateDumper = new StateDumper())
+    public function __construct(private readonly Config $config, ?callable $prevErrorHandler = null, ?callable $prevExceptionHandler = null, private readonly ExplainerInterface $explainer = new Explainer(), private readonly RendererInterface $renderer = new Renderer(), private readonly StateDumperInterface $stateDumper = new StateDumper())
     {
         $this->prevErrorHandler = $prevErrorHandler;
         $this->prevExceptionHandler = $prevExceptionHandler;
