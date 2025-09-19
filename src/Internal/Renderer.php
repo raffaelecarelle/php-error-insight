@@ -7,7 +7,6 @@ namespace ErrorExplainer\Internal;
 use ErrorExplainer\Config;
 use ErrorExplainer\Contracts\RendererInterface;
 
-use function array_slice;
 use function count;
 use function dirname;
 use function function_exists;
@@ -318,12 +317,8 @@ final class Renderer implements RendererInterface
 
             // Line already has <?php, highlight as-is
             $highlightedCode = @highlight_string($codeLine, true);
-            if (is_string($highlightedCode)) {
-                $highlightedCode = preg_replace('#^<code><span[^>]*>(.*)</span></code>$#s', '$1', $highlightedCode) ?? $highlightedCode;
-                $highlightedCode = trim($highlightedCode);
-            } else {
-                $highlightedCode = htmlspecialchars($codeLine, ENT_QUOTES, 'UTF-8');
-            }
+            $highlightedCode = preg_replace('#^<code><span[^>]*>(.*)</span></code>$#s', '$1', $highlightedCode) ?? $highlightedCode;
+            $highlightedCode = trim($highlightedCode);
 
             $rowClass = $ln === $line ? ' class="error-line"' : '';
             $output .= '<tr' . $rowClass . '>';
@@ -332,9 +327,7 @@ final class Renderer implements RendererInterface
             $output .= '</tr>';
         }
 
-        $output .= '</table></div>';
-
-        return $output;
+        return $output . '</table></div>';
     }
 
     private function renderCodeExcerptText(?string $file, ?int $line, int $radius = 5): string
