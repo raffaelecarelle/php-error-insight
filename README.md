@@ -14,7 +14,7 @@ Screenshots:
 - Simple configuration via environment variables or by instantiating the Config.
 
 ## Requirements
-- PHP >= 7.4
+- PHP >= 8.1
 - Composer
 - (Optional) a local AI backend (Ollama/LocalAI) or an API key (OpenAI, etc.)
 
