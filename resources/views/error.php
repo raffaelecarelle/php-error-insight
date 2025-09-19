@@ -94,6 +94,79 @@ $dumper = new \Symfony\Component\VarDumper\Dumper\HtmlDumper();
             * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
         }
 
+        /* Code excerpt styles */
+        .code-excerpt {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            border: 1px solid rgba(0,0,0,0.06);
+            background: #f9fafb;
+        }
+        
+        .dark .code-excerpt {
+            border: 1px solid rgba(255,255,255,0.08);
+            background: #1f2937;
+        }
+        
+        .code-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0;
+        }
+        
+        .code-table td {
+            padding: 0.25rem 0.5rem;
+            vertical-align: top;
+            border: none;
+        }
+        
+        .line-number {
+            background: #f3f4f6;
+            color: #6b7280;
+            text-align: right;
+            user-select: none;
+            width: auto;
+            white-space: nowrap;
+            font-weight: 500;
+            border-right: 1px solid rgba(0,0,0,0.1);
+        }
+        
+        .dark .line-number {
+            background: #374151;
+            color: #9ca3af;
+            border-right: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .code-content {
+            background: #ffffff;
+            color: #111827;
+            padding-left: 1rem;
+            width: 100%;
+        }
+        
+        .dark .code-content {
+            background: #1f2937;
+            color: #e5e7eb;
+        }
+        
+        .error-line .line-number {
+            background: #dc2626;
+            color: #ffffff;
+            font-weight: bold;
+        }
+        
+        .error-line .code-content {
+            background: #fef2f2;
+            border-left: 3px solid #dc2626;
+        }
+        
+        .dark .error-line .code-content {
+            background: #450a0a;
+            border-left: 3px solid #dc2626;
+        }
+
         /* Print styles */
         @media print {
             .no-print { display: none !important; }
@@ -104,6 +177,9 @@ $dumper = new \Symfony\Component\VarDumper\Dumper\HtmlDumper();
             .text-gray-900, .dark\:text-gray-100 { color: #000 !important; }
             .frame-details { display: block !important; }
             a { color: #000; text-decoration: underline; }
+            .code-excerpt, .code-content, .line-number { background: #fff !important; color: #000 !important; }
+            .error-line .line-number { background: #000 !important; color: #fff !important; }
+            .error-line .code-content { background: #f0f0f0 !important; }
         }
     </style>
 </head>

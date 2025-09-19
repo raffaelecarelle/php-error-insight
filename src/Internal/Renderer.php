@@ -308,20 +308,33 @@ final class Renderer implements RendererInterface
         $total = count($lines);
         $start = max(1, $line - $radius);
         $end = min($total, $line + $radius);
-        $snippetLines = array_slice($lines, $start - 1, $end - $start + 1);
-        $code = implode("\n", $snippetLines);
-        // Prepend opening tag to force PHP syntax highlighting
-        $toHighlight = "<?php\n" . $code;
-        $html = @highlight_string($toHighlight, true);
-        if (!is_string($html)) {
-            // Fallback: plain escaped code
-            return '<pre><code>' . htmlspecialchars($code, ENT_QUOTES, 'UTF-8') . '</code></pre>';
+        $numWidth = strlen((string) $end);
+
+        $output = '<div class="code-excerpt"><table class="code-table">';
+
+        for ($ln = $start; $ln <= $end; ++$ln) {
+            $codeLine = $lines[$ln - 1];
+            $lineNum = str_pad((string) $ln, $numWidth, ' ', STR_PAD_LEFT);
+
+            // Line already has <?php, highlight as-is
+            $highlightedCode = @highlight_string($codeLine, true);
+            if (is_string($highlightedCode)) {
+                $highlightedCode = preg_replace('#^<code><span[^>]*>(.*)</span></code>$#s', '$1', $highlightedCode) ?? $highlightedCode;
+                $highlightedCode = trim($highlightedCode);
+            } else {
+                $highlightedCode = htmlspecialchars($codeLine, ENT_QUOTES, 'UTF-8');
+            }
+
+            $rowClass = $ln === $line ? ' class="error-line"' : '';
+            $output .= '<tr' . $rowClass . '>';
+            $output .= '<td class="line-number">' . htmlspecialchars($lineNum, ENT_QUOTES, 'UTF-8') . '</td>';
+            $output .= '<td class="code-content">' . $highlightedCode . '</td>';
+            $output .= '</tr>';
         }
 
-        // Remove the injected opening tag line from the highlighted HTML
-        $html = preg_replace('#&lt;\?php<br\s*/?>#i', '', $html, 1) ?? $html;
+        $output .= '</table></div>';
 
-        return $html;
+        return $output;
     }
 
     private function renderCodeExcerptText(?string $file, ?int $line, int $radius = 5): string
