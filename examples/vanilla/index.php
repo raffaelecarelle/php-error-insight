@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 // Minimal example demonstrating PHP Error Explainer
 // Run with: php examples/vanilla/index.php
 // Optional AI config (env):
@@ -21,36 +23,11 @@ ErrorExplainer::register([
     'output' => 'auto',   // auto|text|html|json
     'verbose' => true,
     // Default to no AI to avoid network calls in example; configure via env to enable
-    'backend'  => getenv('PHP_ERROR_INSIGHT_BACKEND') ?: 'api',
-    'model'    => getenv('PHP_ERROR_INSIGHT_MODEL') ?: 'gpt-4o-mini',
+    'backend' => getenv('PHP_ERROR_INSIGHT_BACKEND') ?: 'api',
+    'model' => getenv('PHP_ERROR_INSIGHT_MODEL') ?: 'gpt-4o-mini',
     'language' => getenv('PHP_ERROR_INSIGHT_LANG') ?: 'en',
-    'apiKey'   => getenv('PHP_ERROR_INSIGHT_API_KEY') ?: null,
-    'apiUrl'   => getenv('PHP_ERROR_INSIGHT_API_URL') ?: null,
+    'apiKey' => getenv('PHP_ERROR_INSIGHT_API_KEY') ?: null,
+    'apiUrl' => getenv('PHP_ERROR_INSIGHT_API_URL') ?: null,
 ]);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 echo $undefinedVar;
