@@ -11,6 +11,9 @@ $suggestions = $suggestions ?? [];
 $frames = $frames ?? [];
 $labels = $labels ?? ['headings' => [], 'labels' => []];
 $copyText = json_encode(trim(($title !== '' ? $title : 'Error') . ($where !== '' ? ' in ' . $where : '')), JSON_UNESCAPED_UNICODE);
+
+$cloner = new \Symfony\Component\VarDumper\Cloner\VarCloner();
+$dumper = new \Symfony\Component\VarDumper\Dumper\HtmlDumper();
 ?>
 <!DOCTYPE html>
 <html lang="<?= $e($docLang) ?>">
@@ -169,25 +172,25 @@ $copyText = json_encode(trim(($title !== '' ? $title : 'Error') . ($where !== ''
         </div>
 
         <div id="tab-server" class="tab-content">
-            <pre class="text-gray-100 rounded text-xs"><?php dump($_SERVER ?? []) ?></pre>
+            <pre class="text-gray-100 rounded text-xs"><?php $dumper->dump($cloner->cloneVar($_SERVER ?? [])) ?></pre>
         </div>
         <div id="tab-env" class="tab-content hidden">
-            <pre class="text-gray-100 rounded text-xs"><?php dump($_ENV ?? []) ?></pre>
+            <pre class="text-gray-100 rounded text-xs"><?php $dumper->dump($cloner->cloneVar($_ENV ?? [])) ?></pre>
         </div>
         <div id="tab-cookies" class="tab-content hidden">
-            <pre class="text-gray-100 rounded text-xs"><?php dump($_COOKIE ?? []) ?></pre>
+            <pre class="text-gray-100 rounded text-xs"><?php $dumper->dump($cloner->cloneVar($_COOKIE ?? [])) ?></pre>
         </div>
         <div id="tab-session" class="tab-content hidden">
-            <pre class="text-gray-100 rounded text-xs"><?php dump($_SESSION ?? []) ?></pre>
+            <pre class="text-gray-100 rounded text-xs"><?php $dumper->dump($cloner->cloneVar($_SESSION ?? [])) ?></pre>
         </div>
         <div id="tab-get" class="tab-content hidden">
-            <pre class="text-gray-100 rounded text-xs"><?php dump($_GET ?? []) ?></pre>
+            <pre class="text-gray-100 rounded text-xs"><?php $dumper->dump($cloner->cloneVar($_GET ?? [])) ?></pre>
         </div>
         <div id="tab-post" class="tab-content hidden">
-            <pre class="text-gray-100 rounded text-xs"><?php dump($_POST ?? []) ?></pre>
+            <pre class="text-gray-100 rounded text-xs"><?php $dumper->dump($cloner->cloneVar($_POST ?? [])) ?></pre>
         </div>
         <div id="tab-files" class="tab-content hidden">
-            <pre class="text-gray-100 rounded text-xs"><?php dump($_FILES ?? []) ?></pre>
+            <pre class="text-gray-100 rounded text-xs"><?php $dumper->dump($cloner->cloneVar($_FILES ?? [])) ?></pre>
         </div>
     </section>
 
@@ -216,159 +219,159 @@ $copyText = json_encode(trim(($title !== '' ? $title : 'Error') . ($where !== ''
 </main>
 
 <script>
-(function(){
-    const qs = s => document.querySelector(s);
-    const qsa = s => Array.from(document.querySelectorAll(s));
+    (function(){
+        const qs = s => document.querySelector(s);
+        const qsa = s => Array.from(document.querySelectorAll(s));
 
-    // Tabs
-    qsa('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            qsa('.tab-btn').forEach(b => { b.classList.remove('border-b-2'); b.classList.remove('border-red-600'); });
-            btn.classList.add('border-b-2');
-            btn.classList.add('border-red-600');
-            qsa('.tab-content').forEach(c => c.classList.add('hidden'));
-            const t = document.getElementById('tab-' + btn.dataset.tab);
-            if (t) t.classList.remove('hidden');
-        });
-    });
-
-    // Theme toggle with persistence
-    const toggleBtn = qs('#toggleTheme');
-    if (toggleBtn) {
-        const isDark = document.documentElement.classList.contains('dark');
-        toggleBtn.setAttribute('aria-pressed', isDark ? 'true' : 'false');
-        toggleBtn.addEventListener('click', () => {
-            const nowDark = document.documentElement.classList.toggle('dark');
-            toggleBtn.setAttribute('aria-pressed', nowDark ? 'true' : 'false');
-            try { localStorage.setItem('errorView.theme', nowDark ? 'dark' : 'light'); } catch (e) {}
-        });
-    }
-
-    // Frames expanded state persistence and toggling
-    const stateKey = 'errorView.frames';
-    let frameState = {};
-    try { frameState = JSON.parse(localStorage.getItem(stateKey) || '{}') || {}; } catch (e) { frameState = {}; }
-
-    function setExpanded(li, expanded) {
-        const btn = li.querySelector('.toggle-frame');
-        const details = li.querySelector('.frame-details');
-        if (!btn || !details) return;
-        if (expanded) details.classList.remove('hidden'); else details.classList.add('hidden');
-        btn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-        const ind = btn.querySelector('.indicator');
-        if (ind) ind.textContent = expanded ? '−' : '+';
-        if (expanded) {
-            const sig = details.getAttribute('data-sig') || '';
-            const code = details.querySelector('.code-view');
-            if (code) highlightParams(code, sig);
-        }
-    }
-
-    function persistFrame(li, expanded) {
-        const id = li.getAttribute('data-id');
-        if (!id) return;
-        frameState[id] = !!expanded;
-        try { localStorage.setItem(stateKey, JSON.stringify(frameState)); } catch (e) {}
-    }
-
-    qsa('#traceList > li').forEach(li => {
-        const btn = li.querySelector('.toggle-frame');
-        if (btn) {
+        // Tabs
+        qsa('.tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                const details = li.querySelector('.frame-details');
-                const expanded = details.classList.contains('hidden');
-                const code = details.querySelector('.code-view');
-                if (code) {
-                    code.querySelectorAll('span.hl-var').forEach(span => {
-                        const text = document.createTextNode(span.textContent);
-                        span.replaceWith(text);
-                    });
-                }
-                setExpanded(li, expanded);
-                persistFrame(li, expanded);
+                qsa('.tab-btn').forEach(b => { b.classList.remove('border-b-2'); b.classList.remove('border-red-600'); });
+                btn.classList.add('border-b-2');
+                btn.classList.add('border-red-600');
+                qsa('.tab-content').forEach(c => c.classList.add('hidden'));
+                const t = document.getElementById('tab-' + btn.dataset.tab);
+                if (t) t.classList.remove('hidden');
+            });
+        });
+
+        // Theme toggle with persistence
+        const toggleBtn = qs('#toggleTheme');
+        if (toggleBtn) {
+            const isDark = document.documentElement.classList.contains('dark');
+            toggleBtn.setAttribute('aria-pressed', isDark ? 'true' : 'false');
+            toggleBtn.addEventListener('click', () => {
+                const nowDark = document.documentElement.classList.toggle('dark');
+                toggleBtn.setAttribute('aria-pressed', nowDark ? 'true' : 'false');
+                try { localStorage.setItem('errorView.theme', nowDark ? 'dark' : 'light'); } catch (e) {}
             });
         }
-        const id = li.getAttribute('data-id');
-        if (id && frameState[id]) setExpanded(li, true);
-    });
 
-    // Search filtering
-    const searchInput = qs('#traceSearch');
-    const clearBtn = qs('#clearSearch');
-    function applyFilter() {
-        const q = (searchInput && searchInput.value ? searchInput.value : '').toLowerCase().trim();
+        // Frames expanded state persistence and toggling
+        const stateKey = 'errorView.frames';
+        let frameState = {};
+        try { frameState = JSON.parse(localStorage.getItem(stateKey) || '{}') || {}; } catch (e) { frameState = {}; }
+
+        function setExpanded(li, expanded) {
+            const btn = li.querySelector('.toggle-frame');
+            const details = li.querySelector('.frame-details');
+            if (!btn || !details) return;
+            if (expanded) details.classList.remove('hidden'); else details.classList.add('hidden');
+            btn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+            const ind = btn.querySelector('.indicator');
+            if (ind) ind.textContent = expanded ? '−' : '+';
+            if (expanded) {
+                const sig = details.getAttribute('data-sig') || '';
+                const code = details.querySelector('.code-view');
+                if (code) highlightParams(code, sig);
+            }
+        }
+
+        function persistFrame(li, expanded) {
+            const id = li.getAttribute('data-id');
+            if (!id) return;
+            frameState[id] = !!expanded;
+            try { localStorage.setItem(stateKey, JSON.stringify(frameState)); } catch (e) {}
+        }
+
         qsa('#traceList > li').forEach(li => {
-            const hay = (li.getAttribute('data-search') || '');
-            li.style.display = (q === '' || hay.indexOf(q) !== -1) ? '' : 'none';
+            const btn = li.querySelector('.toggle-frame');
+            if (btn) {
+                btn.addEventListener('click', () => {
+                    const details = li.querySelector('.frame-details');
+                    const expanded = details.classList.contains('hidden');
+                    const code = details.querySelector('.code-view');
+                    if (code) {
+                        code.querySelectorAll('span.hl-var').forEach(span => {
+                            const text = document.createTextNode(span.textContent);
+                            span.replaceWith(text);
+                        });
+                    }
+                    setExpanded(li, expanded);
+                    persistFrame(li, expanded);
+                });
+            }
+            const id = li.getAttribute('data-id');
+            if (id && frameState[id]) setExpanded(li, true);
         });
-    }
-    if (searchInput) searchInput.addEventListener('input', applyFilter);
-    if (clearBtn) clearBtn.addEventListener('click', () => { if (searchInput) { searchInput.value = ''; applyFilter(); searchInput.focus(); } });
 
-    // Copy title
-    const copyBtn = qs('#copyBtn');
-    if (copyBtn) {
-        copyBtn.addEventListener('click', () => {
-            const text = <?= $copyText ?>;
-            const btnText = '<?= $e($labels['headings']['copy'] ?? 'Copy to clipboard') ?>';
-            navigator.clipboard.writeText(text).then(() => {
-                copyBtn.textContent = '<?= $e($labels['headings']['copied'] ?? 'Copied!') ?>';
-                setTimeout(() => { copyBtn.textContent = btnText; }, 2000);
+        // Search filtering
+        const searchInput = qs('#traceSearch');
+        const clearBtn = qs('#clearSearch');
+        function applyFilter() {
+            const q = (searchInput && searchInput.value ? searchInput.value : '').toLowerCase().trim();
+            qsa('#traceList > li').forEach(li => {
+                const hay = (li.getAttribute('data-search') || '');
+                li.style.display = (q === '' || hay.indexOf(q) !== -1) ? '' : 'none';
             });
-        });
-    }
+        }
+        if (searchInput) searchInput.addEventListener('input', applyFilter);
+        if (clearBtn) clearBtn.addEventListener('click', () => { if (searchInput) { searchInput.value = ''; applyFilter(); searchInput.focus(); } });
 
-    // Copy full stack
-    const copyStackBtn = qs('#copyStackBtn');
-    if (copyStackBtn) {
-        copyStackBtn.addEventListener('click', () => {
-            const lines = qsa('#traceList .trace-line').map(n => n.textContent.trim());
-            const stackText = lines.join('\n');
-            navigator.clipboard.writeText(stackText).then(() => {
-                const prev = copyStackBtn.textContent;
-                copyStackBtn.textContent = '<?= $e($labels['headings']['copied'] ?? 'Copied!') ?>';
-                setTimeout(() => { copyStackBtn.textContent = prev; }, 2000);
+        // Copy title
+        const copyBtn = qs('#copyBtn');
+        if (copyBtn) {
+            copyBtn.addEventListener('click', () => {
+                const text = <?= $copyText ?>;
+                const btnText = '<?= $e($labels['headings']['copy'] ?? 'Copy to clipboard') ?>';
+                navigator.clipboard.writeText(text).then(() => {
+                    copyBtn.textContent = '<?= $e($labels['headings']['copied'] ?? 'Copied!') ?>';
+                    setTimeout(() => { copyBtn.textContent = btnText; }, 2000);
+                });
             });
-        });
-    }
+        }
 
-    // Copy AI details
-    const copyDetailsBtn = qs('#copyDetailsBtn');
-    const detailsText = qs('#detailsText');
-    if (copyDetailsBtn && detailsText) {
-        copyDetailsBtn.addEventListener('click', () => {
-            const txt = detailsText.textContent || '';
-            navigator.clipboard.writeText(txt).then(() => {
-                const prev = copyDetailsBtn.textContent;
-                copyDetailsBtn.textContent = '<?= $e($labels['headings']['copied'] ?? 'Copied!') ?>';
-                setTimeout(() => { copyDetailsBtn.textContent = prev; }, 2000);
+        // Copy full stack
+        const copyStackBtn = qs('#copyStackBtn');
+        if (copyStackBtn) {
+            copyStackBtn.addEventListener('click', () => {
+                const lines = qsa('#traceList .trace-line').map(n => n.textContent.trim());
+                const stackText = lines.join('\n');
+                navigator.clipboard.writeText(stackText).then(() => {
+                    const prev = copyStackBtn.textContent;
+                    copyStackBtn.textContent = '<?= $e($labels['headings']['copied'] ?? 'Copied!') ?>';
+                    setTimeout(() => { copyStackBtn.textContent = prev; }, 2000);
+                });
             });
-        });
-    }
+        }
 
-    // Highlighting helpers
-    function escapeRegExp(s){ return s.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&'); }
-    function highlightParams(codeEl, sig) {
-        if (!sig) return;
-        // unwrap existing highlights in this element
-        codeEl.querySelectorAll('span.hl-var').forEach(span => {
-            const text = document.createTextNode(span.textContent);
-            span.replaceWith(text);
-        });
-        const m = sig.match(/\(([^)]*)\)/);
-        if (!m) return;
-        const inner = m[1];
-        const vars = Array.from(new Set((inner.match(/\$[A-Za-z_][A-Za-z0-9_]*/g) || [])));
-        if (vars.length === 0) return;
-        let html = codeEl.innerHTML;
-        vars.forEach(v => {
-            const pattern = '(^|[^\\\\w$])(' + escapeRegExp(v) + ')(?![\\\\w$])';
-            const re = new RegExp(pattern, 'g');
-            html = html.replace(re, '$1<span class="hl-var">$2</span>');
-        });
-        codeEl.innerHTML = html;
-    }
-})();
+        // Copy AI details
+        const copyDetailsBtn = qs('#copyDetailsBtn');
+        const detailsText = qs('#detailsText');
+        if (copyDetailsBtn && detailsText) {
+            copyDetailsBtn.addEventListener('click', () => {
+                const txt = detailsText.textContent || '';
+                navigator.clipboard.writeText(txt).then(() => {
+                    const prev = copyDetailsBtn.textContent;
+                    copyDetailsBtn.textContent = '<?= $e($labels['headings']['copied'] ?? 'Copied!') ?>';
+                    setTimeout(() => { copyDetailsBtn.textContent = prev; }, 2000);
+                });
+            });
+        }
+
+        // Highlighting helpers
+        function escapeRegExp(s){ return s.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&'); }
+        function highlightParams(codeEl, sig) {
+            if (!sig) return;
+            // unwrap existing highlights in this element
+            codeEl.querySelectorAll('span.hl-var').forEach(span => {
+                const text = document.createTextNode(span.textContent);
+                span.replaceWith(text);
+            });
+            const m = sig.match(/\(([^)]*)\)/);
+            if (!m) return;
+            const inner = m[1];
+            const vars = Array.from(new Set((inner.match(/\$[A-Za-z_][A-Za-z0-9_]*/g) || [])));
+            if (vars.length === 0) return;
+            let html = codeEl.innerHTML;
+            vars.forEach(v => {
+                const pattern = '(^|[^\\\\w$])(' + escapeRegExp(v) + ')(?![\\\\w$])';
+                const re = new RegExp(pattern, 'g');
+                html = html.replace(re, '$1<span class="hl-var">$2</span>');
+            });
+            codeEl.innerHTML = html;
+        }
+    })();
 </script>
 </body>
 </html>
