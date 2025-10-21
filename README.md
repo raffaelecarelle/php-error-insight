@@ -33,10 +33,12 @@ Supported environment variables:
 - PHP_ERROR_INSIGHT_MODEL: model name (e.g. llama3:instruct, gpt-4o-mini, claude-3-5-sonnet-20240620, gemini-1.5-flash)
 - PHP_ERROR_INSIGHT_API_KEY: API key (required for api/openai/anthropic/google backends)
 - PHP_ERROR_INSIGHT_API_URL: service URL (optional override; e.g. http://localhost:11434 for Ollama, https://api.openai.com/v1/chat/completions for OpenAI, https://api.anthropic.com/v1/messages for Anthropic, https://generativelanguage.googleapis.com/v1/models for Google Gemini)
-- PHP_ERROR_INSIGHT_LANG: language for AI prompt (it, en, ...; default: en)
+- PHP_ERROR_INSIGHT_LANG: language for AI prompt (it, en, ...; default: it)
 - PHP_ERROR_INSIGHT_OUTPUT: auto|html|text|json (default: auto)
 - PHP_ERROR_INSIGHT_VERBOSE: true/false (default: false)
 - PHP_ERROR_INSIGHT_TEMPLATE: path to a custom HTML template (optional)
+- PHP_ERROR_INSIGHT_ROOT: absolute project root to compute relative file paths in the stack (optional)
+- PHP_ERROR_INSIGHT_EDITOR: editor URL template for clickable file links, using %file and %line placeholders (e.g. "vscode://file/%file:%line" or "phpstorm://open?file=%file&line=%line")
 
 Configuration examples:
 
@@ -74,6 +76,50 @@ export PHP_ERROR_INSIGHT_API_KEY=api-key
 # optional override
 # export PHP_ERROR_INSIGHT_API_URL=https://generativelanguage.googleapis.com/v1/models
 ```
+
+## Editor integration and stack trace copying
+
+When viewing the HTML error page, each stack frame now shows:
+
+- Clickable file path: if PHP_ERROR_INSIGHT_EDITOR (or Config::editorUrl) is set, file paths become links that can open your editor at the exact line.
+- Per-row copy button: a small clipboard button copies the project-relative path with line in the format `path/to/file.php:LINE`.
+- Copy title: a button in the header copies the error title (and location) to your clipboard.
+- Copy full stack: a button copies all stack lines as plain text.
+
+Configuration options:
+- PHP_ERROR_INSIGHT_ROOT: absolute project root used to compute relative paths.
+- PHP_ERROR_INSIGHT_EDITOR: URL template with placeholders %file and %line.
+  - VS Code: `vscode://file/%file:%line`
+  - PhpStorm: `phpstorm://open?file=%file&line=%line`
+
+Example (VS Code):
+
+```bash
+export PHP_ERROR_INSIGHT_ROOT=/path/to/your/project
+export PHP_ERROR_INSIGHT_EDITOR="vscode://file/%file:%line"
+```
+
+Example (PhpStorm):
+
+```bash
+export PHP_ERROR_INSIGHT_ROOT=/path/to/your/project
+export PHP_ERROR_INSIGHT_EDITOR="phpstorm://open?file=%file&line=%line"
+```
+
+Code-based configuration example:
+
+```php
+use ErrorExplainer\Config;
+
+$config = Config::fromEnvAndArray([
+    'projectRoot' => __DIR__,
+    'editorUrl' => 'vscode://file/%file:%line',
+]);
+```
+
+Notes:
+- If a file is outside the declared project root, the viewer falls back to trimming from `/vendor/` when present, or shows a normalized absolute path.
+- All clipboard features use a secure helper that falls back to a hidden textarea when the Clipboard API is not available.
 
 ## Usage (Vanilla PHP)
 In your application's bootstrap, register the handler included in the examples, or use the helper provided by the package. A minimal example is available in examples/vanilla/index.php.
