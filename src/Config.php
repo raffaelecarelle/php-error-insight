@@ -35,8 +35,9 @@ final class Config
 
     public ?string $template = null; // path to external HTML template
 
-    // New options for linking files and computing relative paths
     public ?string $projectRoot = null; // absolute project root to make file paths relative
+
+    public ?string $hostProjectRoot = null; // absolute host project root used to map container paths for editor links (Docker)
 
     public ?string $editorUrl = null; // template like "vscode://file/%file:%line" or "phpstorm://open?file=%file&line=%line"
 
@@ -85,6 +86,10 @@ final class Config
             $this->projectRoot = null !== $options['projectRoot'] ? (string) $options['projectRoot'] : null;
         }
 
+        if (array_key_exists('hostProjectRoot', $options)) {
+            $this->hostProjectRoot = null !== $options['hostProjectRoot'] ? (string) $options['hostProjectRoot'] : null;
+        }
+
         if (array_key_exists('editorUrl', $options)) {
             $this->editorUrl = null !== $options['editorUrl'] ? (string) $options['editorUrl'] : null;
         }
@@ -106,6 +111,7 @@ final class Config
             'apiUrl' => getenv('PHP_ERROR_INSIGHT_API_URL') ?: null,
             'template' => getenv('PHP_ERROR_INSIGHT_TEMPLATE') ?: null,
             'projectRoot' => getenv('PHP_ERROR_INSIGHT_ROOT') ?: null,
+            'hostProjectRoot' => getenv('PHP_ERROR_INSIGHT_HOST_ROOT') ?: null,
             'editorUrl' => getenv('PHP_ERROR_INSIGHT_EDITOR') ?: null,
         ];
         // Options override env

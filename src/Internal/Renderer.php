@@ -243,6 +243,12 @@ final class Renderer implements RendererInterface
             // collapse duplicate slashes
             return preg_replace('#/{2,}#', '/', $p) ?? $p;
         };
+        $hostProjectRoot = null !== $config->hostProjectRoot && '' !== $config->hostProjectRoot && '0' !== $config->hostProjectRoot ? $config->hostProjectRoot : (getenv('PHP_ERROR_INSIGHT_HOST_ROOT') ?: '');
+        $hostProjectRoot = (string) $hostProjectRoot;
+        if ('' !== $hostProjectRoot) {
+            $hostProjectRoot = rtrim((string) realpath($hostProjectRoot) !== '' && (string) realpath($hostProjectRoot) !== '0' ? (string) realpath($hostProjectRoot) : $hostProjectRoot, DIRECTORY_SEPARATOR);
+        }
+
         $toRel = static function (?string $abs) use ($projectRoot, $normalize): string {
             if (null === $abs || '' === $abs) {
                 return '';
@@ -260,12 +266,18 @@ final class Renderer implements RendererInterface
 
             return $rel;
         };
-        $toEditorHref = static function (string $tpl, ?string $abs, ?int $ln) use ($normalize): string {
+        $toEditorHref = static function (string $tpl, ?string $abs, ?int $ln) use ($normalize, $projectRoot, $hostProjectRoot): string {
             if ('' === $tpl || null === $abs || '' === $abs || null === $ln || 0 === $ln) {
                 return '';
             }
 
             $file = $normalize($abs);
+            $pr = $normalize($projectRoot);
+            $hr = $normalize($hostProjectRoot);
+            if ('' !== $hr && '' !== $pr && str_starts_with($file, $pr . '/')) {
+                $file = $hr . substr($file, strlen($pr));
+            }
+
             $search = ['%file', '%line'];
             $replace = [$file, (string) $ln];
 

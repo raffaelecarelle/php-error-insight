@@ -38,6 +38,7 @@ Supported environment variables:
 - PHP_ERROR_INSIGHT_VERBOSE: true/false (default: false)
 - PHP_ERROR_INSIGHT_TEMPLATE: path to a custom HTML template (optional)
 - PHP_ERROR_INSIGHT_ROOT: absolute project root to compute relative file paths in the stack (optional)
+- PHP_ERROR_INSIGHT_HOST_ROOT: absolute host project root used to map container paths when opening files via editor links (optional; useful in Docker)
 - PHP_ERROR_INSIGHT_EDITOR: editor URL template for clickable file links, using %file and %line placeholders (e.g. "vscode://file/%file:%line" or "phpstorm://open?file=%file&line=%line")
 
 Configuration examples:
@@ -103,6 +104,27 @@ Example (PhpStorm):
 
 ```bash
 export PHP_ERROR_INSIGHT_ROOT=/path/to/your/project
+export PHP_ERROR_INSIGHT_EDITOR="phpstorm://open?file=%file&line=%line"
+```
+
+Docker/containers mapping (open files in host IDE):
+
+When running the app inside a container, set PHP_ERROR_INSIGHT_ROOT to the container project root and PHP_ERROR_INSIGHT_HOST_ROOT to the corresponding host path. Editor links will be generated with the host path so your IDE can open files.
+
+Example (Docker + VS Code):
+
+```bash
+# inside container, your app root is mounted from /Users/you/project
+export PHP_ERROR_INSIGHT_ROOT=/var/www/app
+export PHP_ERROR_INSIGHT_HOST_ROOT=/Users/you/project
+export PHP_ERROR_INSIGHT_EDITOR="vscode://file/%file:%line"
+```
+
+Example (Docker + PhpStorm):
+
+```bash
+export PHP_ERROR_INSIGHT_ROOT=/var/www/app
+export PHP_ERROR_INSIGHT_HOST_ROOT=/Users/you/project
 export PHP_ERROR_INSIGHT_EDITOR="phpstorm://open?file=%file&line=%line"
 ```
 
