@@ -228,14 +228,14 @@ final class Renderer implements RendererInterface
         $trace = isset($explanation['trace']) && is_array($explanation['trace']) ? $explanation['trace'] : [];
 
         // Compute project root and editor URL template
-        $projectRoot = $config->projectRoot !== null && $config->projectRoot !== '' && $config->projectRoot !== '0' ? $config->projectRoot : (getenv('PHP_ERROR_INSIGHT_ROOT') ?: getcwd());
+        $projectRoot = null !== $config->projectRoot && '' !== $config->projectRoot && '0' !== $config->projectRoot ? $config->projectRoot : (getenv('PHP_ERROR_INSIGHT_ROOT') ?: getcwd());
         $projectRoot = (string) $projectRoot;
         if ('' !== $projectRoot) {
             $rp = realpath($projectRoot);
             $projectRoot = false !== $rp ? rtrim($rp, DIRECTORY_SEPARATOR) : rtrim($projectRoot, DIRECTORY_SEPARATOR);
         }
 
-        $editorTpl = $config->editorUrl !== null && $config->editorUrl !== '' && $config->editorUrl !== '0' ? $config->editorUrl : (getenv('PHP_ERROR_INSIGHT_EDITOR') ?: '');
+        $editorTpl = null !== $config->editorUrl && '' !== $config->editorUrl && '0' !== $config->editorUrl ? $config->editorUrl : (getenv('PHP_ERROR_INSIGHT_EDITOR') ?: '');
 
         $normalize = static function (string $p): string {
             $p = str_replace(['\\'], '/', $p);
