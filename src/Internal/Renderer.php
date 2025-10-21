@@ -227,9 +227,25 @@ final class Renderer implements RendererInterface
 
         $trace = isset($explanation['trace']) && is_array($explanation['trace']) ? $explanation['trace'] : [];
 
-        // Compute project root and editor URL template
-        $projectRoot = null !== $config->projectRoot && '' !== $config->projectRoot && '0' !== $config->projectRoot ? $config->projectRoot : (getenv('PHP_ERROR_INSIGHT_ROOT') ?: getcwd());
-        $projectRoot = (string) $projectRoot;
+        // Compute project root at runtime, do not read from env
+        $projectRoot = null !== $config->projectRoot && '' !== $config->projectRoot && '0' !== $config->projectRoot ? $config->projectRoot : '';
+        if ('' === $projectRoot) {
+            // Try to infer from the error file path or CWD by locating composer.json or .git
+            $start = '' !== $file ? $file : (getcwd() ?: '');
+            if ('' !== $start) {
+                $dir = is_file($start) ? dirname($start) : $start;
+                $limit = 15;
+                while ($limit-- > 0 && '' !== $dir && $dir !== dirname($dir)) {
+                    if (is_file($dir . DIRECTORY_SEPARATOR . 'composer.json') || is_dir($dir . DIRECTORY_SEPARATOR . '.git')) {
+                        $projectRoot = $dir;
+                        break;
+                    }
+
+                    $dir = dirname($dir);
+                }
+            }
+        }
+
         if ('' !== $projectRoot) {
             $rp = realpath($projectRoot);
             $projectRoot = false !== $rp ? rtrim($rp, DIRECTORY_SEPARATOR) : rtrim($projectRoot, DIRECTORY_SEPARATOR);
@@ -260,12 +276,24 @@ final class Renderer implements RendererInterface
 
             return $rel;
         };
-        $toEditorHref = static function (string $tpl, ?string $abs, ?int $ln) use ($normalize): string {
+        // Map container path to host path if configured (for editor links only)
+        $mapHostPath = static function (string $abs) use ($config, $normalize): string {
+            $file = $normalize($abs);
+            $c = null !== $config->containerPath && '' !== $config->containerPath && '0' !== $config->containerPath ? $normalize($config->containerPath) : '';
+            $h = null !== $config->hostPath && '' !== $config->hostPath && '0' !== $config->hostPath ? $normalize($config->hostPath) : '';
+            if ('' !== $c && '' !== $h && (str_starts_with($file, $c . '/') || $file === $c)) {
+                $file = $h . (strlen($file) > strlen($c) ? substr($file, strlen($c)) : '');
+                $file = $normalize($file);
+            }
+
+            return $file;
+        };
+        $toEditorHref = static function (string $tpl, ?string $abs, ?int $ln) use ($mapHostPath): string {
             if ('' === $tpl || null === $abs || '' === $abs || null === $ln || 0 === $ln) {
                 return '';
             }
 
-            $file = $normalize($abs);
+            $file = $mapHostPath($abs);
             $search = ['%file', '%line'];
             $replace = [$file, (string) $ln];
 

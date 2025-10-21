@@ -40,6 +40,11 @@ final class Config
 
     public ?string $editorUrl = null; // template like "vscode://file/%file:%line" or "phpstorm://open?file=%file&line=%line"
 
+    // Optional container-to-host path mapping for editor links
+    public ?string $containerPath = null; // e.g., "/app"
+
+    public ?string $hostPath = null;      // e.g., "/Users/me/project"
+
     /**
      * @param array<string, mixed> $options
      */
@@ -88,6 +93,14 @@ final class Config
         if (array_key_exists('editorUrl', $options)) {
             $this->editorUrl = null !== $options['editorUrl'] ? (string) $options['editorUrl'] : null;
         }
+
+        if (array_key_exists('containerPath', $options)) {
+            $this->containerPath = null !== $options['containerPath'] ? rtrim((string) $options['containerPath'], '/\\') : null;
+        }
+
+        if (array_key_exists('hostPath', $options)) {
+            $this->hostPath = null !== $options['hostPath'] ? rtrim((string) $options['hostPath'], '/\\') : null;
+        }
     }
 
     /**
@@ -105,9 +118,39 @@ final class Config
             'apiKey' => getenv('PHP_ERROR_INSIGHT_API_KEY') ?: null,
             'apiUrl' => getenv('PHP_ERROR_INSIGHT_API_URL') ?: null,
             'template' => getenv('PHP_ERROR_INSIGHT_TEMPLATE') ?: null,
-            'projectRoot' => getenv('PHP_ERROR_INSIGHT_ROOT') ?: null,
+            // projectRoot is no longer loaded from env; leave null and compute at runtime
+            'projectRoot' => null,
             'editorUrl' => getenv('PHP_ERROR_INSIGHT_EDITOR') ?: null,
+            // Back-compat: if new mapping is not provided, fallback to legacy envs
+            'containerPath' => null,
+            'hostPath' => null,
         ];
+
+        // Parse new single mapping env var: HOST:CONTAINER
+        $mapping = getenv('PHP_ERROR_INSIGHT_PROJECT_VOLUME_MAPPING');
+        if (false !== $mapping && '' !== $mapping) {
+            $mapping = (string) $mapping;
+            // Allow values like "/host:/container"; split on first ':' only
+            $pos = strpos($mapping, ':');
+            if (false !== $pos) {
+                $host = substr($mapping, 0, $pos);
+                $cont = substr($mapping, $pos + 1);
+                $env['hostPath'] = '' !== $host ? rtrim($host, '\\/') : null;
+                $env['containerPath'] = '' !== $cont ? rtrim($cont, '\\/') : null;
+            }
+        } else {
+            // Legacy envs support (will be removed in a future major)
+            $legacyContainer = getenv('PHP_ERROR_INSIGHT_CONTAINER_PATH') ?: null;
+            $legacyHost = getenv('PHP_ERROR_INSIGHT_HOST_PATH') ?: null;
+            if ('' !== $legacyContainer) {
+                $env['containerPath'] = rtrim((string) $legacyContainer, '\\/');
+            }
+
+            if ('' !== $legacyHost) {
+                $env['hostPath'] = rtrim((string) $legacyHost, '\\/');
+            }
+        }
+
         // Options override env
         $merged = array_merge($env, $options);
 

@@ -25,7 +25,7 @@ final class ConfigTest extends TestCase
 
         $cfg = Config::fromEnvAndArray();
 
-        $this->assertSame($root, $cfg->projectRoot);
+        $this->assertNull($cfg->projectRoot);
         $this->assertSame($editor, $cfg->editorUrl);
     }
 
