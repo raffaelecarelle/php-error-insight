@@ -37,8 +37,8 @@ Supported environment variables:
 - PHP_ERROR_INSIGHT_OUTPUT: auto|html|text|json (default: auto)
 - PHP_ERROR_INSIGHT_VERBOSE: true/false (default: false)
 - PHP_ERROR_INSIGHT_TEMPLATE: path to a custom HTML template (optional)
+- PHP_ERROR_INSIGHT_ROOT: absolute project root to compute relative file paths in the stack (optional)
 - PHP_ERROR_INSIGHT_EDITOR: editor URL template for clickable file links, using %file and %line placeholders (e.g. "vscode://file/%file:%line" or "phpstorm://open?file=%file&line=%line")
-- PHP_ERROR_INSIGHT_PROJECT_VOLUME_MAPPING: map host path to container path for editor links only, format HOST:CONTAINER (e.g. "/Users/you/project:/var/www")
 
 Configuration examples:
 
@@ -87,7 +87,7 @@ When viewing the HTML error page, each stack frame now shows:
 - Copy full stack: a button copies all stack lines as plain text.
 
 Configuration options:
-- Project root: computed automatically at runtime when possible (by looking for composer.json or .git up from the error file or CWD). You can still set it via code using Config::projectRoot if needed.
+- PHP_ERROR_INSIGHT_ROOT: absolute project root used to compute relative paths.
 - PHP_ERROR_INSIGHT_EDITOR: URL template with placeholders %file and %line.
   - VS Code: `vscode://file/%file:%line`
   - PhpStorm: `phpstorm://open?file=%file&line=%line`
@@ -95,24 +95,15 @@ Configuration options:
 Example (VS Code):
 
 ```bash
+export PHP_ERROR_INSIGHT_ROOT=/path/to/your/project
 export PHP_ERROR_INSIGHT_EDITOR="vscode://file/%file:%line"
 ```
 
 Example (PhpStorm):
 
 ```bash
+export PHP_ERROR_INSIGHT_ROOT=/path/to/your/project
 export PHP_ERROR_INSIGHT_EDITOR="phpstorm://open?file=%file&line=%line"
-```
-
-Container/host path mapping for editor links:
-
-If you run PHP inside a container and your editor runs on the host, you can map the container path to the host path for clickable links. Only editor links are rewritten; code excerpts and relative display still use the container filesystem.
-
-```bash
-# Host project path is /Users/you/project, container mount point is /var/www
-export PHP_ERROR_INSIGHT_PROJECT_VOLUME_MAPPING="/Users/you/project:/var/www"
-# Editor link template
-export PHP_ERROR_INSIGHT_EDITOR="vscode://file/%file:%line"
 ```
 
 Code-based configuration example:
