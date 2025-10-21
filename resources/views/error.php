@@ -218,10 +218,29 @@ $dumper = new \Symfony\Component\VarDumper\Dumper\HtmlDumper();
                 <?php foreach ($frames as $f): ?>
                     <?php $frameKey = ($f['idx'] ?? '') . '|' . ($f['loc'] ?? '') . '|' . ($f['sig'] ?? ''); ?>
                     <li class="bg-white dark:bg-gray-800 rounded shadow p-3" data-id="<?= $e($frameKey) ?>" data-search="<?= $e(strtolower(trim(($f['idx'] ?? '') . ' ' . ($f['loc'] ?? '') . ' ' . ($f['sig'] ?? '')))) ?>">
-                        <button class="w-full text-left flex justify-between items-center toggle-frame" aria-expanded="false" aria-controls="details-<?= $e($f['idx']) ?>">
-                            <span class="trace-line">#<?= $e($f['idx']) ?> <?= $e($f['loc'] ?? '') ?> – <code><?= $e($f['sig'] ?? '') ?></code></span>
-                            <span class="indicator" aria-hidden="true">+</span>
-                        </button>
+                        <div class="w-full flex justify-between items-center gap-2">
+                            <button class="flex-1 text-left toggle-frame" aria-expanded="false" aria-controls="details-<?= $e($f['idx']) ?>">
+                                <span class="trace-line">
+                                    #<?= $e($f['idx']) ?>
+                                    <?php $rel = $f['rel'] ?? ''; $ln = (int)($f['line'] ?? 0); $href = $f['editorHref'] ?? ''; ?>
+                                    <?php if ($rel !== ''): ?>
+                                        <?php if ($href !== ''): ?>
+                                            <a class="underline text-blue-600 dark:text-blue-400" href="<?= $e($href) ?>">
+                                                <?= $e($rel) ?>
+                                            </a>:<?= $e((string)$ln) ?>
+                                        <?php else: ?>
+                                            <?= $e($rel) ?>:<?= $e((string)$ln) ?>
+                                        <?php endif; ?>
+                                    <?php else: ?>
+                                        <?= $e($f['loc'] ?? '') ?>
+                                    <?php endif; ?>
+                                    – <code><?= $e($f['sig'] ?? '') ?></code>
+                                </span>
+                                <span class="indicator" aria-hidden="true">+</span>
+                            </button>
+                            <?php $copyVal = ($rel !== '' && $ln) ? ($rel . ':' . $ln) : ($f['loc'] ?? ''); ?>
+                            <button class="copy-rel text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700" data-copy="<?= $e($copyVal) ?>" title="Copy path:line">📋</button>
+                        </div>
                         <div id="details-<?= $e($f['idx']) ?>" class="frame-details hidden mt-2 text-sm bg-gray-50 dark:bg-gray-700 p-2 rounded" data-sig="<?= $e($f['sig'] ?? '') ?>">
                             <p><strong><?= $e($labels['labels']['code'] ?? 'Code') ?>:</strong></p>
                             <div class="code-view text-xs font-mono bg-white text-gray-900 rounded p-2 overflow-auto dark:bg-white dark:text-gray-900">
@@ -384,13 +403,35 @@ $dumper = new \Symfony\Component\VarDumper\Dumper\HtmlDumper();
         if (searchInput) searchInput.addEventListener('input', applyFilter);
         if (clearBtn) clearBtn.addEventListener('click', () => { if (searchInput) { searchInput.value = ''; applyFilter(); searchInput.focus(); } });
 
+        // Clipboard helper with fallback for non-secure contexts
+        function copyToClipboard(text){
+            try {
+                if (navigator.clipboard && window.isSecureContext) {
+                    return navigator.clipboard.writeText(text);
+                }
+            } catch (e) {}
+            return new Promise(function(resolve){
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                // Avoid scrolling to bottom
+                ta.style.position = 'fixed';
+                ta.style.top = '-1000px';
+                document.body.appendChild(ta);
+                ta.focus();
+                ta.select();
+                try { document.execCommand('copy'); } catch (e) {}
+                document.body.removeChild(ta);
+                resolve();
+            });
+        }
+
         // Copy title
         const copyBtn = qs('#copyBtn');
         if (copyBtn) {
             copyBtn.addEventListener('click', () => {
                 const text = <?= $copyText ?>;
                 const btnText = '<?= $e($labels['headings']['copy'] ?? 'Copy to clipboard') ?>';
-                navigator.clipboard.writeText(text).then(() => {
+                copyToClipboard(text).then(() => {
                     copyBtn.textContent = '<?= $e($labels['headings']['copied'] ?? 'Copied!') ?>';
                     setTimeout(() => { copyBtn.textContent = btnText; }, 2000);
                 });
@@ -403,7 +444,7 @@ $dumper = new \Symfony\Component\VarDumper\Dumper\HtmlDumper();
             copyStackBtn.addEventListener('click', () => {
                 const lines = qsa('#traceList .trace-line').map(n => n.textContent.trim());
                 const stackText = lines.join('\n');
-                navigator.clipboard.writeText(stackText).then(() => {
+                copyToClipboard(stackText).then(() => {
                     const prev = copyStackBtn.textContent;
                     copyStackBtn.textContent = '<?= $e($labels['headings']['copied'] ?? 'Copied!') ?>';
                     setTimeout(() => { copyStackBtn.textContent = prev; }, 2000);
@@ -411,13 +452,27 @@ $dumper = new \Symfony\Component\VarDumper\Dumper\HtmlDumper();
             });
         }
 
+        // Per-frame copy of relative path:line
+        qsa('#traceList .copy-rel').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const val = btn.getAttribute('data-copy') || '';
+                if (!val) return;
+                copyToClipboard(val).then(() => {
+                    const prev = btn.textContent;
+                    btn.textContent = '✓';
+                    setTimeout(() => { btn.textContent = prev; }, 1200);
+                });
+            });
+        });
+
         // Copy AI details
         const copyDetailsBtn = qs('#copyDetailsBtn');
         const detailsText = qs('#detailsText');
         if (copyDetailsBtn && detailsText) {
             copyDetailsBtn.addEventListener('click', () => {
                 const txt = detailsText.textContent || '';
-                navigator.clipboard.writeText(txt).then(() => {
+                copyToClipboard(txt).then(() => {
                     const prev = copyDetailsBtn.textContent;
                     copyDetailsBtn.textContent = '<?= $e($labels['headings']['copied'] ?? 'Copied!') ?>';
                     setTimeout(() => { copyDetailsBtn.textContent = prev; }, 2000);

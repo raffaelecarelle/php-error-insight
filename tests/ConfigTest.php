@@ -9,36 +9,37 @@ use PHPUnit\Framework\TestCase;
 
 final class ConfigTest extends TestCase
 {
-    public function testFromEnvAndArrayMergesProperly(): void
+    protected function tearDown(): void
     {
-        $prevBackend = getenv('PHP_ERROR_INSIGHT_BACKEND');
-        $prevLang = getenv('PHP_ERROR_INSIGHT_LANG');
-        putenv('PHP_ERROR_INSIGHT_BACKEND=api');
-        putenv('PHP_ERROR_INSIGHT_LANG=en');
+        // Cleanup env overrides after each test
+        putenv('PHP_ERROR_INSIGHT_ROOT');
+        putenv('PHP_ERROR_INSIGHT_EDITOR');
+    }
 
-        try {
-            $cfg = Config::fromEnvAndArray([
-                'backend' => 'none', // override env
-                'language' => 'it',  // override env
-                'verbose' => true,
-            ]);
+    public function testFromEnvAndArrayLoadsProjectRootAndEditorUrlFromEnv(): void
+    {
+        $root = __DIR__;
+        $editor = 'vscode://file/%file:%line';
+        putenv('PHP_ERROR_INSIGHT_ROOT=' . $root);
+        putenv('PHP_ERROR_INSIGHT_EDITOR=' . $editor);
 
-            $this->assertSame('none', $cfg->backend);
-            $this->assertSame('it', $cfg->language);
-            $this->assertTrue($cfg->verbose);
-        } finally {
-            // restore env
-            if (false === $prevBackend) {
-                putenv('PHP_ERROR_INSIGHT_BACKEND');
-            } else {
-                putenv('PHP_ERROR_INSIGHT_BACKEND=' . $prevBackend);
-            }
+        $cfg = Config::fromEnvAndArray();
 
-            if (false === $prevLang) {
-                putenv('PHP_ERROR_INSIGHT_LANG');
-            } else {
-                putenv('PHP_ERROR_INSIGHT_LANG=' . $prevLang);
-            }
-        }
+        $this->assertSame($root, $cfg->projectRoot);
+        $this->assertSame($editor, $cfg->editorUrl);
+    }
+
+    public function testArrayOptionsOverrideEnv(): void
+    {
+        putenv('PHP_ERROR_INSIGHT_ROOT=/env/root');
+        putenv('PHP_ERROR_INSIGHT_EDITOR=phpstorm://open?file=%file&line=%line');
+
+        $cfg = Config::fromEnvAndArray([
+            'projectRoot' => '/custom/root',
+            'editorUrl' => 'vscode://file/%file:%line',
+        ]);
+
+        $this->assertSame('/custom/root', $cfg->projectRoot);
+        $this->assertSame('vscode://file/%file:%line', $cfg->editorUrl);
     }
 }

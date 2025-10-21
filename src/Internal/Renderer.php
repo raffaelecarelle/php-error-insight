@@ -16,6 +16,7 @@ use function is_string;
 use function sprintf;
 use function strlen;
 
+use const DIRECTORY_SEPARATOR;
 use const ENT_QUOTES;
 use const EXTR_SKIP;
 use const FILE_IGNORE_NEW_LINES;
@@ -225,6 +226,52 @@ final class Renderer implements RendererInterface
         $suggestions = isset($explanation['suggestions']) && is_array($explanation['suggestions']) ? $explanation['suggestions'] : [];
 
         $trace = isset($explanation['trace']) && is_array($explanation['trace']) ? $explanation['trace'] : [];
+
+        // Compute project root and editor URL template
+        $projectRoot = $config->projectRoot !== null && $config->projectRoot !== '' && $config->projectRoot !== '0' ? $config->projectRoot : (getenv('PHP_ERROR_INSIGHT_ROOT') ?: getcwd());
+        $projectRoot = (string) $projectRoot;
+        if ('' !== $projectRoot) {
+            $rp = realpath($projectRoot);
+            $projectRoot = false !== $rp ? rtrim($rp, DIRECTORY_SEPARATOR) : rtrim($projectRoot, DIRECTORY_SEPARATOR);
+        }
+
+        $editorTpl = $config->editorUrl !== null && $config->editorUrl !== '' && $config->editorUrl !== '0' ? $config->editorUrl : (getenv('PHP_ERROR_INSIGHT_EDITOR') ?: '');
+
+        $normalize = static function (string $p): string {
+            $p = str_replace(['\\'], '/', $p);
+
+            // collapse duplicate slashes
+            return preg_replace('#/{2,}#', '/', $p) ?? $p;
+        };
+        $toRel = static function (?string $abs) use ($projectRoot, $normalize): string {
+            if (null === $abs || '' === $abs) {
+                return '';
+            }
+
+            $a = $normalize($abs);
+            $root = $normalize($projectRoot);
+            if ('' !== $root && str_starts_with($a, $root . '/')) {
+                $rel = substr($a, strlen($root) + 1);
+            } else {
+                // try vendor truncation if path contains "/vendor/"
+                $pos = strpos($a, '/vendor/');
+                $rel = false !== $pos ? substr($a, $pos + 1) : ltrim($a, '/');
+            }
+
+            return $rel;
+        };
+        $toEditorHref = static function (string $tpl, ?string $abs, ?int $ln) use ($normalize): string {
+            if ('' === $tpl || null === $abs || '' === $abs || null === $ln || 0 === $ln) {
+                return '';
+            }
+
+            $file = $normalize($abs);
+            $search = ['%file', '%line'];
+            $replace = [$file, (string) $ln];
+
+            return str_replace($search, $replace, $tpl);
+        };
+
         $frames = [];
         $idx = 0;
         foreach ($trace as $frame) {
@@ -239,6 +286,10 @@ final class Renderer implements RendererInterface
                 'idx' => $idx,
                 'sig' => $sig,
                 'loc' => $loc,
+                'file' => $ff,
+                'line' => $ll,
+                'rel' => $toRel($ff),
+                'editorHref' => $toEditorHref((string) $editorTpl, $ff, $ll),
                 'codeHtml' => $this->renderCodeExcerpt($ff, $ll),
             ];
             ++$idx;
@@ -263,10 +314,16 @@ final class Renderer implements RendererInterface
         // Attach full state to each frame and prepend origin as frame #0 (so it's part of the stack)
         $framesOut = [];
         if ('' !== $where) {
+            $ff = $file;
+            $ll = (int) $line;
             $framesOut[] = [
                 'idx' => 0,
                 'sig' => '(origin)',
                 'loc' => $where,
+                'file' => $ff,
+                'line' => $ll,
+                'rel' => $toRel($ff),
+                'editorHref' => $toEditorHref((string) $editorTpl, $ff, $ll),
                 'codeHtml' => $this->renderCodeExcerpt($file, (int) $line),
             ];
         }
@@ -290,6 +347,8 @@ final class Renderer implements RendererInterface
             'suggestions' => $suggestions,
             'frames' => $framesOut,
             'labels' => $labels,
+            'projectRoot' => $projectRoot,
+            'editorUrl' => (string) $editorTpl,
         ];
     }
 

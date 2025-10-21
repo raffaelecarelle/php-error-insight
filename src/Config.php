@@ -35,6 +35,11 @@ final class Config
 
     public ?string $template = null; // path to external HTML template
 
+    // New options for linking files and computing relative paths
+    public ?string $projectRoot = null; // absolute project root to make file paths relative
+
+    public ?string $editorUrl = null; // template like "vscode://file/%file:%line" or "phpstorm://open?file=%file&line=%line"
+
     /**
      * @param array<string, mixed> $options
      */
@@ -75,6 +80,14 @@ final class Config
         if (array_key_exists('template', $options)) {
             $this->template = null !== $options['template'] ? (string) $options['template'] : null;
         }
+
+        if (array_key_exists('projectRoot', $options)) {
+            $this->projectRoot = null !== $options['projectRoot'] ? (string) $options['projectRoot'] : null;
+        }
+
+        if (array_key_exists('editorUrl', $options)) {
+            $this->editorUrl = null !== $options['editorUrl'] ? (string) $options['editorUrl'] : null;
+        }
     }
 
     /**
@@ -92,6 +105,8 @@ final class Config
             'apiKey' => getenv('PHP_ERROR_INSIGHT_API_KEY') ?: null,
             'apiUrl' => getenv('PHP_ERROR_INSIGHT_API_URL') ?: null,
             'template' => getenv('PHP_ERROR_INSIGHT_TEMPLATE') ?: null,
+            'projectRoot' => getenv('PHP_ERROR_INSIGHT_ROOT') ?: null,
+            'editorUrl' => getenv('PHP_ERROR_INSIGHT_EDITOR') ?: null,
         ];
         // Options override env
         $merged = array_merge($env, $options);
