@@ -6,6 +6,7 @@ namespace ErrorExplainer\Internal;
 
 use ErrorExplainer\Config;
 use ErrorExplainer\Contracts\RendererInterface;
+use RuntimeException;
 
 use function count;
 use function dirname;
@@ -168,26 +169,7 @@ final class Renderer implements RendererInterface
         $data = $this->buildViewData($explanation, $config);
 
         if (!is_file($template)) {
-            // Safe minimal fallback if template is missing
-            $esc = static fn ($v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
-            echo '<!DOCTYPE html><html lang="' . $esc($data['docLang']) . '"><head><meta charset="utf-8"><title>' . $esc($data['title']) . '</title></head><body style="font-family:system-ui;padding:24px">';
-            echo '<h1 style="margin:0 0 4px 0">' . $esc($data['title']) . '</h1>';
-            if (!empty($data['subtitle'])) {
-                echo '<div style="color:#6b7280;font-size:12px;margin:0 0 8px 0">' . $esc($data['subtitle']) . '</div>';
-            }
-
-            echo '<div style="color:#6b7280;font-size:12px">' . $esc($data['severity']) . '</div>';
-            if ('' !== $data['where']) {
-                echo '<div style="margin:8px 0;font-family:monospace">' . $esc($data['where']) . '</div>';
-            }
-
-            if ('' !== $data['summary']) {
-                echo '<p>' . $esc($data['summary']) . '</p>';
-            }
-
-            echo '</body></html>';
-
-            return;
+            throw new RuntimeException(sprintf('Template file "%s" not found', $template));
         }
 
         // Isolated scope include, expose $data keys as variables to the template
@@ -246,7 +228,7 @@ final class Renderer implements RendererInterface
         $hostProjectRoot = null !== $config->hostProjectRoot && '' !== $config->hostProjectRoot && '0' !== $config->hostProjectRoot ? $config->hostProjectRoot : (getenv('PHP_ERROR_INSIGHT_HOST_ROOT') ?: '');
         $hostProjectRoot = (string) $hostProjectRoot;
         if ('' !== $hostProjectRoot) {
-            $hostProjectRoot = rtrim((string) realpath($hostProjectRoot) !== '' && (string) realpath($hostProjectRoot) !== '0' ? (string) realpath($hostProjectRoot) : $hostProjectRoot, DIRECTORY_SEPARATOR);
+            $hostProjectRoot = rtrim('' !== (string) realpath($hostProjectRoot) && '0' !== (string) realpath($hostProjectRoot) ? (string) realpath($hostProjectRoot) : $hostProjectRoot, DIRECTORY_SEPARATOR);
         }
 
         $toRel = static function (?string $abs) use ($projectRoot, $normalize): string {
@@ -360,7 +342,8 @@ final class Renderer implements RendererInterface
             'frames' => $framesOut,
             'labels' => $labels,
             'projectRoot' => $projectRoot,
-            'editorUrl' => (string) $editorTpl,
+            'editorUrl' => (string) $config->editorUrl,
+            'aiModel' => (string) $config->model,
         ];
     }
 

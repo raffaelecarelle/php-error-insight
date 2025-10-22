@@ -1,507 +1,936 @@
 <?php
-// Dynamic template based on attached HTML; wired to Renderer::buildViewData variables
-$e = static function ($v): string { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); };
-$docLang = $docLang ?? 'it';
-$title = $title ?? 'PHP Exception Viewer';
+// PHP Error Insight — Error View (templated from docs/index.html)
+// Uses data from Renderer::buildViewData
+
+$e = static function ($v): string {
+    return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
+};
+$docLang = $docLang ?? 'en';
+$title = $title ?? 'PHP Error Insight';
 $subtitle = $subtitle ?? '';
 $where = $where ?? '';
-$verbose = $verbose ?? false;
+$severity = $severity ?? 'Error';
+$summary = $summary ?? '';
 $details = $details ?? '';
 $suggestions = $suggestions ?? [];
 $frames = $frames ?? [];
 $labels = $labels ?? ['headings' => [], 'labels' => []];
-$copyText = json_encode(trim(($title !== '' ? $title : 'Error') . ($where !== '' ? ' in ' . $where : '')), JSON_UNESCAPED_UNICODE);
+$editorUrl = $editorUrl ?? '';
+$verbose = $verbose ?? '';
+$aiModel = $aiModel ?? '';
+$fullTitle = trim(($title !== '' ? $title : 'Error') . ($where !== '' ? ' in ' . $where : ''));
+$copyText = json_encode($fullTitle, JSON_UNESCAPED_UNICODE);
 
-$cloner = new \Symfony\Component\VarDumper\Cloner\VarCloner();
-$dumper = new \Symfony\Component\VarDumper\Dumper\HtmlDumper();
+// pick first available editor link (for toolbar action)
+$firstEditor = '';
+foreach ($frames as $f) {
+    if (!empty($f['editorHref'])) {
+        $firstEditor = (string)$f['editorHref'];
+        break;
+    }
+}
 ?>
-<!DOCTYPE html>
-<html lang="<?= $e($docLang) ?>">
+<!doctype html>
+<html lang="<?= $e($docLang) ?>" class="dark">
 <head>
-    <meta charset="UTF-8">
-    <title>PHP Exception Viewer</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        // Tailwind config + early theme initialization respecting user preference
-        tailwind.config = { darkMode: 'class' };
-        (function(){
-            try {
-                var saved = localStorage.getItem('errorView.theme');
-                var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-                var theme = saved || (prefersDark ? 'dark' : 'light');
-                if (theme === 'dark') document.documentElement.classList.add('dark');
-            } catch (e) { /* no-op */ }
-        })();
-    </script>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title><?= $e($fullTitle) ?></title>
     <style>
-        /* Symfony VarDumper overrides to match the error page (Tailwind-based) */
-        .sf-dump, .sf-dump pre {
-            background-color: #111827 !important; /* gray-900 */
-            color: #e5e7eb !important; /* gray-200 */
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
-            font-size: 0.75rem !important; /* text-xs */
-            line-height: 1.25rem !important;
-            border-radius: 0.5rem !important; /* rounded */
-            padding: 0.5rem 0.75rem !important; /* p-2 px-3 */
+        /* PHP Error Insight — Professional MVP Styles */
+        :root {
+            --bg: #0f1216;
+            --panel: #161b22;
+            --panel-2: #0d1117;
+            --text: #e6edf3;
+            --muted: #9fb0c0;
+            --primary: #0ea5e9; /* cyan-500 */
+            --primary-600: #0284c7;
+            --accent: #f59e0b; /* amber */
+            --danger: #ef4444; /* red */
+            --ok: #22c55e; /* green */
+            --border: #263241;
+            --code-bg: #0b0f14;
+            --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            --sans: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--sans);
+        }
+
+        .wrapper {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .header {
+            background: linear-gradient(180deg, rgba(14, 165, 233, 0.12), rgba(14, 165, 233, 0) 60%);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px 20px 12px;
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .badge {
+            font-weight: 600;
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: var(--panel);
+            color: var(--muted);
+        }
+
+        .badge.severity {
+            background: rgba(239, 68, 68, .12);
+            color: #fecaca;
+            border-color: #7f1d1d;
+        }
+
+        .title {
+            font-size: 20px;
+            font-weight: 700;
+            line-height: 1.3;
+            margin: 6px 0 0;
+        }
+
+        .subtitle {
+            color: var(--muted);
+            font-size: 13px;
+            margin-top: 4px;
+        }
+
+        .location {
+            color: var(--muted);
+            font-family: var(--mono);
+            font-size: 12px;
+            margin-top: 6px;
+        }
+
+        .toolbar {
+            margin-top: 14px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .button {
+            appearance: none;
+            border: 1px solid var(--border);
+            background: var(--panel);
+            color: var(--text);
+            padding: 8px 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .button:hover {
+            background: #1f2630;
+            border-color: #35506b;
+        }
+
+        .button.primary {
+            background: var(--primary);
+            border-color: var(--primary-600);
+            color: #001018;
+            font-weight: 600;
+        }
+
+        .button.primary:hover {
+            background: var(--primary-600);
+        }
+
+        .grid {
+            margin-top: 18px;
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            gap: 16px;
+        }
+
+        @media (max-width: 980px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--panel-2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .card h3 {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: .02em;
+            text-transform: uppercase;
+            color: var(--muted);
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+            background: var(--panel);
+        }
+
+        .card .content {
+            padding: 12px 14px;
+        }
+
+        .card .content p {
+            margin: 0 0 10px;
+            color: var(--text);
+            opacity: .95;
+        }
+
+        /* Toolbar inside cards (e.g., Stack trace actions) */
+        .card > .toolbar {
+            padding: 8px 12px 0;
+        }
+
+        .stack {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .frame {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--panel);
+            overflow: hidden;
+        }
+
+        .frame-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 10px 12px;
+            cursor: pointer;
+        }
+
+        .frame-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .sig {
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .loc {
+            color: var(--muted);
+            font-family: var(--mono);
+            font-size: 12px;
+        }
+
+        .row-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .code {
+            background: var(--code-bg);
+            border-top: 1px solid var(--border);
+            font-family: var(--mono);
+            font-size: 12px;
             overflow: auto;
         }
-        .sf-dump { box-shadow: none !important; border: 1px solid rgba(255,255,255,0.08) !important; }
-        .sf-dump a { color: #93c5fd !important; text-decoration: underline; }
-        .sf-dump .sf-dump-num { color: #60a5fa !important; } /* blue-400 */
-        .sf-dump .sf-dump-str { color: #34d399 !important; } /* emerald-400 */
-        .sf-dump .sf-dump-key { color: #f472b6 !important; } /* pink-400 */
-        .sf-dump .sf-dump-note { color: #fbbf24 !important; } /* amber-300 */
-        .sf-dump .sf-dump-ref { color: #a78bfa !important; } /* violet-400 */
-        .sf-dump .sf-dump-meta { color: #9ca3af !important; } /* gray-400 */
-        .sf-dump .sf-dump-public { color: #10b981 !important; } /* emerald-500 */
-        .sf-dump .sf-dump-protected { color: #f59e0b !important; } /* amber-500 */
-        .sf-dump .sf-dump-private { color: #ef4444 !important; } /* red-500 */
-        .sf-dump .sf-dump-index { color: #93c5fd !important; } /* blue-300 */
-        .sf-dump .sf-dump-ellipsis { color: #9ca3af !important; }
-        .sf-dump .sf-dump-toggle { color: #e5e7eb !important; text-decoration: none !important; }
 
-        /* Light mode variants */
-        :root:not(.dark) .sf-dump, :root:not(.dark) .sf-dump pre {
-            background-color: #f3f4f6 !important; /* gray-100 */
-            color: #111827 !important; /* gray-900 */
-            border: 1px solid rgba(0,0,0,0.06) !important;
-        }
-        :root:not(.dark) .sf-dump a { color: #1d4ed8 !important; }
-        :root:not(.dark) .sf-dump .sf-dump-num { color: #1d4ed8 !important; } /* blue-700 */
-        :root:not(.dark) .sf-dump .sf-dump-str { color: #047857 !important; } /* green-700 */
-        :root:not(.dark) .sf-dump .sf-dump-key { color: #9d174d !important; } /* pink-800 */
-        :root:not(.dark) .sf-dump .sf-dump-note { color: #92400e !important; } /* amber-700 */
-        :root:not(.dark) .sf-dump .sf-dump-ref { color: #6d28d9 !important; } /* violet-700 */
-        :root:not(.dark) .sf-dump .sf-dump-meta { color: #4b5563 !important; } /* gray-600 */
-
-        /* When a dump is wrapped in a <pre>, make the inner sf-dump appear as the display block */
-        pre > .sf-dump {
-            background: transparent !important;
-            padding: 10px !important;
-            border: 0 !important;
+        .code pre {
+            margin: 0;
+            padding: 12px;
+            line-height: 1.45;
         }
 
-        pre.sf-dump, pre.sf-dump .sf-dump-default {
-            background: transparent !important;
+        .code .line {
+            display: flex;
+            gap: 12px;
         }
 
-        /* Highlight class for variables/parameters */
-        .hl-var { background: rgba(234,179,8,0.35); color: inherit; border-radius: 0.25rem; padding: 0 0.1rem; }
-        :root.dark .hl-var { background: rgba(234,179,8,0.35); }
-
-        /* Reduced motion */
-        @media (prefers-reduced-motion: reduce) {
-            * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
+        .code .gutter {
+            width: 40px;
+            text-align: right;
+            color: #6b7d90;
+            opacity: .75;
+            user-select: none;
         }
 
-        /* Code excerpt styles */
-        .code-excerpt {
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-            font-size: 0.875rem;
-            line-height: 1.25rem;
-            border-radius: 0.5rem;
+        .code .src {
+            white-space: pre;
+            color: #dbe7f3;
+        }
+
+        .code .hl {
+            background: rgba(14, 165, 233, 0.12);
+        }
+
+        .kv {
+            display: grid;
+            grid-template-columns: 180px 1fr;
+            gap: 6px 12px;
+            font-family: var(--mono);
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .kv .k {
+            color: #9fb8cc;
+        }
+
+        .kv .v {
+            color: #dbe7f3;
+        }
+
+        .suggestions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .suggestion {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--panel);
+            padding: 10px 12px;
+        }
+
+        .suggestion .title {
+            font-size: 14px;
+            margin: 0 0 6px;
+        }
+
+        .suggestion p {
+            margin: 0;
+            color: var(--text);
+            opacity: .95;
+        }
+
+        .footer {
+            margin: 22px 0;
+            color: var(--muted);
+            font-size: 12px;
+            text-align: center;
+        }
+
+        /* Light theme */
+        .light {
+            --bg: #f5f7fa;
+            --panel: #ffffff;
+            --panel-2: #ffffff;
+            --text: #0b1220;
+            --muted: #334155;
+            --border: #94a3b8;
+            --code-bg: #ffffff;
+        }
+
+        .light .badge.severity {
+            background: #fee2e2;
+            color: #991b1b;
+            border-color: #fecaca;
+        }
+
+        .light .button {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+
+        .light .button:hover {
+            background: #e2e8f0;
+            border-color: #94a3b8;
+        }
+
+        /* Collapsible frames */
+        .frame.collapsed .code {
+            display: none;
+        }
+
+        .chev {
+            display: inline-block;
+            transform: rotate(90deg);
+            transition: transform .15s ease;
+            margin-right: 6px;
+            color: var(--muted);
+        }
+
+        .frame.collapsed .chev {
+            transform: rotate(0deg);
+        }
+
+        /* Higher contrast for light theme section header and locations */
+        .light .card h3 {
+            background: #f8fafc;
+            color: #334155;
+        }
+
+        .light .loc {
+            color: #334155;
+        }
+
+        /* Copy feedback */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
             overflow: hidden;
-            border: 1px solid rgba(0,0,0,0.06);
-            background: #f9fafb;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
+            border: 0;
         }
-        
-        .dark .code-excerpt {
-            border: 1px solid rgba(255,255,255,0.08);
-            background: #1f2937;
+
+        @keyframes pulseCopied {
+            0% {
+                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5);
+            }
+            100% {
+                box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
+            }
         }
-        
+
+        .button.copied {
+            background: var(--ok);
+            border-color: #16a34a;
+            color: #04130a;
+            animation: pulseCopied .6s ease;
+        }
+
+        /* Light theme code and table contrast tweaks */
+        .light .code {
+            background: #ffffff;
+        }
+
+        .light .code .src {
+            color: #0b1220;
+        }
+
+        .light .code .gutter {
+            color: #64748b;
+        }
+
+        .light .code .hl {
+            background: rgba(14, 165, 233, 0.18);
+        }
+
+        .light .kv {
+            color: #334155;
+        }
+
+        .light .kv .k {
+            color: #475569;
+        }
+
+        .light .kv .v {
+            color: #0b1220;
+        }
+
+        /* Extra styles for Renderer::renderCodeExcerpt() output */
+        .code-excerpt {
+            border-top: 1px solid var(--border);
+        }
+
         .code-table {
             width: 100%;
             border-collapse: collapse;
-            margin: 0;
-        }
-        
-        .code-table td {
-            padding: 0.25rem 0.5rem;
-            vertical-align: top;
-            border: none;
-        }
-        
-        .line-number {
-            background: #f3f4f6;
-            color: #6b7280;
-            text-align: right;
-            user-select: none;
-            width: auto;
-            white-space: nowrap;
-            font-weight: 500;
-            border-right: 1px solid rgba(0,0,0,0.1);
-        }
-        
-        .dark .line-number {
-            background: #374151;
-            color: #9ca3af;
-            border-right: 1px solid rgba(255,255,255,0.1);
-        }
-        
-        .code-content {
-            background: #ffffff;
-            color: #111827;
-            padding-left: 1rem;
-            width: 100%;
-        }
-        
-        .dark .code-content {
-            background: #1f2937;
-            color: #e5e7eb;
-        }
-        
-        .error-line .line-number {
-            background: #dc2626;
-            color: #ffffff;
-            font-weight: bold;
-        }
-        
-        .error-line .code-content {
-            background: #fef2f2;
-            border-left: 3px solid #dc2626;
-        }
-        
-        .dark .error-line .code-content {
-            background: #450a0a;
-            border-left: 3px solid #dc2626;
         }
 
-        /* Print styles */
-        @media print {
-            .no-print { display: none !important; }
-            body { background: #fff !important; color: #000 !important; }
-            .dark & { color: #000 !important; }
-            .shadow { box-shadow: none !important; }
-            .bg-white, .dark\:bg-gray-800, .dark\:bg-gray-700 { background: #fff !important; }
-            .text-gray-900, .dark\:text-gray-100 { color: #000 !important; }
-            .frame-details { display: block !important; }
-            a { color: #000; text-decoration: underline; }
-            .code-excerpt, .code-content, .line-number { background: #fff !important; color: #000 !important; }
-            .error-line .line-number { background: #000 !important; color: #fff !important; }
-            .error-line .code-content { background: #f0f0f0 !important; }
+        .code-table td {
+            padding: 6px 10px;
+            vertical-align: top;
+        }
+
+        .line-number {
+            width: 1%;
+            white-space: nowrap;
+            text-align: right;
+            color: #9fb0c0;
+        }
+
+        .code-content {
+            width: 99%;
+            color: #dbe7f3;
+        }
+
+        .error-line .line-number {
+            background: rgba(239, 68, 68, .15);
+            color: #fecaca;
+            font-weight: 700;
+        }
+
+        .light .line-number {
+            color: #64748b;
+        }
+
+        .light .code-content {
+            color: #0b1220;
+        }
+
+        /* Tabs for Environment Details */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            appearance: none;
+            border: 1px solid transparent;
+            border-bottom: none;
+            background: transparent;
+            color: var(--muted);
+            padding: 8px 10px;
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .tab:hover {
+            color: var(--text);
+            background: #1b2430;
+            border-color: var(--border);
+            border-bottom-color: transparent;
+        }
+
+        .tab.is-active {
+            background: var(--panel);
+            color: var(--text);
+            border-color: var(--border);
+            border-bottom-color: var(--panel);
+            font-weight: 600;
+        }
+
+        .tabpanel {
+            border: 1px solid var(--border);
+            border-radius: 0 10px 10px 10px;
+            background: var(--panel);
+            padding: 0;
+        }
+
+        .tabpanel .code {
+            border: 0;
+        }
+
+        .light .tab:hover {
+            background: #e2e8f0;
+        }
+
+        .light .tab.is-active {
+            background: #ffffff;
+            border-color: #cbd5e1;
+            border-bottom-color: #ffffff;
+        }
+    </style>
+    <style>
+        /* tiny icons via CSS only */
+        .i-copy::before {
+            content: "📋"
+        }
+
+        .i-sun::before {
+            content: "☀️"
+        }
+
+        .i-moon::before {
+            content: "🌙"
+        }
+
+        .i-stack::before {
+            content: "📚"
+        }
+
+        .i-link::before {
+            content: "🔗"
+        }
+
+        .i-title::before {
+            content: "🏷️"
         }
     </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-sans">
+<body>
+<div class="wrapper" id="app">
+    <header class="header" aria-labelledby="page-title">
+        <div class="header-top">
+            <span class="badge severity" aria-label="Severity"><?= $e($severity) ?></span>
+            <span class="badge">PHP Error Insight</span>
+        </div>
+        <h1 id="page-title" class="title"><?= $e($fullTitle) ?></h1>
+        <?php if ($subtitle !== ''): ?>
+            <div class="subtitle"><?= $e($subtitle) ?></div><?php endif; ?>
+        <?php if ($where !== ''): ?>
+            <div class="location"><?= $e($where) ?></div><?php endif; ?>
 
-<!-- Header -->
-<div class="bg-red-600 text-white px-6 py-4 flex justify-between items-center shadow">
-    <div>
-        <h1 class="text-xl font-bold">🚨 <?= $e($title) ?> <?php if ($where !== ''): ?> in <code><?= $e($where) ?></code><?php endif; ?></h1>
-    </div>
+        <div class="toolbar" role="toolbar" aria-label="Page actions">
+            <button class="button primary i-title" id="copyTitle"> Copy title</button>
+            <button class="button i-stack" id="copyStack"> Copy stack</button>
+            <button class="button i-link" id="openEditor" <?= $firstEditor === '' ? 'disabled' : '' ?>> Open in your
+                editor
+            </button>
+            <button class="button i-moon" id="toggleTheme" aria-pressed="false" aria-label="Toggle theme"> Theme
+            </button>
+        </div>
+    </header>
 
-    <div class="flex space-x-2 no-print">
-        <button id="copyBtn" class="bg-white text-red-600 px-3 py-1 rounded shadow hover:bg-gray-200">
-            <?= $e($labels['headings']['copy'] ?? 'Copy title') ?>
-        </button>
-        <button id="toggleTheme" class="bg-white text-gray-700 px-3 py-1 rounded shadow hover:bg-gray-200" aria-pressed="false" title="Toggle theme">
-            🌙/☀️
-        </button>
-    </div>
-</div>
+    <main class="grid" aria-live="polite">
+        <?php if ($summary !== ''): ?>
+            <section class="card" aria-labelledby="sec-summary">
+                <h3 id="sec-summary">Summary</h3>
+                <div class="content">
+                    <p><?= $e($summary) ?></p>
+                </div>
+            </section>
+        <?php endif; ?>
 
-<main class="p-6 max-w-6xl mx-auto">
-
-    <!-- Stack trace -->
-    <?php if (!empty($frames)): ?>
-        <section class="mb-6">
-            <h2 class="text-lg font-semibold mb-2 flex items-center justify-between">
-                <span><?= $e($labels['headings']['stack'] ?? 'Stack Trace') ?></span>
-                <span class="flex items-center gap-2 no-print">
-                    <input id="traceSearch" type="search" inputmode="search" placeholder="<?= $e($labels['labels']['search_trace'] ?? 'Cerca nel trace…') ?>" class="text-sm px-2 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800" aria-label="<?= $e($labels['labels']['search_trace'] ?? 'Cerca nel trace') ?>">
-                    <button id="clearSearch" class="text-sm px-2 py-1 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700" aria-label="<?= $e($labels['labels']['clear_search'] ?? 'Pulisci ricerca') ?>">✕</button>
-                    <button id="copyStackBtn" class="text-sm px-2 py-1 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700" aria-label="<?= $e($labels['labels']['copy_stack'] ?? 'Copia stack') ?>">📋 Stack</button>
-                </span>
-            </h2>
-            <ul id="traceList" class="space-y-2">
-                <?php foreach ($frames as $f): ?>
-                    <?php $frameKey = ($f['idx'] ?? '') . '|' . ($f['loc'] ?? '') . '|' . ($f['sig'] ?? ''); ?>
-                    <li class="bg-white dark:bg-gray-800 rounded shadow p-3" data-id="<?= $e($frameKey) ?>" data-search="<?= $e(strtolower(trim(($f['idx'] ?? '') . ' ' . ($f['loc'] ?? '') . ' ' . ($f['sig'] ?? '')))) ?>">
-                        <div class="w-full flex justify-between items-center gap-2">
-                            <button class="flex-1 text-left toggle-frame" aria-expanded="false" aria-controls="details-<?= $e($f['idx']) ?>">
-                                <span class="trace-line">
-                                    #<?= $e($f['idx']) ?>
-                                    <?php $rel = $f['rel'] ?? ''; $ln = (int)($f['line'] ?? 0); $href = $f['editorHref'] ?? ''; ?>
-                                    <?php if ($rel !== ''): ?>
-                                        <?php if ($href !== ''): ?>
-                                            <a class="underline text-blue-600 dark:text-blue-400" href="<?= $e($href) ?>">
-                                                <?= $e($rel) ?>
-                                            </a>:<?= $e((string)$ln) ?>
-                                        <?php else: ?>
-                                            <?= $e($rel) ?>:<?= $e((string)$ln) ?>
-                                        <?php endif; ?>
-                                    <?php else: ?>
-                                        <?= $e($f['loc'] ?? '') ?>
-                                    <?php endif; ?>
-                                    – <code><?= $e($f['sig'] ?? '') ?></code>
-                                </span>
-                                <span class="indicator" aria-hidden="true">+</span>
-                            </button>
-                            <?php $copyVal = ($rel !== '' && $ln) ? ($rel . ':' . $ln) : ($f['loc'] ?? ''); ?>
-                            <button class="copy-rel text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700" data-copy="<?= $e($copyVal) ?>" title="Copy path:line">📋</button>
-                        </div>
-                        <div id="details-<?= $e($f['idx']) ?>" class="frame-details hidden mt-2 text-sm bg-gray-50 dark:bg-gray-700 p-2 rounded" data-sig="<?= $e($f['sig'] ?? '') ?>">
-                            <p><strong><?= $e($labels['labels']['code'] ?? 'Code') ?>:</strong></p>
-                            <div class="code-view text-xs font-mono bg-white text-gray-900 rounded p-2 overflow-auto dark:bg-white dark:text-gray-900">
-                                <?= $f['codeHtml'] ?? '' ?>
+        <section class="card" aria-labelledby="sec-stack">
+            <h3 id="sec-stack"><?= $e($labels['headings']['stack'] ?? 'Stack trace') ?></h3>
+            <div class="toolbar" role="toolbar" aria-label="Stack actions">
+                <button class="button" id="expandAll">Expand all</button>
+                <button class="button" id="collapseAll">Collapse all</button>
+            </div>
+            <div class="content stack">
+                <?php foreach ($frames as $f): $rel = (string)($f['rel'] ?? '');
+                    $loc = (string)($f['loc'] ?? '');
+                    $ln = (int)($f['line'] ?? 0);
+                    $sig = (string)($f['sig'] ?? '');
+                    $href = (string)($f['editorHref'] ?? '');
+                    $copy = $rel !== '' && $ln ? ($rel . ':' . $ln) : $loc; ?>
+                    <article class="frame" aria-label="Frame <?= $e((string)($f['idx'] ?? '')) ?>">
+                        <div class="frame-head" role="button" tabindex="0" aria-expanded="true">
+                            <span class="chev" aria-hidden="true">▶</span>
+                            <div class="frame-meta">
+                                <div class="sig"><?= $e($sig) ?></div>
+                                <div class="loc"><?= $e($rel !== '' ? ($rel . ($ln ? ':' . $ln : '')) : $loc) ?></div>
+                            </div>
+                            <div class="row-actions">
+                                <button class="button i-copy" data-copy="<?= $e($copy) ?>" aria-label="Copy line">
+                                    Copy
+                                </button>
+                                <?php if ($href !== ''): ?>
+                                    <a class="button i-link" href="<?= $e($href) ?>" title="Open in your editor">
+                                        Open</a>
+                                <?php endif; ?>
                             </div>
                         </div>
-                    </li>
+                        <div class="code" role="region" aria-label="Code excerpt">
+                            <?php if (!empty($f['codeHtml'])): ?>
+                                <?= $f['codeHtml'] ?>
+                            <?php else: ?>
+                                <pre><code><em>No excerpt available</em></code></pre>
+                            <?php endif; ?>
+                        </div>
+                    </article>
                 <?php endforeach; ?>
-            </ul>
+            </div>
         </section>
-    <?php endif; ?>
 
-    <!-- Tabs -->
-    <section class="mb-6">
-        <h2 class="text-lg font-semibold mb-2"><?= $e($labels['headings']['env_details'] ?? 'Environment Details') ?></h2>
-        <div class="border-b border-gray-300 dark:border-gray-700 flex flex-wrap space-x-2 mb-4">
-            <button class="tab-btn font-medium py-2 px-3 border-b-2 border-red-600" data-tab="server">Server/Request</button>
-            <button class="tab-btn font-medium py-2 px-3" data-tab="env">Env Vars</button>
-            <button class="tab-btn font-medium py-2 px-3" data-tab="cookies">Cookies</button>
-            <button class="tab-btn font-medium py-2 px-3" data-tab="session">Session</button>
-            <button class="tab-btn font-medium py-2 px-3" data-tab="get">GET</button>
-            <button class="tab-btn font-medium py-2 px-3" data-tab="post">POST</button>
-            <button class="tab-btn font-medium py-2 px-3" data-tab="files">Files</button>
-        </div>
+        <?php if ($details !== ''): ?>
+            <section class="card" aria-labelledby="sec-details">
+                <h3 id="sec-details"><?= $e($labels['headings']['details'] ?? 'Details') ?></h3>
+                <div class="content">
+                    <p><?= nl2br($e($details)) ?></p>
+                </div>
+            </section>
+        <?php endif; ?>
 
-        <div id="tab-server" class="tab-content">
-            <pre class="text-gray-100 rounded text-xs"><?php $dumper->dump($cloner->cloneVar($_SERVER ?? [])) ?></pre>
-        </div>
-        <div id="tab-env" class="tab-content hidden">
-            <pre class="text-gray-100 rounded text-xs"><?php $dumper->dump($cloner->cloneVar($_ENV ?? [])) ?></pre>
-        </div>
-        <div id="tab-cookies" class="tab-content hidden">
-            <pre class="text-gray-100 rounded text-xs"><?php $dumper->dump($cloner->cloneVar($_COOKIE ?? [])) ?></pre>
-        </div>
-        <div id="tab-session" class="tab-content hidden">
-            <pre class="text-gray-100 rounded text-xs"><?php $dumper->dump($cloner->cloneVar($_SESSION ?? [])) ?></pre>
-        </div>
-        <div id="tab-get" class="tab-content hidden">
-            <pre class="text-gray-100 rounded text-xs"><?php $dumper->dump($cloner->cloneVar($_GET ?? [])) ?></pre>
-        </div>
-        <div id="tab-post" class="tab-content hidden">
-            <pre class="text-gray-100 rounded text-xs"><?php $dumper->dump($cloner->cloneVar($_POST ?? [])) ?></pre>
-        </div>
-        <div id="tab-files" class="tab-content hidden">
-            <pre class="text-gray-100 rounded text-xs"><?php $dumper->dump($cloner->cloneVar($_FILES ?? [])) ?></pre>
-        </div>
-    </section>
+        <?php if (!empty($suggestions)): ?>
+            <section class="card" aria-labelledby="sec-suggestions">
+                <h3 id="sec-suggestions"><?= $e($labels['headings']['suggestions'] ?? 'Suggerimenti') ?></h3>
+                <div class="content suggestions">
+                    <?php foreach ($suggestions as $s): ?>
+                        <div class="suggestion">
+                            <p class="title">Suggerimento</p>
+                            <p><?= $e((string)$s) ?></p>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </section>
+        <?php endif; ?>
 
-    <!-- Dettagli (AI) -->
-    <?php if ($subtitle !== '' && $verbose && $details !== ''): ?>
-        <section class="bg-blue-50 dark:bg-blue-900 border-l-4 border-blue-500 p-4 rounded shadow mb-6">
-            <h2 class="text-lg font-semibold mb-2 text-blue-700 dark:text-blue-300 flex items-center justify-between">
-                <span>📝 <?= $e($labels['headings']['details'] ?? 'Details') ?></span>
-                <button id="copyDetailsBtn" class="no-print text-xs px-2 py-1 rounded border border-blue-400 text-blue-800 dark:text-blue-100 bg-white/70 dark:bg-blue-800/40 hover:bg-white" aria-label="<?= $e($labels['labels']['copy_details'] ?? 'Copia dettagli') ?>">📋 <?= $e($labels['labels']['copy_details'] ?? 'Copia dettagli') ?></button>
-            </h2>
-            <pre id="detailsText" class="rounded text-xs whitespace-pre-wrap"><?= $e($details) ?></pre>
+        <section class="card" aria-labelledby="sec-env">
+            <h3 id="sec-env">PHPErrorInsighe Info</h3>
+            <div class="content">
+                <div class="kv">
+                    <div class="k">Language</div>
+                    <div class="v"><?php echo $docLang; ?></div>
+                    <?php if ($aiModel !== ''): ?>
+                        <div class="k">AI Model</div>
+                        <div class="v"><?php echo $aiModel ?></div>
+                    <?php endif; ?>
+                    <?php if ($editorUrl !== ''): ?>
+                        <div class="k">Editor URL</div>
+                        <div class="v"><?php echo $editorUrl ?></div>
+                    <?php endif; ?>
+                    <div class="k">Verbose URL</div>
+                    <div class="v"><?php echo (bool)$verbose ?></div>
+                </div>
+            </div>
         </section>
-    <?php endif; ?>
 
-    <!-- Suggerimenti (AI) -->
-    <?php if ($subtitle !== '' && !empty($suggestions)): ?>
-        <section class="bg-green-50 dark:bg-green-900 border-l-4 border-green-500 p-4 rounded shadow">
-            <h2 class="text-lg font-semibold mb-2 text-green-700 dark:text-green-300">💡 <?= $e($labels['headings']['suggestions'] ?? 'Suggestions') ?></h2>
-            <ul class="list-disc pl-6 text-sm">
-                <?php foreach ($suggestions as $s): ?>
-                    <li><?= $e($s) ?></li>
-                <?php endforeach; ?>
-            </ul>
+        <section class="card" aria-labelledby="sec-env-details">
+            <h3 id="sec-env-details"><?= $e($labels['headings']['env_details'] ?? 'Environment Details') ?></h3>
+            <div class="content">
+                <div class="tabs" role="tablist" aria-label="Environment tabs">
+                    <button class="tab is-active" role="tab" aria-selected="true" aria-controls="tab-server"
+                            id="tabbtn-server">Server/Request
+                    </button>
+                    <button class="tab" role="tab" aria-selected="false" aria-controls="tab-env" id="tabbtn-env"
+                            tabindex="-1">Env Vars
+                    </button>
+                    <button class="tab" role="tab" aria-selected="false" aria-controls="tab-cookies" id="tabbtn-cookies"
+                            tabindex="-1">Cookies
+                    </button>
+                    <button class="tab" role="tab" aria-selected="false" aria-controls="tab-session" id="tabbtn-session"
+                            tabindex="-1">Session
+                    </button>
+                    <button class="tab" role="tab" aria-selected="false" aria-controls="tab-get" id="tabbtn-get"
+                            tabindex="-1">GET
+                    </button>
+                    <button class="tab" role="tab" aria-selected="false" aria-controls="tab-post" id="tabbtn-post"
+                            tabindex="-1">POST
+                    </button>
+                    <button class="tab" role="tab" aria-selected="false" aria-controls="tab-files" id="tabbtn-files"
+                            tabindex="-1">Files
+                    </button>
+                </div>
+
+                <div id="tab-server" class="tabpanel" role="tabpanel" tabindex="0" aria-labelledby="tabbtn-server">
+                    <div class="code dump" role="region" aria-label="Server / Request dump">
+                        <pre><code><?= $e(var_export($_SERVER ?? [], true)) ?></code></pre>
+                    </div>
+                </div>
+
+                <div id="tab-env" class="tabpanel" role="tabpanel" hidden tabindex="0" aria-labelledby="tabbtn-env">
+                    <div class="code dump">
+                        <pre><code><?= $e(var_export($_ENV ?? [], true)) ?></code></pre>
+                    </div>
+                </div>
+
+                <div id="tab-cookies" class="tabpanel" role="tabpanel" hidden tabindex="0"
+                     aria-labelledby="tabbtn-cookies">
+                    <div class="code dump">
+                        <pre><code><?= $e(var_export($_COOKIE ?? [], true)) ?></code></pre>
+                    </div>
+                </div>
+
+                <div id="tab-session" class="tabpanel" role="tabpanel" hidden tabindex="0"
+                     aria-labelledby="tabbtn-session">
+                    <div class="code dump">
+                        <pre><code><?= $e(var_export($_SESSION ?? [], true)) ?></code></pre>
+                    </div>
+                </div>
+
+                <div id="tab-get" class="tabpanel" role="tabpanel" hidden tabindex="0" aria-labelledby="tabbtn-get">
+                    <div class="code dump">
+                        <pre><code><?= $e(var_export($_GET ?? [], true)) ?></code></pre>
+                    </div>
+                </div>
+
+                <div id="tab-post" class="tabpanel" role="tabpanel" hidden tabindex="0" aria-labelledby="tabbtn-post">
+                    <div class="code dump">
+                        <pre><code><?= $e(var_export($_POST ?? [], true)) ?></code></pre>
+                    </div>
+                </div>
+
+                <div id="tab-files" class="tabpanel" role="tabpanel" hidden tabindex="0" aria-labelledby="tabbtn-files">
+                    <div class="code dump">
+                        <pre><code><?= $e(var_export($_FILES ?? [], true)) ?></code></pre>
+                    </div>
+                </div>
+            </div>
         </section>
-    <?php endif; ?>
-</main>
+    </main>
+
+    <div class="footer">Rendered by PHP Error Insight</div>
+</div>
 
 <script>
-    (function(){
-        const qs = s => document.querySelector(s);
-        const qsa = s => Array.from(document.querySelectorAll(s));
+    const $ = sel => document.querySelector(sel);
+    const $$ = sel => Array.from(document.querySelectorAll(sel));
 
-        // Tabs
-        qsa('.tab-btn').forEach(btn => {
+    // Accessible live region for copy feedback
+    const live = document.createElement('div');
+    live.setAttribute('aria-live', 'polite');
+    live.setAttribute('aria-atomic', 'true');
+    live.className = 'sr-only';
+    document.body.appendChild(live);
+
+    function copy(text) {
+        try {
+            return navigator.clipboard?.writeText(text) || Promise.resolve();
+        } catch (e) {
+            return Promise.resolve();
+        }
+    }
+
+    function flashCopied(el, labelCopied = 'Copiato!') {
+        if (!el) return;
+        const prevText = el.textContent;
+        const prevAria = el.getAttribute('aria-label');
+        el.classList.add('copied');
+        if (prevAria) el.setAttribute('aria-label', labelCopied);
+        el.textContent = ' ' + labelCopied;
+        live.textContent = labelCopied;
+        setTimeout(() => {
+            el.classList.remove('copied');
+            if (prevAria) el.setAttribute('aria-label', prevAria);
+            el.textContent = prevText;
+        }, 1200);
+    }
+
+    $('#copyTitle')?.addEventListener('click', (e) => {
+        const btnEl = e.currentTarget;
+        const titleText = $('#page-title')?.textContent?.trim() || document.title;
+        copy(titleText).then(() => flashCopied(btnEl, 'Titolo copiato')).catch(() => {
+        });
+    });
+
+    $('#copyStack')?.addEventListener('click', (e) => {
+        const btnEl = e.currentTarget;
+        const lines = $$('.frame .loc').map(e => e.textContent?.trim()).join("\n");
+        copy(lines).then(() => flashCopied(btnEl, 'Stack copiato')).catch(() => {
+        });
+    });
+
+    $$('.row-actions .button.i-copy').forEach(b => {
+        b.addEventListener('click', (e) => {
+            const btnEl = e.currentTarget;
+            const txt = b.getAttribute('data-copy') || '';
+            copy(txt).then(() => flashCopied(btnEl, 'Copiato!')).catch(() => {
+            });
+            e.stopPropagation();
+        });
+    });
+
+    // Open in editor (first available)
+    (function () {
+        const href = <?= json_encode($firstEditor, JSON_UNESCAPED_SLASHES) ?>;
+        const btn = $('#openEditor');
+        if (btn && href) {
             btn.addEventListener('click', () => {
-                qsa('.tab-btn').forEach(b => { b.classList.remove('border-b-2'); b.classList.remove('border-red-600'); });
-                btn.classList.add('border-b-2');
-                btn.classList.add('border-red-600');
-                qsa('.tab-content').forEach(c => c.classList.add('hidden'));
-                const t = document.getElementById('tab-' + btn.dataset.tab);
-                if (t) t.classList.remove('hidden');
-            });
-        });
-
-        // Theme toggle with persistence
-        const toggleBtn = qs('#toggleTheme');
-        if (toggleBtn) {
-            const isDark = document.documentElement.classList.contains('dark');
-            toggleBtn.setAttribute('aria-pressed', isDark ? 'true' : 'false');
-            toggleBtn.addEventListener('click', () => {
-                const nowDark = document.documentElement.classList.toggle('dark');
-                toggleBtn.setAttribute('aria-pressed', nowDark ? 'true' : 'false');
-                try { localStorage.setItem('errorView.theme', nowDark ? 'dark' : 'light'); } catch (e) {}
-            });
-        }
-
-        // Frames expanded state persistence and toggling
-        const stateKey = 'errorView.frames';
-        let frameState = {};
-        try { frameState = JSON.parse(localStorage.getItem(stateKey) || '{}') || {}; } catch (e) { frameState = {}; }
-
-        function setExpanded(li, expanded) {
-            const btn = li.querySelector('.toggle-frame');
-            const details = li.querySelector('.frame-details');
-            if (!btn || !details) return;
-            if (expanded) details.classList.remove('hidden'); else details.classList.add('hidden');
-            btn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-            const ind = btn.querySelector('.indicator');
-            if (ind) ind.textContent = expanded ? '−' : '+';
-            if (expanded) {
-                const sig = details.getAttribute('data-sig') || '';
-                const code = details.querySelector('.code-view');
-                if (code) highlightParams(code, sig);
-            }
-        }
-
-        function persistFrame(li, expanded) {
-            const id = li.getAttribute('data-id');
-            if (!id) return;
-            frameState[id] = !!expanded;
-            try { localStorage.setItem(stateKey, JSON.stringify(frameState)); } catch (e) {}
-        }
-
-        qsa('#traceList > li').forEach(li => {
-            const btn = li.querySelector('.toggle-frame');
-            if (btn) {
-                btn.addEventListener('click', () => {
-                    const details = li.querySelector('.frame-details');
-                    const expanded = details.classList.contains('hidden');
-                    const code = details.querySelector('.code-view');
-                    if (code) {
-                        code.querySelectorAll('span.hl-var').forEach(span => {
-                            const text = document.createTextNode(span.textContent);
-                            span.replaceWith(text);
-                        });
-                    }
-                    setExpanded(li, expanded);
-                    persistFrame(li, expanded);
-                });
-            }
-            const id = li.getAttribute('data-id');
-            if (id && frameState[id]) setExpanded(li, true);
-        });
-
-        // Search filtering
-        const searchInput = qs('#traceSearch');
-        const clearBtn = qs('#clearSearch');
-        function applyFilter() {
-            const q = (searchInput && searchInput.value ? searchInput.value : '').toLowerCase().trim();
-            qsa('#traceList > li').forEach(li => {
-                const hay = (li.getAttribute('data-search') || '');
-                li.style.display = (q === '' || hay.indexOf(q) !== -1) ? '' : 'none';
-            });
-        }
-        if (searchInput) searchInput.addEventListener('input', applyFilter);
-        if (clearBtn) clearBtn.addEventListener('click', () => { if (searchInput) { searchInput.value = ''; applyFilter(); searchInput.focus(); } });
-
-        // Clipboard helper with fallback for non-secure contexts
-        function copyToClipboard(text){
-            try {
-                if (navigator.clipboard && window.isSecureContext) {
-                    return navigator.clipboard.writeText(text);
+                try {
+                    window.location.href = href;
+                } catch (e) {
                 }
-            } catch (e) {}
-            return new Promise(function(resolve){
-                const ta = document.createElement('textarea');
-                ta.value = text;
-                // Avoid scrolling to bottom
-                ta.style.position = 'fixed';
-                ta.style.top = '-1000px';
-                document.body.appendChild(ta);
-                ta.focus();
-                ta.select();
-                try { document.execCommand('copy'); } catch (e) {}
-                document.body.removeChild(ta);
-                resolve();
             });
+        } else if (btn) {
+            btn.disabled = true;
+        }
+    })();
+
+    const root = document.documentElement;
+    const themeBtn = $('#toggleTheme');
+    let light = false;
+    themeBtn?.addEventListener('click', () => {
+        light = !light;
+        themeBtn.setAttribute('aria-pressed', String(light));
+        root.classList.toggle('light', light);
+        themeBtn.classList.toggle('i-sun', light);
+        themeBtn.classList.toggle('i-moon', !light);
+    });
+
+    // Collapsible stack frames
+    function setCollapsed(frame, collapsed) {
+        frame.classList.toggle('collapsed', collapsed);
+        const head = frame.querySelector('.frame-head');
+        head?.setAttribute('aria-expanded', String(!collapsed));
+    }
+
+    function toggleFrame(frame) {
+        const isCollapsed = frame.classList.contains('collapsed');
+        setCollapsed(frame, !isCollapsed);
+    }
+
+    $$('.frame').forEach(frame => {
+        const head = frame.querySelector('.frame-head');
+        head?.addEventListener('click', (e) => {
+            if ((e.target instanceof Element) && e.target.closest('.row-actions')) return;
+            toggleFrame(frame);
+        });
+        head?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggleFrame(frame);
+            }
+        });
+    });
+
+    $('#expandAll')?.addEventListener('click', () => $$('.frame').forEach(f => setCollapsed(f, false)));
+    $('#collapseAll')?.addEventListener('click', () => $$('.frame').forEach(f => setCollapsed(f, true)));
+</script>
+<script>
+    // Accessible Tabs for Environment Details (same behavior as docs)
+    (function () {
+        const list = document.querySelector('.tabs');
+        if (!list) return;
+        const tabs = Array.from(list.querySelectorAll('.tab'));
+        const panels = Array.from(document.querySelectorAll('.tabpanel'));
+        const idxOf = (btn) => Math.max(0, tabs.indexOf(btn));
+
+        function activate(index) {
+            tabs.forEach((t, i) => {
+                const selected = i === index;
+                t.classList.toggle('is-active', selected);
+                t.setAttribute('aria-selected', String(selected));
+                t.tabIndex = selected ? 0 : -1;
+                const id = t.getAttribute('aria-controls');
+                const panel = id ? document.getElementById(id) : null;
+                if (panel) {
+                    selected ? panel.removeAttribute('hidden') : panel.setAttribute('hidden', '');
+                }
+            });
+            tabs[index]?.focus();
         }
 
-        // Copy title
-        const copyBtn = qs('#copyBtn');
-        if (copyBtn) {
-            copyBtn.addEventListener('click', () => {
-                const text = <?= $copyText ?>;
-                const btnText = '<?= $e($labels['headings']['copy'] ?? 'Copy to clipboard') ?>';
-                copyToClipboard(text).then(() => {
-                    copyBtn.textContent = '<?= $e($labels['headings']['copied'] ?? 'Copied!') ?>';
-                    setTimeout(() => { copyBtn.textContent = btnText; }, 2000);
-                });
-            });
-        }
-
-        // Copy full stack
-        const copyStackBtn = qs('#copyStackBtn');
-        if (copyStackBtn) {
-            copyStackBtn.addEventListener('click', () => {
-                const lines = qsa('#traceList .trace-line').map(n => n.textContent.trim());
-                const stackText = lines.join('\n');
-                copyToClipboard(stackText).then(() => {
-                    const prev = copyStackBtn.textContent;
-                    copyStackBtn.textContent = '<?= $e($labels['headings']['copied'] ?? 'Copied!') ?>';
-                    setTimeout(() => { copyStackBtn.textContent = prev; }, 2000);
-                });
-            });
-        }
-
-        // Per-frame copy of relative path:line
-        qsa('#traceList .copy-rel').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const val = btn.getAttribute('data-copy') || '';
-                if (!val) return;
-                copyToClipboard(val).then(() => {
-                    const prev = btn.textContent;
-                    btn.textContent = '✓';
-                    setTimeout(() => { btn.textContent = prev; }, 1200);
-                });
+        tabs.forEach((btn) => {
+            btn.addEventListener('click', () => activate(idxOf(btn)));
+            btn.addEventListener('keydown', (e) => {
+                const i = idxOf(btn);
+                let ni = i;
+                if (e.key === 'ArrowRight') {
+                    ni = (i + 1) % tabs.length;
+                    e.preventDefault();
+                } else if (e.key === 'ArrowLeft') {
+                    ni = (i - 1 + tabs.length) % tabs.length;
+                    e.preventDefault();
+                } else if (e.key === 'Home') {
+                    ni = 0;
+                    e.preventDefault();
+                } else if (e.key === 'End') {
+                    ni = tabs.length - 1;
+                    e.preventDefault();
+                }
+                if (ni !== i) activate(ni);
             });
         });
-
-        // Copy AI details
-        const copyDetailsBtn = qs('#copyDetailsBtn');
-        const detailsText = qs('#detailsText');
-        if (copyDetailsBtn && detailsText) {
-            copyDetailsBtn.addEventListener('click', () => {
-                const txt = detailsText.textContent || '';
-                copyToClipboard(txt).then(() => {
-                    const prev = copyDetailsBtn.textContent;
-                    copyDetailsBtn.textContent = '<?= $e($labels['headings']['copied'] ?? 'Copied!') ?>';
-                    setTimeout(() => { copyDetailsBtn.textContent = prev; }, 2000);
-                });
-            });
-        }
-
-        // Highlighting helpers
-        function escapeRegExp(s){ return s.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&'); }
-        function highlightParams(codeEl, sig) {
-            if (!sig) return;
-            // unwrap existing highlights in this element
-            codeEl.querySelectorAll('span.hl-var').forEach(span => {
-                const text = document.createTextNode(span.textContent);
-                span.replaceWith(text);
-            });
-            const m = sig.match(/\(([^)]*)\)/);
-            if (!m) return;
-            const inner = m[1];
-            const vars = Array.from(new Set((inner.match(/\$[A-Za-z_][A-Za-z0-9_]*/g) || [])));
-            if (vars.length === 0) return;
-            let html = codeEl.innerHTML;
-            vars.forEach(v => {
-                const pattern = '(^|[^\\\\w$])(' + escapeRegExp(v) + ')(?![\\\\w$])';
-                const re = new RegExp(pattern, 'g');
-                html = html.replace(re, '$1<span class="hl-var">$2</span>');
-            });
-            codeEl.innerHTML = html;
-        }
     })();
 </script>
 </body>

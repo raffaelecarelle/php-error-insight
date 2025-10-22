@@ -117,6 +117,7 @@ final class Explainer implements ExplainerInterface
             } elseif ($config->verbose) {
                 // On failure, add a soft suggestion if verbose
                 $explanation['suggestions'][] = Translator::t($config, 'suggestion.ai_unavailable');
+                $explanation['summary'] = Translator::t($config, 'suggestion.ai_unavailable');
             }
         }
 
