@@ -799,7 +799,13 @@ foreach ($frames as $f) {
 
     function copy(text) {
         try {
-            return navigator.clipboard?.writeText(text) || Promise.resolve();
+            const input = document.createElement('textarea')
+            input.value = text
+            document.body.appendChild(input)
+            input.select()
+            document.execCommand('copy')
+            document.body.removeChild(input)
+            return Promise.resolve();
         } catch (e) {
             return Promise.resolve();
         }
@@ -829,7 +835,7 @@ foreach ($frames as $f) {
 
     $('#copyStack')?.addEventListener('click', (e) => {
         const btnEl = e.currentTarget;
-        const lines = $$('.frame .loc').map(e => e.textContent?.trim()).join("\n");
+        const lines = $$('.frame .sig').map(e => e.textContent?.trim()).join("\n");
         copy(lines).then(() => flashCopied(btnEl, 'Stack copied!')).catch(() => {
         });
     });
