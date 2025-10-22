@@ -277,7 +277,7 @@ foreach ($frames as $f) {
 
         .code pre {
             margin: 0;
-            padding: 12px;
+            padding: 0px 6px;
             line-height: 1.45;
         }
 
@@ -474,7 +474,7 @@ foreach ($frames as $f) {
         }
 
         .code-table td {
-            padding: 6px 6px;
+            padding: 6px 10px;
         }
 
         .line-number {
@@ -629,13 +629,15 @@ foreach ($frames as $f) {
                 <button class="button" id="collapseAll">Collapse all</button>
             </div>
             <div class="content stack">
+                <?php $i = 0 ?>
                 <?php foreach ($frames as $f): $rel = (string)($f['rel'] ?? '');
                     $loc = (string)($f['loc'] ?? '');
                     $ln = (int)($f['line'] ?? 0);
                     $sig = (string)($f['sig'] ?? '');
                     $href = (string)($f['editorHref'] ?? '');
-                    $copy = $rel !== '' && $ln ? ($rel . ':' . $ln) : $loc; ?>
-                    <article class="frame" aria-label="Frame <?= $e((string)($f['idx'] ?? '')) ?>">
+                    $copy = $rel !== '' && $ln ? ($rel . ':' . $ln) : $loc;
+                    $isFirst = $i === 0; ?>
+                    <article class="frame <?= !$isFirst ? 'collapsed' : '' ?>" aria-label="Frame <?= $e((string)($f['idx'] ?? '')) ?>">
                         <div class="frame-head" role="button" tabindex="0" aria-expanded="true">
                             <div class="frame-meta">
                                 <span class="chev" aria-hidden="true">▶</span>
@@ -659,6 +661,7 @@ foreach ($frames as $f) {
                             <?php endif; ?>
                         </div>
                     </article>
+                    <?php $i++ ?>
                 <?php endforeach; ?>
             </div>
         </section>
