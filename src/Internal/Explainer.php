@@ -173,34 +173,6 @@ final class Explainer implements ExplainerInterface
         return $out;
     }
 
-    /**
-     * @param array<int,array<string,mixed>>|null $trace
-     */
-    private function buildDetails(Config $config, string $message, ?string $file, ?int $line, ?array $trace, bool $verbose): string
-    {
-        $unknown = Translator::t($config, 'details.unknown');
-        $where = (null !== $file ? ($file . (null !== $line ? ":{$line}" : '')) : $unknown);
-        $labelMsg = Translator::t($config, 'details.message');
-        $labelPos = Translator::t($config, 'details.position');
-        $labelTrace = Translator::t($config, 'details.trace');
-        $details = $labelMsg . ' ' . $message . "\n" . $labelPos . ' ' . $where;
-        if ($verbose && $trace) {
-            $details .= "\n" . $labelTrace . "\n";
-            $i = 0;
-            foreach ($trace as $frame) {
-                $fn = isset($frame['function']) ? (string) $frame['function'] : 'unknown';
-                $cls = isset($frame['class']) ? (string) $frame['class'] : '';
-                $type = isset($frame['type']) ? (string) $frame['type'] : '';
-                $f = isset($frame['file']) ? (string) $frame['file'] : '';
-                $l = isset($frame['line']) ? (string) $frame['line'] : '';
-                $details .= sprintf('#%d %s%s%s(%s:%s)' . "\n", $i, $cls, $type, $fn, $f, $l);
-                ++$i;
-            }
-        }
-
-        return $details;
-    }
-
     private function aiExplain(string $kind, string $message, ?string $file, ?int $line, ?int $severity, Config $config): ?string
     {
         $lang = '' !== $config->language && '0' !== $config->language ? $config->language : 'en';
