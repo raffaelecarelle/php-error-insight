@@ -384,9 +384,8 @@ final class Renderer implements RendererInterface
     private function highlightText(string $text): string
     {
         $text = highlight_string($text, true);
-        $text = preg_replace('|<code style="color: #[a-fA-F0-9]{6}">|', '<code>', $text);
 
-        return $text;
+        return preg_replace('|<code style="color: #[a-fA-F0-9]{6}">|', '<code>', $text);
     }
 
     private function renderCodeExcerptText(?string $file, ?int $line, int $radius = 5): string

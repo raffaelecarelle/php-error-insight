@@ -12,7 +12,6 @@ use function function_exists;
 use function in_array;
 use function is_array;
 use function is_string;
-use function sprintf;
 use function strlen;
 
 use const CURLINFO_HTTP_CODE;
