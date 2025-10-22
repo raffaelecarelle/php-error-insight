@@ -474,8 +474,7 @@ foreach ($frames as $f) {
         }
 
         .code-table td {
-            padding: 6px 10px;
-            vertical-align: top;
+            padding: 6px 6px;
         }
 
         .line-number {
@@ -490,7 +489,7 @@ foreach ($frames as $f) {
             color: #dbe7f3;
         }
 
-        .error-line .line-number {
+        .error-line .line-number, .error-line .code-content {
             background: rgba(239, 68, 68, .15);
             color: #fecaca;
             font-weight: 700;
@@ -638,10 +637,9 @@ foreach ($frames as $f) {
                     $copy = $rel !== '' && $ln ? ($rel . ':' . $ln) : $loc; ?>
                     <article class="frame" aria-label="Frame <?= $e((string)($f['idx'] ?? '')) ?>">
                         <div class="frame-head" role="button" tabindex="0" aria-expanded="true">
-                            <span class="chev" aria-hidden="true">▶</span>
                             <div class="frame-meta">
-                                <div class="sig"><?= $e($sig) ?></div>
-                                <div class="loc"><?= $e($rel !== '' ? ($rel . ($ln ? ':' . $ln : '')) : $loc) ?></div>
+                                <span class="chev" aria-hidden="true">▶</span>
+                                <div class="sig" title="<?= $e($rel !== '' ? ($rel . ($ln ? ':' . $ln : '')) : $loc) ?>"><?= $e($sig) ?></div>
                             </div>
                             <div class="row-actions">
                                 <button class="button i-copy" data-copy="<?= $e($copy) ?>" aria-label="Copy line">
@@ -804,7 +802,7 @@ foreach ($frames as $f) {
         }
     }
 
-    function flashCopied(el, labelCopied = 'Copiato!') {
+    function flashCopied(el, labelCopied = 'Copied!') {
         if (!el) return;
         const prevText = el.textContent;
         const prevAria = el.getAttribute('aria-label');
@@ -822,14 +820,14 @@ foreach ($frames as $f) {
     $('#copyTitle')?.addEventListener('click', (e) => {
         const btnEl = e.currentTarget;
         const titleText = $('#page-title')?.textContent?.trim() || document.title;
-        copy(titleText).then(() => flashCopied(btnEl, 'Titolo copiato')).catch(() => {
+        copy(titleText).then(() => flashCopied(btnEl, 'Title copied!')).catch(() => {
         });
     });
 
     $('#copyStack')?.addEventListener('click', (e) => {
         const btnEl = e.currentTarget;
         const lines = $$('.frame .loc').map(e => e.textContent?.trim()).join("\n");
-        copy(lines).then(() => flashCopied(btnEl, 'Stack copiato')).catch(() => {
+        copy(lines).then(() => flashCopied(btnEl, 'Stack copied!')).catch(() => {
         });
     });
 
@@ -837,7 +835,7 @@ foreach ($frames as $f) {
         b.addEventListener('click', (e) => {
             const btnEl = e.currentTarget;
             const txt = b.getAttribute('data-copy') || '';
-            copy(txt).then(() => flashCopied(btnEl, 'Copiato!')).catch(() => {
+            copy(txt).then(() => flashCopied(btnEl, 'Copied!')).catch(() => {
             });
             e.stopPropagation();
         });

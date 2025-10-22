@@ -369,10 +369,7 @@ final class Renderer implements RendererInterface
             $codeLine = $lines[$ln - 1];
             $lineNum = str_pad((string) $ln, $numWidth, ' ', STR_PAD_LEFT);
 
-            // Line already has <?php, highlight as-is
-            $highlightedCode = @highlight_string($codeLine, true);
-            $highlightedCode = preg_replace('#^<code><span[^>]*>(.*)</span></code>$#s', '$1', $highlightedCode) ?? $highlightedCode;
-            $highlightedCode = trim($highlightedCode);
+            $highlightedCode = $this->highlightText($codeLine);
 
             $rowClass = $ln === $line ? ' class="error-line"' : '';
             $output .= '<tr' . $rowClass . '>';
@@ -382,6 +379,16 @@ final class Renderer implements RendererInterface
         }
 
         return $output . '</table></div>';
+    }
+
+    private function highlightText(string $text): string
+    {
+        $text = preg_replace("|^\\<code\\>\\<span style\\=\"color\\: #[a-fA-F0-9]{0,6}\"\\>|", "", $text, 1);  // remove prefix
+        $text = preg_replace("|\\</code\\>\$|", "", $text, 1);  // remove suffix 1
+        $text = preg_replace("|\\</span\\>\$|", "", $text, 1);  // remove suffix 2
+        $text = preg_replace("|^(\\<span style\\=\"color\\: #[a-fA-F0-9]{0,6}\"\\>)(&lt;\\?php&nbsp;)(.*?)(\\</span\\>)|", "\$1\$3\$4", $text);  // remove custom added "<?php "
+
+        return $text;
     }
 
     private function renderCodeExcerptText(?string $file, ?int $line, int $radius = 5): string
