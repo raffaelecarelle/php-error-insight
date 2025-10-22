@@ -676,7 +676,7 @@ foreach ($frames as $f) {
         <?php endif; ?>
 
         <section class="card" aria-labelledby="sec-env">
-            <h3 id="sec-env">PHPErrorInsighe Info</h3>
+            <h3 id="sec-env">PHP Error Insight Info</h3>
             <div class="content">
                 <div class="kv">
                     <div class="k">Language</div>

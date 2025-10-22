@@ -114,14 +114,8 @@ final class Explainer implements ExplainerInterface
                 }
 
                 $explanation['details'] .= '[AI] ' . $aiText;
-            } elseif ($config->verbose) {
-                // On failure, add a soft suggestion if verbose
-                $explanation['suggestions'][] = Translator::t($config, 'suggestion.ai_unavailable');
-                $explanation['summary'] = Translator::t($config, 'suggestion.ai_unavailable');
             }
         }
-
-        $explanation['details'] = $this->buildDetails($config, $message, $file, $line, $trace, $config->verbose) . (('' !== $explanation['details']) ? "\n\n" . $explanation['details'] : '');
 
         return $explanation;
     }
