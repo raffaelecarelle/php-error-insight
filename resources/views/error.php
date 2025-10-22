@@ -174,6 +174,18 @@ foreach ($frames as $f) {
             }
         }
 
+        /* Layout tweak when AI features are disabled: place Env details on the right, PHP Error Insight Info on the left,
+           and make Stack trace span full width on top. This applies only when .no-ai is on the grid container. */
+        .grid.no-ai > [aria-labelledby="sec-stack"] {
+            grid-column: 1 / -1;
+        }
+        .grid.no-ai > [aria-labelledby="sec-env-details"] {
+            grid-column: 2;
+        }
+        .grid.no-ai > [aria-labelledby="sec-env"] {
+            grid-column: 1;
+        }
+
         .card {
             background: var(--panel-2);
             border: 1px solid var(--border);
@@ -600,7 +612,8 @@ foreach ($frames as $f) {
         </div>
     </header>
 
-    <main class="grid" aria-live="polite">
+    <?php $noAi = ($summary === '' && $details === '' && empty($suggestions)); ?>
+    <main class="grid<?= $noAi ? ' no-ai' : '' ?>" aria-live="polite">
         <?php if ($summary !== ''): ?>
             <section class="card" aria-labelledby="sec-summary">
                 <h3 id="sec-summary">Summary</h3>
@@ -689,7 +702,7 @@ foreach ($frames as $f) {
                         <div class="k">Editor URL</div>
                         <div class="v"><?php echo $editorUrl ?></div>
                     <?php endif; ?>
-                    <div class="k">Verbose URL</div>
+                    <div class="k">Verbose</div>
                     <div class="v"><?php echo (bool)$verbose ?></div>
                 </div>
             </div>
