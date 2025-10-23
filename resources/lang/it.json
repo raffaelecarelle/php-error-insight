@@ -16,15 +16,17 @@
     "unknown": "n/d"
   },
   "html": {
-  "headings": {
+    "headings": {
       "details": "Dettagli",
       "copied": "Copiato!",
       "copy": "Copia errore",
-      "env_details": "Dattagli Ambiente",
+      "env_details": "Dettagli Ambiente",
       "suggestions": "Suggerimenti",
       "stack": "Stack trace",
       "globals": "Stato globale",
-      "state": "Stato completo"
+      "state": "Stato completo",
+      "summary": "Riepilogo",
+      "info": "Info PHP Error Insight"
     },
     "labels": {
       "arguments": "Argomenti",
@@ -38,7 +40,56 @@
       "globals_all": "Tutte le globali",
       "defined_vars": "Variabili definite (scope)",
       "raw_trace": "Trace grezzo",
-      "xdebug": "Xdebug"
+      "xdebug": "Xdebug",
+      "language": "Lingua",
+      "ai_model": "Modello AI",
+      "editor_url": "URL Editor",
+      "verbose": "Verboso",
+      "suggestion": "Suggerimento"
+    },
+    "toolbar": {
+      "copy_title": "Copia titolo",
+      "copy_stack": "Copia stack",
+      "open_in_editor": "Apri nel tuo editor",
+      "theme": "Tema"
+    },
+    "stack": {
+      "expand_all": "Espandi tutto",
+      "collapse_all": "Comprimi tutto",
+      "copy": "Copia",
+      "open": "Apri"
+    },
+    "tabs": {
+      "server_request": "Server/Richiesta",
+      "env_vars": "Variabili ambiente",
+      "cookies": "Cookie",
+      "session": "Sessione",
+      "get": "GET",
+      "post": "POST",
+      "files": "File"
+    },
+    "messages": {
+      "no_excerpt": "Nessun estratto disponibile"
+    },
+    "footer": {
+      "rendered_by": "Generato da PHP Error Insight"
+    },
+    "aria": {
+      "page_actions": "Azioni pagina",
+      "toggle_theme": "Cambia tema",
+      "stack_actions": "Azioni stack",
+      "copy_line": "Copia riga",
+      "code_excerpt": "Estratto codice",
+      "server_dump": "Dump Server / Richiesta",
+      "env_tabs": "Schede ambiente"
+    },
+    "js": {
+      "copied": "Copiato!",
+      "title_copied": "Titolo copiato!",
+      "stack_copied": "Stack copiato!"
+    },
+    "badge": {
+      "severity": "Gravità"
     }
   },
   "ai": {

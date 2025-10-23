@@ -295,6 +295,8 @@ final class Renderer implements RendererInterface
                 'env_details' => Translator::t($config, 'html.headings.env_details'),
                 'suggestions' => Translator::t($config, 'html.headings.suggestions'),
                 'stack' => Translator::t($config, 'html.headings.stack'),
+                'summary' => Translator::t($config, 'html.headings.summary'),
+                'info' => Translator::t($config, 'html.headings.info'),
             ],
             'labels' => [
                 'code' => Translator::t($config, 'html.labels.code'),
@@ -302,6 +304,52 @@ final class Renderer implements RendererInterface
                 'post' => Translator::t($config, 'html.labels.post'),
                 'cookie' => Translator::t($config, 'html.labels.cookie'),
                 'session' => Translator::t($config, 'html.labels.session'),
+                'language' => Translator::t($config, 'html.labels.language'),
+                'ai_model' => Translator::t($config, 'html.labels.ai_model'),
+                'editor_url' => Translator::t($config, 'html.labels.editor_url'),
+                'verbose' => Translator::t($config, 'html.labels.verbose'),
+            ],
+            'toolbar' => [
+                'copy_title' => Translator::t($config, 'html.toolbar.copy_title'),
+                'copy_stack' => Translator::t($config, 'html.toolbar.copy_stack'),
+                'open_in_editor' => Translator::t($config, 'html.toolbar.open_in_editor'),
+                'theme' => Translator::t($config, 'html.toolbar.theme'),
+            ],
+            'stack' => [
+                'expand_all' => Translator::t($config, 'html.stack.expand_all'),
+                'collapse_all' => Translator::t($config, 'html.stack.collapse_all'),
+                'copy' => Translator::t($config, 'html.stack.copy'),
+                'open' => Translator::t($config, 'html.stack.open'),
+            ],
+            'tabs' => [
+                'server_request' => Translator::t($config, 'html.tabs.server_request'),
+                'env_vars' => Translator::t($config, 'html.tabs.env_vars'),
+                'cookies' => Translator::t($config, 'html.tabs.cookies'),
+                'session' => Translator::t($config, 'html.tabs.session'),
+                'get' => Translator::t($config, 'html.tabs.get'),
+                'post' => Translator::t($config, 'html.tabs.post'),
+                'files' => Translator::t($config, 'html.tabs.files'),
+            ],
+            'messages' => [
+                'no_excerpt' => Translator::t($config, 'html.messages.no_excerpt'),
+                'rendered_by' => Translator::t($config, 'html.footer.rendered_by'),
+            ],
+            'aria' => [
+                'page_actions' => Translator::t($config, 'html.aria.page_actions'),
+                'toggle_theme' => Translator::t($config, 'html.aria.toggle_theme'),
+                'stack_actions' => Translator::t($config, 'html.aria.stack_actions'),
+                'copy_line' => Translator::t($config, 'html.aria.copy_line'),
+                'code_excerpt' => Translator::t($config, 'html.aria.code_excerpt'),
+                'server_dump' => Translator::t($config, 'html.aria.server_dump'),
+                'env_tabs' => Translator::t($config, 'html.aria.env_tabs'),
+            ],
+            'js' => [
+                'copied' => Translator::t($config, 'html.js.copied'),
+                'title_copied' => Translator::t($config, 'html.js.title_copied'),
+                'stack_copied' => Translator::t($config, 'html.js.stack_copied'),
+            ],
+            'badge' => [
+                'severity' => Translator::t($config, 'html.badge.severity'),
             ],
         ];
 

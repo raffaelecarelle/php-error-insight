@@ -591,7 +591,7 @@ foreach ($frames as $f) {
 <div class="wrapper" id="app">
     <header class="header" aria-labelledby="page-title">
         <div class="header-top">
-            <span class="badge severity" aria-label="Severity"><?= $e($severity) ?></span>
+            <span class="badge severity" aria-label="<?= $e($labels['badge']['severity'] ?? 'Severity') ?>"><?= $e($severity) ?></span>
             <span class="badge">PHP Error Insight</span>
         </div>
         <h1 id="page-title" class="title"><?= $e($fullTitle) ?></h1>
@@ -600,14 +600,11 @@ foreach ($frames as $f) {
         <?php if ($where !== ''): ?>
             <div class="location"><?= $e($where) ?></div><?php endif; ?>
 
-        <div class="toolbar" role="toolbar" aria-label="Page actions">
-            <button class="button primary i-title" id="copyTitle"> Copy title</button>
-            <button class="button i-stack" id="copyStack"> Copy stack</button>
-            <button class="button i-link" id="openEditor" <?= $firstEditor === '' ? 'disabled' : '' ?>> Open in your
-                editor
-            </button>
-            <button class="button i-moon" id="toggleTheme" aria-pressed="false" aria-label="Toggle theme"> Theme
-            </button>
+        <div class="toolbar" role="toolbar" aria-label="<?= $e($labels['aria']['page_actions'] ?? 'Page actions') ?>">
+            <button class="button primary i-title" id="copyTitle"> <?= $e($labels['toolbar']['copy_title'] ?? 'Copy title') ?></button>
+            <button class="button i-stack" id="copyStack"> <?= $e($labels['toolbar']['copy_stack'] ?? 'Copy stack') ?></button>
+            <button class="button i-link" id="openEditor" <?= $firstEditor === '' ? 'disabled' : '' ?>> <?= $e($labels['toolbar']['open_in_editor'] ?? 'Open in your editor') ?></button>
+            <button class="button i-moon" id="toggleTheme" aria-pressed="false" aria-label="<?= $e($labels['aria']['toggle_theme'] ?? 'Toggle theme') ?>"> <?= $e($labels['toolbar']['theme'] ?? 'Theme') ?></button>
         </div>
     </header>
 
@@ -615,7 +612,7 @@ foreach ($frames as $f) {
     <main class="grid<?= $noAi ? ' no-ai' : '' ?>" aria-live="polite">
         <?php if ($summary !== ''): ?>
             <section class="card" aria-labelledby="sec-summary">
-                <h3 id="sec-summary">Summary</h3>
+                <h3 id="sec-summary"><?= $e($labels['headings']['summary'] ?? 'Summary') ?></h3>
                 <div class="content">
                     <p><?= $e($summary) ?></p>
                 </div>
@@ -624,9 +621,9 @@ foreach ($frames as $f) {
 
         <section class="card" aria-labelledby="sec-stack">
             <h3 id="sec-stack"><?= $e($labels['headings']['stack'] ?? 'Stack trace') ?></h3>
-            <div class="toolbar" role="toolbar" aria-label="Stack actions">
-                <button class="button" id="expandAll">Expand all</button>
-                <button class="button" id="collapseAll">Collapse all</button>
+            <div class="toolbar" role="toolbar" aria-label="<?= $e($labels['aria']['stack_actions'] ?? 'Stack actions') ?>">
+                <button class="button" id="expandAll"><?= $e($labels['stack']['expand_all'] ?? 'Expand all') ?></button>
+                <button class="button" id="collapseAll"><?= $e($labels['stack']['collapse_all'] ?? 'Collapse all') ?></button>
             </div>
             <div class="content stack">
                 <?php $i = 0 ?>
@@ -644,20 +641,20 @@ foreach ($frames as $f) {
                                 <div class="sig" title="<?= $e($rel !== '' ? ($rel . ($ln ? ':' . $ln : '')) : $loc) ?>"><?= $e($sig) ?></div>
                             </div>
                             <div class="row-actions">
-                                <button class="button i-copy" data-copy="<?= $e($copy) ?>" aria-label="Copy line">
-                                    Copy
+                                <button class="button i-copy" data-copy="<?= $e($copy) ?>" aria-label="<?= $e($labels['aria']['copy_line'] ?? 'Copy line') ?>">
+                                    <?= $e($labels['stack']['copy'] ?? 'Copy') ?>
                                 </button>
                                 <?php if ($href !== ''): ?>
-                                    <a class="button i-link" href="<?= $e($href) ?>" title="Open in your editor">
-                                        Open</a>
+                                    <a class="button i-link" href="<?= $e($href) ?>" title="<?= $e($labels['toolbar']['open_in_editor'] ?? 'Open in your editor') ?>">
+                                        <?= $e($labels['stack']['open'] ?? 'Open') ?></a>
                                 <?php endif; ?>
                             </div>
                         </div>
-                        <div class="code" role="region" aria-label="Code excerpt">
+                        <div class="code" role="region" aria-label="<?= $e($labels['aria']['code_excerpt'] ?? 'Code excerpt') ?>">
                             <?php if (!empty($f['codeHtml'])): ?>
                                 <?= $f['codeHtml'] ?>
                             <?php else: ?>
-                                <pre><code><em>No excerpt available</em></code></pre>
+                                <pre><code><em><?= $e($labels['messages']['no_excerpt'] ?? 'No excerpt available') ?></em></code></pre>
                             <?php endif; ?>
                         </div>
                     </article>
@@ -677,11 +674,11 @@ foreach ($frames as $f) {
 
         <?php if (!empty($suggestions)): ?>
             <section class="card" aria-labelledby="sec-suggestions">
-                <h3 id="sec-suggestions"><?= $e($labels['headings']['suggestions'] ?? 'Suggerimenti') ?></h3>
+                <h3 id="sec-suggestions"><?= $e($labels['headings']['suggestions'] ?? 'Suggestions') ?></h3>
                 <div class="content suggestions">
                     <?php foreach ($suggestions as $s): ?>
                         <div class="suggestion">
-                            <p class="title">Suggerimento</p>
+                            <p class="title"><?= $e($labels['labels']['suggestion'] ?? 'Suggestion') ?></p>
                             <p><?= $e((string)$s) ?></p>
                         </div>
                     <?php endforeach; ?>
@@ -690,20 +687,20 @@ foreach ($frames as $f) {
         <?php endif; ?>
 
         <section class="card" aria-labelledby="sec-env">
-            <h3 id="sec-env">PHP Error Insight Info</h3>
+            <h3 id="sec-env"><?= $e($labels['headings']['info'] ?? 'PHP Error Insight Info') ?></h3>
             <div class="content">
                 <div class="kv">
-                    <div class="k">Language</div>
+                    <div class="k"><?= $e($labels['labels']['language'] ?? 'Language') ?></div>
                     <div class="v"><?php echo $docLang; ?></div>
                     <?php if ($aiModel !== ''): ?>
-                        <div class="k">AI Model</div>
+                        <div class="k"><?= $e($labels['labels']['ai_model'] ?? 'AI Model') ?></div>
                         <div class="v"><?php echo $aiModel ?></div>
                     <?php endif; ?>
                     <?php if ($editorUrl !== ''): ?>
-                        <div class="k">Editor URL</div>
+                        <div class="k"><?= $e($labels['labels']['editor_url'] ?? 'Editor URL') ?></div>
                         <div class="v"><?php echo $editorUrl ?></div>
                     <?php endif; ?>
-                    <div class="k">Verbose</div>
+                    <div class="k"><?= $e($labels['labels']['verbose'] ?? 'Verbose') ?></div>
                     <div class="v"><?php echo (bool)$verbose ?></div>
                 </div>
             </div>
@@ -712,32 +709,32 @@ foreach ($frames as $f) {
         <section class="card" aria-labelledby="sec-env-details">
             <h3 id="sec-env-details"><?= $e($labels['headings']['env_details'] ?? 'Environment Details') ?></h3>
             <div class="content">
-                <div class="tabs" role="tablist" aria-label="Environment tabs">
+                <div class="tabs" role="tablist" aria-label="<?= $e($labels['aria']['env_tabs'] ?? 'Environment tabs') ?>">
                     <button class="tab is-active" role="tab" aria-selected="true" aria-controls="tab-server"
-                            id="tabbtn-server">Server/Request
+                            id="tabbtn-server"><?= $e($labels['tabs']['server_request'] ?? 'Server/Request') ?>
                     </button>
                     <button class="tab" role="tab" aria-selected="false" aria-controls="tab-env" id="tabbtn-env"
-                            tabindex="-1">Env Vars
+                            tabindex="-1"><?= $e($labels['tabs']['env_vars'] ?? 'Env Vars') ?>
                     </button>
                     <button class="tab" role="tab" aria-selected="false" aria-controls="tab-cookies" id="tabbtn-cookies"
-                            tabindex="-1">Cookies
+                            tabindex="-1"><?= $e($labels['tabs']['cookies'] ?? 'Cookies') ?>
                     </button>
                     <button class="tab" role="tab" aria-selected="false" aria-controls="tab-session" id="tabbtn-session"
-                            tabindex="-1">Session
+                            tabindex="-1"><?= $e($labels['tabs']['session'] ?? 'Session') ?>
                     </button>
                     <button class="tab" role="tab" aria-selected="false" aria-controls="tab-get" id="tabbtn-get"
-                            tabindex="-1">GET
+                            tabindex="-1"><?= $e($labels['tabs']['get'] ?? ($labels['labels']['get'] ?? 'GET')) ?>
                     </button>
                     <button class="tab" role="tab" aria-selected="false" aria-controls="tab-post" id="tabbtn-post"
-                            tabindex="-1">POST
+                            tabindex="-1"><?= $e($labels['tabs']['post'] ?? ($labels['labels']['post'] ?? 'POST')) ?>
                     </button>
                     <button class="tab" role="tab" aria-selected="false" aria-controls="tab-files" id="tabbtn-files"
-                            tabindex="-1">Files
+                            tabindex="-1"><?= $e($labels['tabs']['files'] ?? 'Files') ?>
                     </button>
                 </div>
 
                 <div id="tab-server" class="tabpanel" role="tabpanel" tabindex="0" aria-labelledby="tabbtn-server">
-                    <div class="code dump" role="region" aria-label="Server / Request dump">
+                    <div class="code dump" role="region" aria-label="<?= $e($labels['aria']['server_dump'] ?? 'Server / Request dump') ?>">
                         <pre><code><?= $e(var_export($_SERVER ?? [], true)) ?></code></pre>
                     </div>
                 </div>
@@ -783,7 +780,7 @@ foreach ($frames as $f) {
         </section>
     </main>
 
-    <div class="footer">Rendered by PHP Error Insight</div>
+    <div class="footer"><?= $e($labels['messages']['rendered_by'] ?? 'Rendered by PHP Error Insight') ?></div>
 </div>
 
 <script>
@@ -811,7 +808,7 @@ foreach ($frames as $f) {
         }
     }
 
-    function flashCopied(el, labelCopied = 'Copied!') {
+    function flashCopied(el, labelCopied = <?= json_encode($labels['js']['copied'] ?? 'Copied!') ?>) {
         if (!el) return;
         const prevText = el.textContent;
         const prevAria = el.getAttribute('aria-label');
@@ -829,14 +826,14 @@ foreach ($frames as $f) {
     $('#copyTitle')?.addEventListener('click', (e) => {
         const btnEl = e.currentTarget;
         const titleText = $('#page-title')?.textContent?.trim() || document.title;
-        copy(titleText).then(() => flashCopied(btnEl, 'Title copied!')).catch(() => {
+        copy(titleText).then(() => flashCopied(btnEl, <?= json_encode($labels['js']['title_copied'] ?? 'Title copied!') ?>)).catch(() => {
         });
     });
 
     $('#copyStack')?.addEventListener('click', (e) => {
         const btnEl = e.currentTarget;
         const lines = $$('.frame .sig').map(e => e.textContent?.trim()).join("\n");
-        copy(lines).then(() => flashCopied(btnEl, 'Stack copied!')).catch(() => {
+        copy(lines).then(() => flashCopied(btnEl, <?= json_encode($labels['js']['stack_copied'] ?? 'Stack copied!') ?>)).catch(() => {
         });
     });
 
@@ -844,7 +841,7 @@ foreach ($frames as $f) {
         b.addEventListener('click', (e) => {
             const btnEl = e.currentTarget;
             const txt = b.getAttribute('data-copy') || '';
-            copy(txt).then(() => flashCopied(btnEl, 'Copied!')).catch(() => {
+            copy(txt).then(() => flashCopied(btnEl, <?= json_encode($labels['js']['copied'] ?? 'Copied!') ?>)).catch(() => {
             });
             e.stopPropagation();
         });

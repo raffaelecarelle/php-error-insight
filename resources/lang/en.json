@@ -24,7 +24,9 @@
         "suggestions": "Suggestions",
         "stack": "Stack trace",
         "globals": "Globals",
-        "state": "Full state"
+        "state": "Full state",
+        "summary": "Summary",
+        "info": "PHP Error Insight Info"
       },
       "labels": {
         "arguments": "Arguments",
@@ -38,7 +40,56 @@
         "globals_all": "All globals",
         "defined_vars": "Defined vars (scope)",
         "raw_trace": "Raw trace",
-        "xdebug": "Xdebug"
+        "xdebug": "Xdebug",
+        "language": "Language",
+        "ai_model": "AI Model",
+        "editor_url": "Editor URL",
+        "verbose": "Verbose",
+        "suggestion": "Suggestion"
+      },
+      "toolbar": {
+        "copy_title": "Copy title",
+        "copy_stack": "Copy stack",
+        "open_in_editor": "Open in your editor",
+        "theme": "Theme"
+      },
+      "stack": {
+        "expand_all": "Expand all",
+        "collapse_all": "Collapse all",
+        "copy": "Copy",
+        "open": "Open"
+      },
+      "tabs": {
+        "server_request": "Server/Request",
+        "env_vars": "Env Vars",
+        "cookies": "Cookies",
+        "session": "Session",
+        "get": "GET",
+        "post": "POST",
+        "files": "Files"
+      },
+      "messages": {
+        "no_excerpt": "No excerpt available"
+      },
+      "footer": {
+        "rendered_by": "Rendered by PHP Error Insight"
+      },
+      "aria": {
+        "page_actions": "Page actions",
+        "toggle_theme": "Toggle theme",
+        "stack_actions": "Stack actions",
+        "copy_line": "Copy line",
+        "code_excerpt": "Code excerpt",
+        "server_dump": "Server / Request dump",
+        "env_tabs": "Environment tabs"
+      },
+      "js": {
+        "copied": "Copied!",
+        "title_copied": "Title copied!",
+        "stack_copied": "Stack copied!"
+      },
+      "badge": {
+        "severity": "Severity"
       }
     },
   "ai": {
