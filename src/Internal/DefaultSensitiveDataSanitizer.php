@@ -8,8 +8,17 @@ use ErrorExplainer\Contracts\SensitiveDataSanitizerInterface;
 
 use function in_array;
 
+/**
+ * Best-effort sensitive data masker for logs and rendered output.
+ *
+ * Why conservative rules: false positives harm debugging more than partial masking. Rules can be customized
+ * via SanitizerConfig allowing teams to tune for their domain.
+ */
 final class DefaultSensitiveDataSanitizer implements SensitiveDataSanitizerInterface
 {
+    /**
+     * Apply masking rules in a predictable order to reduce cross-rule interference.
+     */
     public function sanitize(string $text, SanitizerConfig $config): string
     {
         if ('' === $text) {

@@ -9,6 +9,7 @@ use ErrorExplainer\Contracts\ExplainerInterface;
 use ErrorExplainer\Contracts\RendererInterface;
 use ErrorExplainer\Internal\ErrorHandler;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 use Throwable;
 
 use const E_USER_NOTICE;
@@ -33,7 +34,7 @@ final class ErrorHandlerChainingTest extends TestCase
         };
     }
 
-    private function makeSilentRenderer(object $sink = null): RendererInterface
+    private function makeSilentRenderer(?object $sink = null): RendererInterface
     {
         return new class($sink) implements RendererInterface {
             public function __construct(private readonly ?object $sink)
@@ -42,7 +43,7 @@ final class ErrorHandlerChainingTest extends TestCase
 
             public function render(array $explanation, Config $config, string $kind, bool $isShutdown): void
             {
-                if ($this->sink) {
+                if (null !== $this->sink) {
                     $this->sink->explanation = $explanation;
                     $this->sink->kind = $kind;
                     $this->sink->isShutdown = $isShutdown;
@@ -51,26 +52,38 @@ final class ErrorHandlerChainingTest extends TestCase
         };
     }
 
-    private static function makeInvokeCounter(object $counter): callable
+    private function makeInvokeCounter(object $counter): callable
     {
         return new class($counter) {
-            public function __construct(private readonly object $counter) {}
-            public function __invoke(): void { $this->counter->count++; }
+            public function __construct(private readonly object $counter)
+            {
+            }
+
+            public function __invoke(): void
+            {
+                ++$this->counter->count;
+            }
         };
     }
 
-    private static function makeInvokeCounterEx(object $counter): callable
+    private function makeInvokeCounterEx(object $counter): callable
     {
         return new class($counter) {
-            public function __construct(private readonly object $counter) {}
-            public function __invoke(\Throwable $e): void { $this->counter->count++; }
+            public function __construct(private readonly object $counter)
+            {
+            }
+
+            public function __invoke(Throwable $e): void
+            {
+                ++$this->counter->count;
+            }
         };
     }
 
     public function testPreviousErrorHandlerIsCalledWhenPresent(): void
     {
         $called = (object) ['count' => 0];
-        $prev = self::makeInvokeCounter($called);
+        $prev = $this->makeInvokeCounter($called);
 
         $config = new Config(['enabled' => true, 'output' => Config::OUTPUT_TEXT]);
         $handler = new ErrorHandler($config, $prev, null, $this->makeFakeExplainer(), $this->makeSilentRenderer());
@@ -84,20 +97,20 @@ final class ErrorHandlerChainingTest extends TestCase
     public function testHandleExceptionCallsPreviousWhenDisabled(): void
     {
         $called = (object) ['count' => 0];
-        $prevEx = self::makeInvokeCounterEx($called);
+        $prevEx = $this->makeInvokeCounterEx($called);
 
         $config = new Config(['enabled' => false, 'output' => Config::OUTPUT_TEXT]);
         $handler = new ErrorHandler($config, null, $prevEx, $this->makeFakeExplainer(), $this->makeSilentRenderer());
 
-        $handler->handleException(new \RuntimeException('Boom'));
+        $handler->handleException(new RuntimeException('Boom'));
         $this->assertSame(1, $called->count, 'Previous exception handler should be called when disabled');
     }
 
     public function testHandleExceptionRethrowsWhenDisabledAndNoPrevious(): void
     {
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(RuntimeException::class);
         $config = new Config(['enabled' => false, 'output' => Config::OUTPUT_TEXT]);
         $handler = new ErrorHandler($config, null, null, $this->makeFakeExplainer(), $this->makeSilentRenderer());
-        $handler->handleException(new \RuntimeException('Boom'));
+        $handler->handleException(new RuntimeException('Boom'));
     }
 }

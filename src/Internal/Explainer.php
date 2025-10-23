@@ -39,6 +39,13 @@ use const E_USER_WARNING;
 use const E_WARNING;
 use const PHP_SESSION_ACTIVE;
 
+/**
+ * Produces human-friendly explanations for runtime problems and optionally enriches them via an AI backend.
+ *
+ * Why separate from rendering and handling:
+ * - Keeps the knowledge/heuristics about errors isolated and testable.
+ * - Allows swapping the AI provider without changing how we render or capture errors.
+ */
 final class Explainer implements ExplainerInterface
 {
     public function __construct(private readonly ?AIClientInterface $aiClient = null)
@@ -47,6 +54,11 @@ final class Explainer implements ExplainerInterface
 
     /**
      * Build an educational explanation based on the given error/exception data.
+     *
+     * Why we attach both normalized trace and minimal globals:
+     * - Normalized trace enables consistent presentation across formats.
+     * - Minimal globals snapshot helps reproducing issues without leaking too much data.
+     *
      * Returns an associative array with keys: title, summary, details, suggestions, severityLabel, original.
      *
      * @param string                              $kind  'error'|'exception'|'shutdown'

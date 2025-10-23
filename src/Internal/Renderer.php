@@ -27,9 +27,20 @@ use const PHP_SAPI;
 use const STDOUT;
 use const STR_PAD_LEFT;
 
+/**
+ * Renders error explanations across multiple formats (HTML, text, JSON).
+ *
+ * Why separate rendering:
+ * - Presentation concerns change more frequently than domain logic; isolating them reduces ripple effects.
+ * - Different environments (CLI vs web) require different defaults and headers.
+ */
 final class Renderer implements RendererInterface
 {
     /**
+     * Decide output format at runtime and delegate to specialized renderers.
+     *
+     * Why AUTO: we prefer text in CLI for readability and HTML in web for rich context.
+     *
      * @param array<string,mixed> $explanation
      */
     public function render(array $explanation, Config $config, string $kind, bool $isShutdown): void
@@ -56,6 +67,11 @@ final class Renderer implements RendererInterface
     }
 
     /**
+     * Emit a machine-readable representation for integrations.
+     *
+     * Why set headers here: when running under a web SAPI we owe a proper content-type and a 500 status code
+     * so upstream reverse proxies and clients can react appropriately.
+     *
      * @param array<string,mixed> $explanation
      */
     private function renderJson(array $explanation): void

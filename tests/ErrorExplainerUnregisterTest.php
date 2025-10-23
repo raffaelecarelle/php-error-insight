@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace ErrorExplainer\Tests;
 
+use Closure;
 use ErrorExplainer\Config;
 use ErrorExplainer\ErrorExplainer;
 use PHPUnit\Framework\TestCase;
+use ReflectionFunction;
+
+use function is_object;
 
 final class ErrorExplainerUnregisterTest extends TestCase
 {
@@ -30,17 +34,17 @@ final class ErrorExplainerUnregisterTest extends TestCase
         restore_error_handler();
 
         // Verify ErrorExplainer is NOT the current error handler
-        if ($currentErr !== null) {
+        if (null !== $currentErr) {
             if (is_object($currentErr)) {
                 $this->assertNotInstanceOf(
                     ErrorExplainer::class,
                     $currentErr,
                     'ErrorExplainer should not be installed as error handler when disabled'
                 );
-            } elseif ($currentErr instanceof \Closure) {
-                $reflection = new \ReflectionFunction($currentErr);
+            } elseif ($currentErr instanceof Closure) {
+                $reflection = new ReflectionFunction($currentErr);
                 $scopeClass = $reflection->getClosureScopeClass();
-                if ($scopeClass !== null) {
+                if (null !== $scopeClass) {
                     $this->assertStringNotContainsString(
                         'ErrorExplainer',
                         $scopeClass->getName(),
@@ -56,17 +60,17 @@ final class ErrorExplainerUnregisterTest extends TestCase
         restore_exception_handler();
 
         // Verify ErrorExplainer is NOT the current exception handler
-        if ($currentEx !== null) {
+        if (null !== $currentEx) {
             if (is_object($currentEx)) {
                 $this->assertNotInstanceOf(
                     ErrorExplainer::class,
                     $currentEx,
                     'ErrorExplainer should not be installed as exception handler when disabled'
                 );
-            } elseif ($currentEx instanceof \Closure) {
-                $reflection = new \ReflectionFunction($currentEx);
+            } elseif ($currentEx instanceof Closure) {
+                $reflection = new ReflectionFunction($currentEx);
                 $scopeClass = $reflection->getClosureScopeClass();
-                if ($scopeClass !== null) {
+                if (null !== $scopeClass) {
                     $this->assertStringNotContainsString(
                         'ErrorExplainer',
                         $scopeClass->getName(),
@@ -84,7 +88,7 @@ final class ErrorExplainerUnregisterTest extends TestCase
         $afterErr = set_error_handler(static fn (): bool => false);
         restore_error_handler();
 
-        if ($afterErr !== null && is_object($afterErr)) {
+        if (null !== $afterErr && is_object($afterErr)) {
             $this->assertNotInstanceOf(
                 ErrorExplainer::class,
                 $afterErr,

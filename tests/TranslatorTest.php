@@ -63,12 +63,12 @@ final class TranslatorTest extends TestCase
         $configDefault = new Config(['language' => '']);
         $listDefault = Translator::tList($configDefault, 'errors.undefined_variable.suggestions');
         $this->assertNotEmpty($listDefault);
-        $this->assertSame('Inizializza la variabile prima dell\'uso.', $listDefault[0]);
+        $this->assertSame("Inizializza la variabile prima dell'uso.", $listDefault[0]);
 
         // Unknown language -> fallback to 'it' for lists
         $configUnknown = new Config(['language' => 'zz']);
         $listUnknown = Translator::tList($configUnknown, 'errors.undefined_index.suggestions');
         $this->assertNotEmpty($listUnknown);
-        $this->assertSame('Verifica l\'esistenza della chiave con isset() o array_key_exists() prima di accedere.', $listUnknown[0]);
+        $this->assertSame("Verifica l'esistenza della chiave con isset() o array_key_exists() prima di accedere.", $listUnknown[0]);
     }
 }
