@@ -19,6 +19,8 @@ use const E_COMPILE_ERROR;
 use const E_CORE_ERROR;
 use const E_ERROR;
 use const E_PARSE;
+use const E_RECOVERABLE_ERROR;
+use const E_USER_ERROR;
 
 /**
  * Coordinates the flow between error capture, explanation building, state dumping and rendering.
@@ -55,9 +57,14 @@ final class ErrorHandler
      */
     public function handleError(int $severity, string $message, ?string $file = null, ?int $line = null): bool
     {
-        // Respect @-operator: if error_reporting() is 0, PHP intends to silence the error.
-        if (0 === error_reporting()) {
-            return false;
+        // Respect @-operator:
+        // - PHP < 8.0: error_reporting() returns 0 when @ is used
+        // - PHP >= 8.0: error_reporting() returns E_ERROR | E_CORE_ERROR | E_COMPILE_ERROR | E_USER_ERROR | E_RECOVERABLE_ERROR | E_PARSE (4437)
+        $errorReporting = error_reporting();
+        $suppressedMask = E_ERROR | E_CORE_ERROR | E_COMPILE_ERROR | E_USER_ERROR | E_RECOVERABLE_ERROR | E_PARSE;
+
+        if (0 === $errorReporting || $errorReporting === $suppressedMask) {
+            return true; // Error was silenced with @, handle it by doing nothing
         }
 
         if (!$this->config->enabled) {
