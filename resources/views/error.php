@@ -865,13 +865,38 @@ foreach ($frames as $f) {
 
     const root = document.documentElement;
     const themeBtn = $('#toggleTheme');
+    const THEME_KEY = 'phpesTheme';
+
+    function applyTheme(isLight) {
+        // Update ARIA and classes
+        themeBtn?.setAttribute('aria-pressed', String(isLight));
+        root.classList.toggle('light', isLight);
+        themeBtn?.classList.toggle('i-sun', isLight);
+        themeBtn?.classList.toggle('i-moon', !isLight);
+    }
+
+    // Initialize from localStorage (remember user's last choice)
     let light = false;
+    try {
+        light = (localStorage.getItem(THEME_KEY) === 'light');
+    } catch (e) {
+        // localStorage might be unavailable; fall back to default (dark)
+    }
+    applyTheme(light);
+
+    // Toggle and persist preference
     themeBtn?.addEventListener('click', () => {
         light = !light;
-        themeBtn.setAttribute('aria-pressed', String(light));
-        root.classList.toggle('light', light);
-        themeBtn.classList.toggle('i-sun', light);
-        themeBtn.classList.toggle('i-moon', !light);
+        applyTheme(light);
+        try {
+            if (light) {
+                localStorage.setItem(THEME_KEY, 'light');
+            } else {
+                localStorage.removeItem(THEME_KEY);
+            }
+        } catch (e) {
+            // ignore storage errors
+        }
     });
 
     // Collapsible stack frames
