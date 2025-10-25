@@ -102,17 +102,17 @@ final class Config
     {
         $env = [
             'enabled' => self::envBool('PHP_ERROR_INSIGHT_ENABLED', true),
-            'backend' => getenv('PHP_ERROR_INSIGHT_BACKEND') ?: 'none',
-            'model' => getenv('PHP_ERROR_INSIGHT_MODEL') ?: null,
-            'language' => getenv('PHP_ERROR_INSIGHT_LANG') ?: 'it',
-            'output' => getenv('PHP_ERROR_INSIGHT_OUTPUT') ?: self::OUTPUT_AUTO,
+            'backend' => self::getEnvVar('PHP_ERROR_INSIGHT_BACKEND') ?: 'none',
+            'model' => self::getEnvVar('PHP_ERROR_INSIGHT_MODEL') ?: null,
+            'language' => self::getEnvVar('PHP_ERROR_INSIGHT_LANG') ?: 'it',
+            'output' => self::getEnvVar('PHP_ERROR_INSIGHT_OUTPUT') ?: self::OUTPUT_AUTO,
             'verbose' => self::envBool('PHP_ERROR_INSIGHT_VERBOSE', false),
-            'apiKey' => getenv('PHP_ERROR_INSIGHT_API_KEY') ?: null,
-            'apiUrl' => getenv('PHP_ERROR_INSIGHT_API_URL') ?: null,
-            'template' => getenv('PHP_ERROR_INSIGHT_TEMPLATE') ?: null,
-            'projectRoot' => getenv('PHP_ERROR_INSIGHT_ROOT') ?: null,
-            'hostProjectRoot' => getenv('PHP_ERROR_INSIGHT_HOST_ROOT') ?: null,
-            'editorUrl' => getenv('PHP_ERROR_INSIGHT_EDITOR') ?: null,
+            'apiKey' => self::getEnvVar('PHP_ERROR_INSIGHT_API_KEY') ?: null,
+            'apiUrl' => self::getEnvVar('PHP_ERROR_INSIGHT_API_URL') ?: null,
+            'template' => self::getEnvVar('PHP_ERROR_INSIGHT_TEMPLATE') ?: null,
+            'projectRoot' => self::getEnvVar('PHP_ERROR_INSIGHT_ROOT') ?: null,
+            'hostProjectRoot' => self::getEnvVar('PHP_ERROR_INSIGHT_HOST_ROOT') ?: null,
+            'editorUrl' => self::getEnvVar('PHP_ERROR_INSIGHT_EDITOR') ?: null,
         ];
         // Options override env
         $merged = array_merge($env, $options);
@@ -120,14 +120,19 @@ final class Config
         return new self($merged);
     }
 
+    private static function getEnvVar(string $var): string|false
+    {
+        return $_ENV[$var] ?? getenv($var);
+    }
+
     private static function envBool(string $var, bool $default): bool
     {
-        $val = getenv($var);
+        $val = self::getEnvVar($var);
         if (false === $val) {
             return $default;
         }
 
-        $val = strtolower((string) $val);
+        $val = strtolower($val);
 
         return in_array($val, ['1', 'true', 'yes', 'on'], true);
     }
