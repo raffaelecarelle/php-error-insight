@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace ErrorExplainer\Internal;
+namespace PhpErrorInsight\Internal;
 
-use ErrorExplainer\Contracts\SensitiveDataSanitizerInterface;
+use PhpErrorInsight\Contracts\SensitiveDataSanitizerInterface;
 
 use function in_array;
 

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace ErrorExplainer;
+namespace PhpErrorInsight;
 
-use ErrorExplainer\Internal\ErrorHandler;
+use PhpErrorInsight\Internal\ErrorHandler;
 
 /**
  * Library facade used to register/unregister global error handlers.

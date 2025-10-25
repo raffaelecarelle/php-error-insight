@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace ErrorExplainer\Tests;
+namespace PhpErrorInsight\Tests;
 
-use ErrorExplainer\Config;
+use PhpErrorInsight\Config;
 use PHPUnit\Framework\TestCase;
 
 use function dirname;

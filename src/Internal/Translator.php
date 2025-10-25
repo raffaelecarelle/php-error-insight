@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace ErrorExplainer\Internal;
+namespace PhpErrorInsight\Internal;
 
-use ErrorExplainer\Config;
+use PhpErrorInsight\Config;
 
 use function array_key_exists;
 use function dirname;

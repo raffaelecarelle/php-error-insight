@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace ErrorExplainer\Internal;
+namespace PhpErrorInsight\Internal;
 
-use ErrorExplainer\Config;
-use ErrorExplainer\Contracts\AIClientInterface;
-use ErrorExplainer\Contracts\ExplainerInterface;
+use PhpErrorInsight\Config;
+use PhpErrorInsight\Contracts\AIClientInterface;
+use PhpErrorInsight\Contracts\ExplainerInterface;
 
 use function function_exists;
 use function in_array;

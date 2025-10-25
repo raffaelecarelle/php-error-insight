@@ -9,12 +9,12 @@
     },
     "autoload": {
         "psr-4": {
-            "ErrorExplainer\\": "src/"
+            "PhpErrorInsight\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "ErrorExplainer\\Tests\\": "tests/"
+            "PhpErrorInsight\\Tests\\": "tests/"
         }
     },
     "authors": [

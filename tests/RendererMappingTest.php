@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace ErrorExplainer\Tests;
+namespace PhpErrorInsight\Tests;
 
-use ErrorExplainer\Config;
-use ErrorExplainer\Internal\Renderer;
+use PhpErrorInsight\Config;
+use PhpErrorInsight\Internal\Renderer;
 use PHPUnit\Framework\TestCase;
 
 final class RendererMappingTest extends TestCase

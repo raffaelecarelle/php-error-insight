@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace ErrorExplainer\Internal;
+namespace PhpErrorInsight\Internal;
 
-use ErrorExplainer\Contracts\StateDumperInterface;
+use PhpErrorInsight\Contracts\StateDumperInterface;
 use ReflectionClass;
 use Throwable;
 

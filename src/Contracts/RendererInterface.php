@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace ErrorExplainer\Contracts;
+namespace PhpErrorInsight\Contracts;
 
-use ErrorExplainer\Config;
+use PhpErrorInsight\Config;
 
 interface RendererInterface
 {

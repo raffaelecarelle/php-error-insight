@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace ErrorExplainer\Contracts;
+namespace PhpErrorInsight\Contracts;
 
 /**
  * Abstraction for collecting extended runtime state during error handling.

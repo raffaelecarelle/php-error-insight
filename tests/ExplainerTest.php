@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace ErrorExplainer\Tests;
+namespace PhpErrorInsight\Tests;
 
-use ErrorExplainer\Config;
-use ErrorExplainer\Contracts\AIClientInterface;
-use ErrorExplainer\Internal\Explainer;
+use PhpErrorInsight\Config;
+use PhpErrorInsight\Contracts\AIClientInterface;
+use PhpErrorInsight\Internal\Explainer;
 use PHPUnit\Framework\TestCase;
 
 use const E_USER_NOTICE;

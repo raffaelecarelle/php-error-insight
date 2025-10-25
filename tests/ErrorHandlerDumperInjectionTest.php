@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace ErrorExplainer\Tests;
+namespace PhpErrorInsight\Tests;
 
-use ErrorExplainer\Config;
-use ErrorExplainer\Contracts\ExplainerInterface;
-use ErrorExplainer\Contracts\RendererInterface;
-use ErrorExplainer\Contracts\StateDumperInterface;
-use ErrorExplainer\Internal\ErrorHandler;
+use PhpErrorInsight\Config;
+use PhpErrorInsight\Contracts\ExplainerInterface;
+use PhpErrorInsight\Contracts\RendererInterface;
+use PhpErrorInsight\Contracts\StateDumperInterface;
+use PhpErrorInsight\Internal\ErrorHandler;
 use PHPUnit\Framework\TestCase;
 
 use const E_USER_NOTICE;

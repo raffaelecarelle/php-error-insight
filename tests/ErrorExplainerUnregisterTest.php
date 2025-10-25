@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace ErrorExplainer\Tests;
+namespace PhpErrorInsight\Tests;
 
 use Closure;
-use ErrorExplainer\Config;
-use ErrorExplainer\ErrorExplainer;
+use PhpErrorInsight\Config;
+use PhpErrorInsight\ErrorExplainer;
 use PHPUnit\Framework\TestCase;
 use ReflectionFunction;
 

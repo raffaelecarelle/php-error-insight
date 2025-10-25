@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace ErrorExplainer\Contracts;
+namespace PhpErrorInsight\Contracts;
 
-use ErrorExplainer\Internal\SanitizerConfig;
+use PhpErrorInsight\Internal\SanitizerConfig;
 
 /**
  * Simple sensitive data sanitizer used before sending prompts to AI providers.

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace ErrorExplainer\Tests;
+namespace PhpErrorInsight\Tests;
 
-use ErrorExplainer\Internal\DefaultSensitiveDataSanitizer;
-use ErrorExplainer\Internal\SanitizerConfig;
+use PhpErrorInsight\Internal\DefaultSensitiveDataSanitizer;
+use PhpErrorInsight\Internal\SanitizerConfig;
 use PHPUnit\Framework\TestCase;
 
 final class SanitizerTest extends TestCase

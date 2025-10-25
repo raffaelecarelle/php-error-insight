@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace ErrorExplainer\Tests;
+namespace PhpErrorInsight\Tests;
 
-use ErrorExplainer\Internal\StateDumper;
+use PhpErrorInsight\Internal\StateDumper;
 use PHPUnit\Framework\TestCase;
 
 final class StateDumperTest extends TestCase

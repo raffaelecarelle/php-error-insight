@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace ErrorExplainer\Internal;
+namespace PhpErrorInsight\Internal;
 
-use ErrorExplainer\Config;
-use ErrorExplainer\Contracts\RendererInterface;
+use PhpErrorInsight\Config;
+use PhpErrorInsight\Contracts\RendererInterface;
 use RuntimeException;
 
 use function count;

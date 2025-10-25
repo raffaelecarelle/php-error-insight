@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace ErrorExplainer\Internal;
+namespace PhpErrorInsight\Internal;
 
 final class SanitizerConfig
 {

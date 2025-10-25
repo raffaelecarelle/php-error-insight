@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace ErrorExplainer\Internal;
+namespace PhpErrorInsight\Internal;
 
-use ErrorExplainer\Config;
-use ErrorExplainer\Contracts\ExplainerInterface;
-use ErrorExplainer\Contracts\RendererInterface;
-use ErrorExplainer\Contracts\StateDumperInterface;
+use PhpErrorInsight\Config;
+use PhpErrorInsight\Contracts\ExplainerInterface;
+use PhpErrorInsight\Contracts\RendererInterface;
+use PhpErrorInsight\Contracts\StateDumperInterface;
 use Throwable;
 
 use function call_user_func;
