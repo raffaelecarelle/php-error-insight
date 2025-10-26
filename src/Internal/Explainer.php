@@ -96,8 +96,10 @@ final class Explainer implements ExplainerInterface
             $aiText = $this->aiExplain($kind, $message, $file, $line, $severity, $config);
             if (is_string($aiText) && '' !== trim($aiText)) {
                 $explanation['title'] = Translator::t($config, 'title.ai');
+
                 // Try to extract bullet suggestions from AI text
-                $aiLines = preg_split('/\r?\n/', trim($aiText)) ?: [];
+                $aiTrim = trim($aiText);
+                $aiLines = preg_split('/\r?\n/', $aiTrim) ?: [];
                 $bullets = [];
                 foreach ($aiLines as $ln) {
                     $t = trim($ln);
@@ -193,7 +195,7 @@ final class Explainer implements ExplainerInterface
 Message: {$message}
 Severity: {$sev}
 Location: {$where}
-Explain the likely cause and provide practical steps to fix it. Keep the answer concise and use bullet points when useful.";
+Provide a concise Summary (max 500 chars) and concise Details (max 500 chars). Then list up to 2 practical fix suggestions as bullet points (-). Keep wording tight and actionable.";
 
         // Sanitize prompt before sending to any AI backend
         $sanitizer = new DefaultSensitiveDataSanitizer();
