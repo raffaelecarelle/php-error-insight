@@ -18,7 +18,6 @@ $editorUrl = $editorUrl ?? '';
 $verbose = $verbose ?? '';
 $aiModel = $aiModel ?? '';
 $fullTitle = trim(($title !== '' ? $title : 'Error') . ($where !== '' ? ' in ' . $where : ''));
-$copyText = json_encode($fullTitle, JSON_UNESCAPED_UNICODE);
 
 // pick first available editor link (for toolbar action)
 $firstEditor = '';
@@ -43,11 +42,9 @@ foreach ($frames as $f) {
             --panel-2: #0d1117;
             --text: #e6edf3;
             --muted: #9fb0c0;
-            --primary: #0ea5e9; /* cyan-500 */
+            --primary: #0ea5e9;
             --primary-600: #0284c7;
-            --accent: #f59e0b; /* amber */
-            --danger: #ef4444; /* red */
-            --ok: #22c55e; /* green */
+            --ok: #22c55e;
             --border: #263241;
             --code-bg: #0b0f14;
             --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
@@ -193,30 +190,6 @@ foreach ($frames as $f) {
             }
         }
 
-        /* Remove old grid positioning */
-        .grid > [aria-labelledby="sec-details"],
-        .grid > [aria-labelledby="sec-suggestions"],
-        .grid > [aria-labelledby="sec-env"] {
-            /* No positioning needed with flexbox */
-        }
-
-        .grid > [aria-labelledby="sec-stack"],
-        .grid > [aria-labelledby="sec-env-details"] {
-            /* No positioning needed with flexbox */
-        }
-
-        /* Layout tweak when AI features are disabled: place Env details on the right, PHP Error Insight Info on the left,
-           and make Stack trace span full width on top. This applies only when .no-ai is on the grid container. */
-        .grid.no-ai > [aria-labelledby="sec-stack"] {
-            grid-column: 1 / -1;
-        }
-        .grid.no-ai > [aria-labelledby="sec-env-details"] {
-            grid-column: 2;
-        }
-        .grid.no-ai > [aria-labelledby="sec-env"] {
-            grid-column: 1;
-        }
-
         .card {
             background: var(--panel-2);
             border: 1px solid var(--border);
@@ -246,7 +219,6 @@ foreach ($frames as $f) {
             opacity: .95;
         }
 
-        /* Toolbar inside cards (e.g., Stack trace actions) */
         .card > .toolbar {
             padding: 8px 12px 0;
         }
@@ -336,7 +308,7 @@ foreach ($frames as $f) {
 
         .kv {
             display: grid;
-            grid-template-columns: 180px 1fr;
+            grid-template-columns: 95px 1fr;
             gap: 6px 12px;
             font-family: var(--mono);
             font-size: 12px;
@@ -409,6 +381,53 @@ foreach ($frames as $f) {
             border-color: #94a3b8;
         }
 
+        .light .card h3 {
+            background: #f8fafc;
+            color: #334155;
+        }
+
+        .light .loc {
+            color: #334155;
+        }
+
+        .light .code {
+            background: #ffffff;
+        }
+
+        .light .code .src {
+            color: #0b1220;
+        }
+
+        .light .code .gutter {
+            color: #64748b;
+        }
+
+        .light .code .hl {
+            background: rgba(14, 165, 233, 0.18);
+        }
+
+        .light .kv {
+            color: #334155;
+        }
+
+        .light .kv .k {
+            color: #475569;
+        }
+
+        .light .kv .v {
+            color: #0b1220;
+        }
+
+        .light .tab:hover {
+            background: #e2e8f0;
+        }
+
+        .light .tab.is-active {
+            background: #ffffff;
+            border-color: #cbd5e1;
+            border-bottom-color: #ffffff;
+        }
+
         /* Collapsible frames */
         .frame.collapsed .code {
             display: none;
@@ -424,16 +443,6 @@ foreach ($frames as $f) {
 
         .frame.collapsed .chev {
             transform: rotate(0deg);
-        }
-
-        /* Higher contrast for light theme section header and locations */
-        .light .card h3 {
-            background: #f8fafc;
-            color: #334155;
-        }
-
-        .light .loc {
-            color: #334155;
         }
 
         /* Copy feedback */
@@ -463,75 +472,6 @@ foreach ($frames as $f) {
             border-color: #16a34a;
             color: #04130a;
             animation: pulseCopied .6s ease;
-        }
-
-        /* Light theme code and table contrast tweaks */
-        .light .code {
-            background: #ffffff;
-        }
-
-        .light .code .src {
-            color: #0b1220;
-        }
-
-        .light .code .gutter {
-            color: #64748b;
-        }
-
-        .light .code .hl {
-            background: rgba(14, 165, 233, 0.18);
-        }
-
-        .light .kv {
-            color: #334155;
-        }
-
-        .light .kv .k {
-            color: #475569;
-        }
-
-        .light .kv .v {
-            color: #0b1220;
-        }
-
-        /* Extra styles for Renderer::renderCodeExcerpt() output */
-        .code-excerpt {
-            border-top: 1px solid var(--border);
-        }
-
-        .code-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .code-table td {
-            padding: 6px 10px;
-        }
-
-        .line-number {
-            width: 1%;
-            white-space: nowrap;
-            text-align: right;
-            color: #9fb0c0;
-        }
-
-        .code-content {
-            width: 99%;
-            color: #dbe7f3;
-        }
-
-        .error-line .line-number, .error-line .code-content {
-            background: rgba(239, 68, 68, .15);
-            color: #fecaca;
-            font-weight: 700;
-        }
-
-        .light .line-number {
-            color: #64748b;
-        }
-
-        .light .code-content {
-            color: #0b1220;
         }
 
         /* Tabs for Environment Details */
@@ -579,16 +519,6 @@ foreach ($frames as $f) {
 
         .tabpanel .code {
             border: 0;
-        }
-
-        .light .tab:hover {
-            background: #e2e8f0;
-        }
-
-        .light .tab.is-active {
-            background: #ffffff;
-            border-color: #cbd5e1;
-            border-bottom-color: #ffffff;
         }
     </style>
     <style>
@@ -639,8 +569,7 @@ foreach ($frames as $f) {
         </div>
     </header>
 
-    <?php $noAi = ($details === '' && empty($suggestions)); ?>
-    <main class="grid<?= $noAi ? ' no-ai' : '' ?>" aria-live="polite">
+    <main class="grid" aria-live="polite">
         <div class="grid-col-left">
             <?php if ($details !== ''): ?>
                 <section class="card" aria-labelledby="sec-details">
