@@ -62,7 +62,7 @@ final class ExplainerSanitizationTest extends TestCase
             {
                 $this->c->prompt = $prompt;
 
-                return 'ok';
+                return '{}';
             }
         };
         $explainer = new Explainer($fakeAi);
@@ -91,7 +91,7 @@ final class ExplainerSanitizationTest extends TestCase
             {
                 $this->c->prompt = $prompt;
 
-                return 'ok';
+                return '{}';
             }
         };
         $explainer = new Explainer($fakeAi);

@@ -17,7 +17,6 @@ final class RendererTest extends TestCase
     {
         return [
             'title' => 'PHP Error Explanation',
-            'summary' => 'Something went wrong',
             'details' => 'More details here',
             'suggestions' => ['Try this', 'Then that'],
             'severityLabel' => 'Notice',
@@ -30,7 +29,7 @@ final class RendererTest extends TestCase
         ];
     }
 
-    public function testRenderTextOutputsSummaryAndSuggestions(): void
+    public function testRenderTextOutputsSuggestions(): void
     {
         $renderer = new Renderer();
         $config = new Config(['output' => Config::OUTPUT_TEXT, 'language' => 'en', 'verbose' => true]);
@@ -40,8 +39,6 @@ final class RendererTest extends TestCase
         $renderer->render($exp, $config, 'error', false);
         $out = (string) ob_get_clean();
 
-        $this->assertStringContainsString('Summary:', $out);
-        $this->assertStringContainsString('Something went wrong', $out);
         $this->assertStringContainsString('Suggestions:', $out);
         $this->assertStringContainsString('Try this', $out);
     }

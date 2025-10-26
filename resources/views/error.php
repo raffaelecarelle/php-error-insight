@@ -647,6 +647,11 @@ foreach ($frames as $f) {
                                     <?php endif; ?>
                                 </div>
                             </div>
+                            <?php if (!empty($f['args'])): ?>
+                                <div class="code" role="region" aria-label="<?= $e($labels['aria']['frame_args'] ?? 'Function arguments') ?>">
+                                    <pre><code><?= $e(print_r($f['args'], true)) ?></code></pre>
+                                </div>
+                            <?php endif; ?>
                             <div class="code" role="region" aria-label="<?= $e($labels['aria']['code_excerpt'] ?? 'Code excerpt') ?>">
                                 <?php if (!empty($f['codeHtml'])): ?>
                                     <?= $f['codeHtml'] ?>

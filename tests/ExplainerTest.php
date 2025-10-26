@@ -13,12 +13,12 @@ use const E_USER_NOTICE;
 
 final class ExplainerTest extends TestCase
 {
-    public function testExplainUsesInjectedAIClientAndExtractsBullets(): void
+    public function testExplainUsesInjectedAIClientAndExtractsSuggestions(): void
     {
         $fakeAi = new class() implements AIClientInterface {
             public function generateExplanation(string $prompt, Config $config): ?string
             {
-                return "* Do A\n* Do B";
+                return '{"details": "[AI]", "suggestions": ["Do A", "Do B", "Do B"]}';
             }
         };
 

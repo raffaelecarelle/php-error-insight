@@ -94,16 +94,20 @@ final class Explainer implements ExplainerInterface
         if ('none' !== $config->backend) {
             $aiText = $this->aiExplain($kind, $message, $file, $line, $severity, $config);
 
-            if($aiText === null) {
+            if (null === $aiText) {
                 return $explanation;
             }
 
-            $explanation = json_decode($aiText, true);
+            $aiTextDecoded = json_decode($aiText, true);
 
-            if(is_array($explanation)) {
+            if (null === $aiTextDecoded) {
+                return $explanation;
+            }
+
+            if (is_array($aiTextDecoded)) {
                 $explanation['title'] = Translator::t($config, 'title.ai');
-                $explanation['details'] = $explanation['details'] ?? '';
-                $explanation['suggestions'] = $explanation['suggestions'] ?? [];
+                $explanation['details'] = $aiTextDecoded['details'] ?? '';
+                $explanation['suggestions'] = $aiTextDecoded['suggestions'] ?? '';
             }
         }
 
