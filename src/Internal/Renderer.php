@@ -109,11 +109,6 @@ final class Renderer implements RendererInterface
         $lines[] = $titleC($header);
         $lines[] = $muted((string) $data['severity']);
 
-        // Summary
-        if ('' !== $data['summary']) {
-            $lines[] = $section(Translator::t($config, 'labels.summary')) . ' ' . $data['summary'];
-        }
-
         // Stack (show top frames with code excerpt)
         if (!empty($data['frames'])) {
             $lines[] = '';
@@ -219,7 +214,6 @@ final class Renderer implements RendererInterface
 
         $severity = (string) ($explanation['severityLabel'] ?? 'Error');
 
-        $summary = (string) ($explanation['summary'] ?? '');
         $details = (string) ($explanation['details'] ?? '');
         $suggestions = isset($explanation['suggestions']) && is_array($explanation['suggestions']) ? $explanation['suggestions'] : [];
 
@@ -311,7 +305,6 @@ final class Renderer implements RendererInterface
                 'env_details' => Translator::t($config, 'html.headings.env_details'),
                 'suggestions' => Translator::t($config, 'html.headings.suggestions'),
                 'stack' => Translator::t($config, 'html.headings.stack'),
-                'summary' => Translator::t($config, 'html.headings.summary'),
                 'info' => Translator::t($config, 'html.headings.info'),
             ],
             'labels' => [
@@ -399,7 +392,6 @@ final class Renderer implements RendererInterface
             'subtitle' => $subtitle,
             'severity' => $severity,
             'where' => $where,
-            'summary' => $summary,
             'verbose' => $config->verbose,
             'details' => $details,
             'suggestions' => $suggestions,

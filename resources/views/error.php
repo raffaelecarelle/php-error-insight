@@ -10,7 +10,6 @@ $title = $title ?? 'PHP Error Insight';
 $subtitle = $subtitle ?? '';
 $where = $where ?? '';
 $severity = $severity ?? 'Error';
-$summary = $summary ?? '';
 $details = $details ?? '';
 $suggestions = $suggestions ?? [];
 $frames = $frames ?? [];
@@ -163,15 +162,47 @@ foreach ($frames as $f) {
 
         .grid {
             margin-top: 18px;
-            display: grid;
-            grid-template-columns: 360px 1fr;
+            display: flex;
             gap: 16px;
+            align-items: flex-start;
+        }
+
+        .grid-col-left {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            min-width: 0;
+        }
+
+        .grid-col-right {
+            flex: 3;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            min-width: 0;
         }
 
         @media (max-width: 980px) {
             .grid {
-                grid-template-columns: 1fr;
+                flex-direction: column;
             }
+            .grid-col-left,
+            .grid-col-right {
+                flex: 1;
+            }
+        }
+
+        /* Remove old grid positioning */
+        .grid > [aria-labelledby="sec-details"],
+        .grid > [aria-labelledby="sec-suggestions"],
+        .grid > [aria-labelledby="sec-env"] {
+            /* No positioning needed with flexbox */
+        }
+
+        .grid > [aria-labelledby="sec-stack"],
+        .grid > [aria-labelledby="sec-env-details"] {
+            /* No positioning needed with flexbox */
         }
 
         /* Layout tweak when AI features are disabled: place Env details on the right, PHP Error Insight Info on the left,
@@ -608,176 +639,171 @@ foreach ($frames as $f) {
         </div>
     </header>
 
-    <?php $noAi = ($summary === '' && $details === '' && empty($suggestions)); ?>
+    <?php $noAi = ($details === '' && empty($suggestions)); ?>
     <main class="grid<?= $noAi ? ' no-ai' : '' ?>" aria-live="polite">
-        <?php if ($summary !== ''): ?>
-            <section class="card" aria-labelledby="sec-summary">
-                <h3 id="sec-summary"><?= $e($labels['headings']['summary'] ?? 'Summary') ?></h3>
+        <div class="grid-col-left">
+            <?php if ($details !== ''): ?>
+                <section class="card" aria-labelledby="sec-details">
+                    <h3 id="sec-details"><?= $e($labels['headings']['details'] ?? 'Details') ?></h3>
+                    <div class="content">
+                        <p><?= nl2br($e($details)) ?></p>
+                    </div>
+                </section>
+            <?php endif; ?>
+
+            <?php if (!empty($suggestions)): ?>
+                <section class="card" aria-labelledby="sec-suggestions">
+                    <h3 id="sec-suggestions"><?= $e($labels['headings']['suggestions'] ?? 'Suggestions') ?></h3>
+                    <div class="content suggestions">
+                        <?php foreach ($suggestions as $s): ?>
+                            <div class="suggestion">
+                                <p class="title"><?= $e($labels['labels']['suggestion'] ?? 'Suggestion') ?></p>
+                                <p><?= $e((string)$s) ?></p>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </section>
+            <?php endif; ?>
+
+            <section class="card" aria-labelledby="sec-env">
+                <h3 id="sec-env"><?= $e($labels['headings']['info'] ?? 'PHP Error Insight Info') ?></h3>
                 <div class="content">
-                    <p><?= $e($summary) ?></p>
+                    <div class="kv">
+                        <div class="k"><?= $e($labels['labels']['language'] ?? 'Language') ?></div>
+                        <div class="v"><?php echo $docLang; ?></div>
+                        <?php if ($aiModel !== ''): ?>
+                            <div class="k"><?= $e($labels['labels']['ai_model'] ?? 'AI Model') ?></div>
+                            <div class="v"><?php echo $aiModel ?></div>
+                        <?php endif; ?>
+                        <?php if ($editorUrl !== ''): ?>
+                            <div class="k"><?= $e($labels['labels']['editor_url'] ?? 'Editor URL') ?></div>
+                            <div class="v"><?php echo $editorUrl ?></div>
+                        <?php endif; ?>
+                        <div class="k"><?= $e($labels['labels']['verbose'] ?? 'Verbose') ?></div>
+                        <div class="v"><?php echo (bool)$verbose ?></div>
+                    </div>
                 </div>
             </section>
-        <?php endif; ?>
+        </div>
 
-        <section class="card" aria-labelledby="sec-stack">
-            <h3 id="sec-stack"><?= $e($labels['headings']['stack'] ?? 'Stack trace') ?></h3>
-            <div class="toolbar" role="toolbar" aria-label="<?= $e($labels['aria']['stack_actions'] ?? 'Stack actions') ?>">
-                <button class="button" id="expandAll"><?= $e($labels['stack']['expand_all'] ?? 'Expand all') ?></button>
-                <button class="button" id="collapseAll"><?= $e($labels['stack']['collapse_all'] ?? 'Collapse all') ?></button>
-            </div>
-            <div class="content stack">
-                <?php $i = 0 ?>
-                <?php foreach ($frames as $f): $rel = (string)($f['rel'] ?? '');
-                    $loc = (string)($f['loc'] ?? '');
-                    $ln = (int)($f['line'] ?? 0);
-                    $sig = (string)($f['sig'] ?? '');
-                    $href = (string)($f['editorHref'] ?? '');
-                    $copy = $rel !== '' && $ln ? ($rel . ':' . $ln) : $loc;
-                    $isFirst = $i === 0; ?>
-                    <article class="frame <?= !$isFirst ? 'collapsed' : '' ?>" aria-label="Frame <?= $e((string)($f['idx'] ?? '')) ?>">
-                        <div class="frame-head" role="button" tabindex="0" aria-expanded="true">
-                            <div class="frame-meta">
-                                <span class="chev" aria-hidden="true">▶</span>
-                                <div class="sig" title="<?= $e($rel !== '' ? ($rel . ($ln ? ':' . $ln : '')) : $loc) ?>"><?= $e($sig) ?></div>
+        <div class="grid-col-right">
+            <section class="card" aria-labelledby="sec-stack">
+                <h3 id="sec-stack"><?= $e($labels['headings']['stack'] ?? 'Stack trace') ?></h3>
+                <div class="toolbar" role="toolbar" aria-label="<?= $e($labels['aria']['stack_actions'] ?? 'Stack actions') ?>">
+                    <button class="button" id="expandAll"><?= $e($labels['stack']['expand_all'] ?? 'Expand all') ?></button>
+                    <button class="button" id="collapseAll"><?= $e($labels['stack']['collapse_all'] ?? 'Collapse all') ?></button>
+                </div>
+                <div class="content stack">
+                    <?php $i = 0 ?>
+                    <?php foreach ($frames as $f): $rel = (string)($f['rel'] ?? '');
+                        $loc = (string)($f['loc'] ?? '');
+                        $ln = (int)($f['line'] ?? 0);
+                        $sig = (string)($f['sig'] ?? '');
+                        $href = (string)($f['editorHref'] ?? '');
+                        $copy = $rel !== '' && $ln ? ($rel . ':' . $ln) : $loc;
+                        $isFirst = $i === 0; ?>
+                        <article class="frame <?= !$isFirst ? 'collapsed' : '' ?>" aria-label="Frame <?= $e((string)($f['idx'] ?? '')) ?>">
+                            <div class="frame-head" role="button" tabindex="0" aria-expanded="true">
+                                <div class="frame-meta">
+                                    <span class="chev" aria-hidden="true">▶</span>
+                                    <div class="sig" title="<?= $e($rel !== '' ? ($rel . ($ln ? ':' . $ln : '')) : $loc) ?>"><?= $e($sig) ?></div>
+                                </div>
+                                <div class="row-actions">
+                                    <button class="button i-copy" data-copy="<?= $e($copy) ?>" aria-label="<?= $e($labels['aria']['copy_line'] ?? 'Copy line') ?>">
+                                        <?= $e($labels['stack']['copy'] ?? 'Copy') ?>
+                                    </button>
+                                    <?php if ($href !== ''): ?>
+                                        <a class="button i-link" href="<?= $e($href) ?>" title="<?= $e($labels['toolbar']['open_in_editor'] ?? 'Open in your editor') ?>">
+                                            <?= $e($labels['stack']['open'] ?? 'Open') ?></a>
+                                    <?php endif; ?>
+                                </div>
                             </div>
-                            <div class="row-actions">
-                                <button class="button i-copy" data-copy="<?= $e($copy) ?>" aria-label="<?= $e($labels['aria']['copy_line'] ?? 'Copy line') ?>">
-                                    <?= $e($labels['stack']['copy'] ?? 'Copy') ?>
-                                </button>
-                                <?php if ($href !== ''): ?>
-                                    <a class="button i-link" href="<?= $e($href) ?>" title="<?= $e($labels['toolbar']['open_in_editor'] ?? 'Open in your editor') ?>">
-                                        <?= $e($labels['stack']['open'] ?? 'Open') ?></a>
+                            <div class="code" role="region" aria-label="<?= $e($labels['aria']['code_excerpt'] ?? 'Code excerpt') ?>">
+                                <?php if (!empty($f['codeHtml'])): ?>
+                                    <?= $f['codeHtml'] ?>
+                                <?php else: ?>
+                                    <pre><code><em><?= $e($labels['messages']['no_excerpt'] ?? 'No excerpt available') ?></em></code></pre>
                                 <?php endif; ?>
                             </div>
-                        </div>
-                        <div class="code" role="region" aria-label="<?= $e($labels['aria']['code_excerpt'] ?? 'Code excerpt') ?>">
-                            <?php if (!empty($f['codeHtml'])): ?>
-                                <?= $f['codeHtml'] ?>
-                            <?php else: ?>
-                                <pre><code><em><?= $e($labels['messages']['no_excerpt'] ?? 'No excerpt available') ?></em></code></pre>
-                            <?php endif; ?>
-                        </div>
-                    </article>
-                    <?php $i++ ?>
-                <?php endforeach; ?>
-            </div>
-        </section>
-
-        <?php if ($details !== ''): ?>
-            <section class="card" aria-labelledby="sec-details">
-                <h3 id="sec-details"><?= $e($labels['headings']['details'] ?? 'Details') ?></h3>
-                <div class="content">
-                    <p><?= nl2br($e($details)) ?></p>
-                </div>
-            </section>
-        <?php endif; ?>
-
-        <?php if (!empty($suggestions)): ?>
-            <section class="card" aria-labelledby="sec-suggestions">
-                <h3 id="sec-suggestions"><?= $e($labels['headings']['suggestions'] ?? 'Suggestions') ?></h3>
-                <div class="content suggestions">
-                    <?php foreach ($suggestions as $s): ?>
-                        <div class="suggestion">
-                            <p class="title"><?= $e($labels['labels']['suggestion'] ?? 'Suggestion') ?></p>
-                            <p><?= $e((string)$s) ?></p>
-                        </div>
+                        </article>
+                        <?php $i++ ?>
                     <?php endforeach; ?>
                 </div>
             </section>
-        <?php endif; ?>
 
-        <section class="card" aria-labelledby="sec-env">
-            <h3 id="sec-env"><?= $e($labels['headings']['info'] ?? 'PHP Error Insight Info') ?></h3>
-            <div class="content">
-                <div class="kv">
-                    <div class="k"><?= $e($labels['labels']['language'] ?? 'Language') ?></div>
-                    <div class="v"><?php echo $docLang; ?></div>
-                    <?php if ($aiModel !== ''): ?>
-                        <div class="k"><?= $e($labels['labels']['ai_model'] ?? 'AI Model') ?></div>
-                        <div class="v"><?php echo $aiModel ?></div>
-                    <?php endif; ?>
-                    <?php if ($editorUrl !== ''): ?>
-                        <div class="k"><?= $e($labels['labels']['editor_url'] ?? 'Editor URL') ?></div>
-                        <div class="v"><?php echo $editorUrl ?></div>
-                    <?php endif; ?>
-                    <div class="k"><?= $e($labels['labels']['verbose'] ?? 'Verbose') ?></div>
-                    <div class="v"><?php echo (bool)$verbose ?></div>
-                </div>
-            </div>
-        </section>
+            <section class="card" aria-labelledby="sec-env-details">
+                <h3 id="sec-env-details"><?= $e($labels['headings']['env_details'] ?? 'Environment Details') ?></h3>
+                <div class="content">
+                    <div class="tabs" role="tablist" aria-label="<?= $e($labels['aria']['env_tabs'] ?? 'Environment tabs') ?>">
+                        <button class="tab is-active" role="tab" aria-selected="true" aria-controls="tab-server"
+                                id="tabbtn-server"><?= $e($labels['tabs']['server_request'] ?? 'Server/Request') ?>
+                        </button>
+                        <button class="tab" role="tab" aria-selected="false" aria-controls="tab-env" id="tabbtn-env"
+                                tabindex="-1"><?= $e($labels['tabs']['env_vars'] ?? 'Env Vars') ?>
+                        </button>
+                        <button class="tab" role="tab" aria-selected="false" aria-controls="tab-cookies" id="tabbtn-cookies"
+                                tabindex="-1"><?= $e($labels['tabs']['cookies'] ?? 'Cookies') ?>
+                        </button>
+                        <button class="tab" role="tab" aria-selected="false" aria-controls="tab-session" id="tabbtn-session"
+                                tabindex="-1"><?= $e($labels['tabs']['session'] ?? 'Session') ?>
+                        </button>
+                        <button class="tab" role="tab" aria-selected="false" aria-controls="tab-get" id="tabbtn-get"
+                                tabindex="-1"><?= $e($labels['tabs']['get'] ?? ($labels['labels']['get'] ?? 'GET')) ?>
+                        </button>
+                        <button class="tab" role="tab" aria-selected="false" aria-controls="tab-post" id="tabbtn-post"
+                                tabindex="-1"><?= $e($labels['tabs']['post'] ?? ($labels['labels']['post'] ?? 'POST')) ?>
+                        </button>
+                        <button class="tab" role="tab" aria-selected="false" aria-controls="tab-files" id="tabbtn-files"
+                                tabindex="-1"><?= $e($labels['tabs']['files'] ?? 'Files') ?>
+                        </button>
+                    </div>
 
-        <section class="card" aria-labelledby="sec-env-details">
-            <h3 id="sec-env-details"><?= $e($labels['headings']['env_details'] ?? 'Environment Details') ?></h3>
-            <div class="content">
-                <div class="tabs" role="tablist" aria-label="<?= $e($labels['aria']['env_tabs'] ?? 'Environment tabs') ?>">
-                    <button class="tab is-active" role="tab" aria-selected="true" aria-controls="tab-server"
-                            id="tabbtn-server"><?= $e($labels['tabs']['server_request'] ?? 'Server/Request') ?>
-                    </button>
-                    <button class="tab" role="tab" aria-selected="false" aria-controls="tab-env" id="tabbtn-env"
-                            tabindex="-1"><?= $e($labels['tabs']['env_vars'] ?? 'Env Vars') ?>
-                    </button>
-                    <button class="tab" role="tab" aria-selected="false" aria-controls="tab-cookies" id="tabbtn-cookies"
-                            tabindex="-1"><?= $e($labels['tabs']['cookies'] ?? 'Cookies') ?>
-                    </button>
-                    <button class="tab" role="tab" aria-selected="false" aria-controls="tab-session" id="tabbtn-session"
-                            tabindex="-1"><?= $e($labels['tabs']['session'] ?? 'Session') ?>
-                    </button>
-                    <button class="tab" role="tab" aria-selected="false" aria-controls="tab-get" id="tabbtn-get"
-                            tabindex="-1"><?= $e($labels['tabs']['get'] ?? ($labels['labels']['get'] ?? 'GET')) ?>
-                    </button>
-                    <button class="tab" role="tab" aria-selected="false" aria-controls="tab-post" id="tabbtn-post"
-                            tabindex="-1"><?= $e($labels['tabs']['post'] ?? ($labels['labels']['post'] ?? 'POST')) ?>
-                    </button>
-                    <button class="tab" role="tab" aria-selected="false" aria-controls="tab-files" id="tabbtn-files"
-                            tabindex="-1"><?= $e($labels['tabs']['files'] ?? 'Files') ?>
-                    </button>
-                </div>
+                    <div id="tab-server" class="tabpanel" role="tabpanel" tabindex="0" aria-labelledby="tabbtn-server">
+                        <div class="code dump" role="region" aria-label="<?= $e($labels['aria']['server_dump'] ?? 'Server / Request dump') ?>">
+                            <pre><code><?= $e(var_export($_SERVER ?? [], true)) ?></code></pre>
+                        </div>
+                    </div>
 
-                <div id="tab-server" class="tabpanel" role="tabpanel" tabindex="0" aria-labelledby="tabbtn-server">
-                    <div class="code dump" role="region" aria-label="<?= $e($labels['aria']['server_dump'] ?? 'Server / Request dump') ?>">
-                        <pre><code><?= $e(var_export($_SERVER ?? [], true)) ?></code></pre>
+                    <div id="tab-env" class="tabpanel" role="tabpanel" hidden tabindex="0" aria-labelledby="tabbtn-env">
+                        <div class="code dump">
+                            <pre><code><?= $e(var_export($_ENV ?? [], true)) ?></code></pre>
+                        </div>
+                    </div>
+
+                    <div id="tab-cookies" class="tabpanel" role="tabpanel" hidden tabindex="0"
+                         aria-labelledby="tabbtn-cookies">
+                        <div class="code dump">
+                            <pre><code><?= $e(var_export($_COOKIE ?? [], true)) ?></code></pre>
+                        </div>
+                    </div>
+
+                    <div id="tab-session" class="tabpanel" role="tabpanel" hidden tabindex="0"
+                         aria-labelledby="tabbtn-session">
+                        <div class="code dump">
+                            <pre><code><?= $e(var_export($_SESSION ?? [], true)) ?></code></pre>
+                        </div>
+                    </div>
+
+                    <div id="tab-get" class="tabpanel" role="tabpanel" hidden tabindex="0" aria-labelledby="tabbtn-get">
+                        <div class="code dump">
+                            <pre><code><?= $e(var_export($_GET ?? [], true)) ?></code></pre>
+                        </div>
+                    </div>
+
+                    <div id="tab-post" class="tabpanel" role="tabpanel" hidden tabindex="0" aria-labelledby="tabbtn-post">
+                        <div class="code dump">
+                            <pre><code><?= $e(var_export($_POST ?? [], true)) ?></code></pre>
+                        </div>
+                    </div>
+
+                    <div id="tab-files" class="tabpanel" role="tabpanel" hidden tabindex="0" aria-labelledby="tabbtn-files">
+                        <div class="code dump">
+                            <pre><code><?= $e(var_export($_FILES ?? [], true)) ?></code></pre>
+                        </div>
                     </div>
                 </div>
-
-                <div id="tab-env" class="tabpanel" role="tabpanel" hidden tabindex="0" aria-labelledby="tabbtn-env">
-                    <div class="code dump">
-                        <pre><code><?= $e(var_export($_ENV ?? [], true)) ?></code></pre>
-                    </div>
-                </div>
-
-                <div id="tab-cookies" class="tabpanel" role="tabpanel" hidden tabindex="0"
-                     aria-labelledby="tabbtn-cookies">
-                    <div class="code dump">
-                        <pre><code><?= $e(var_export($_COOKIE ?? [], true)) ?></code></pre>
-                    </div>
-                </div>
-
-                <div id="tab-session" class="tabpanel" role="tabpanel" hidden tabindex="0"
-                     aria-labelledby="tabbtn-session">
-                    <div class="code dump">
-                        <pre><code><?= $e(var_export($_SESSION ?? [], true)) ?></code></pre>
-                    </div>
-                </div>
-
-                <div id="tab-get" class="tabpanel" role="tabpanel" hidden tabindex="0" aria-labelledby="tabbtn-get">
-                    <div class="code dump">
-                        <pre><code><?= $e(var_export($_GET ?? [], true)) ?></code></pre>
-                    </div>
-                </div>
-
-                <div id="tab-post" class="tabpanel" role="tabpanel" hidden tabindex="0" aria-labelledby="tabbtn-post">
-                    <div class="code dump">
-                        <pre><code><?= $e(var_export($_POST ?? [], true)) ?></code></pre>
-                    </div>
-                </div>
-
-                <div id="tab-files" class="tabpanel" role="tabpanel" hidden tabindex="0" aria-labelledby="tabbtn-files">
-                    <div class="code dump">
-                        <pre><code><?= $e(var_export($_FILES ?? [], true)) ?></code></pre>
-                    </div>
-                </div>
-            </div>
-        </section>
+            </section>
+        </div>
     </main>
 
     <div class="footer"><?= $e($labels['messages']['rendered_by'] ?? 'Rendered by PHP Error Insight') ?></div>

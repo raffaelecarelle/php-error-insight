@@ -72,7 +72,6 @@ final class Explainer implements ExplainerInterface
 
         $explanation = [
             'title' => Translator::t($config, 'title.basic'),
-            'summary' => '',
             'details' => '',
             'suggestions' => [],
             'severityLabel' => $severityLabel,
@@ -94,39 +93,17 @@ final class Explainer implements ExplainerInterface
 
         if ('none' !== $config->backend) {
             $aiText = $this->aiExplain($kind, $message, $file, $line, $severity, $config);
-            if (is_string($aiText) && '' !== trim($aiText)) {
+
+            if($aiText === null) {
+                return $explanation;
+            }
+
+            $explanation = json_decode($aiText, true);
+
+            if(is_array($explanation)) {
                 $explanation['title'] = Translator::t($config, 'title.ai');
-
-                // Try to extract bullet suggestions from AI text
-                $aiTrim = trim($aiText);
-                $aiLines = preg_split('/\r?\n/', $aiTrim) ?: [];
-                $bullets = [];
-                foreach ($aiLines as $ln) {
-                    $t = trim($ln);
-                    if ('' === $t) {
-                        continue;
-                    }
-
-                    if (preg_match('/^[-*•]\s+(.+)/u', $t, $m)) {
-                        $bullets[] = trim($m[1]);
-                    } elseif (preg_match('/^\d+\.?\s+(.+)/', $t, $m)) {
-                        $bullets[] = trim($m[1]);
-                    }
-                }
-
-                if ([] !== $bullets) {
-                    // Merge new unique suggestions
-                    $existing = $explanation['suggestions'];
-                    foreach ($bullets as $b) {
-                        if (!in_array($b, $existing, true)) {
-                            $existing[] = $b;
-                        }
-                    }
-
-                    $explanation['suggestions'] = $existing;
-                }
-
-                $explanation['details'] .= '[AI] ' . $aiText;
+                $explanation['details'] = $explanation['details'] ?? '';
+                $explanation['suggestions'] = $explanation['suggestions'] ?? [];
             }
         }
 
@@ -195,7 +172,8 @@ final class Explainer implements ExplainerInterface
 Message: {$message}
 Severity: {$sev}
 Location: {$where}
-Provide a concise Summary (max 500 chars) and concise Details (max 500 chars). Then list up to 2 practical fix suggestions as bullet points (-). Keep wording tight and actionable.";
+Provide a concise Details (max 500 chars). Then list up to 2 practical fix suggestions.
+Output must be in pure json (can be used with json_decode php function)): {\"details\": \"\", \"suggestions\": [\"\", \"\"]}";
 
         // Sanitize prompt before sending to any AI backend
         $sanitizer = new DefaultSensitiveDataSanitizer();
