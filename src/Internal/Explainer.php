@@ -150,6 +150,7 @@ final class Explainer implements ExplainerInterface
             $type = isset($f['type']) ? (string) $f['type'] : '';
             $file = isset($f['file']) ? (string) $f['file'] : null;
             $line = isset($f['line']) ? (int) $f['line'] : null;
+            $args = isset($f['args']) ? (array) $f['args'] : null;
 
             $out[] = [
                 'function' => $fn,
@@ -157,6 +158,7 @@ final class Explainer implements ExplainerInterface
                 'type' => $type,
                 'file' => $file,
                 'line' => $line,
+                'args' => $args,
             ];
         }
 

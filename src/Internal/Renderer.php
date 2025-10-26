@@ -286,12 +286,14 @@ final class Renderer implements RendererInterface
             $ll = isset($frame['line']) ? (int) $frame['line'] : 0;
             $sig = trim($cls . $type . $fn . '()');
             $loc = '' !== $ff ? ($ff . (0 !== $ll ? ':' . $ll : '')) : '';
+            $args = isset($frame['args']) && is_array($frame['args']) ? $frame['args'] : [];
             $frames[] = [
                 'idx' => $idx,
                 'sig' => $sig,
                 'loc' => $loc,
                 'file' => $ff,
                 'line' => $ll,
+                'args' => $args,
                 'rel' => $toRel($ff),
                 'editorHref' => $toEditorHref((string) $editorTpl, $ff, $ll),
                 'codeHtml' => $this->renderCodeExcerpt($ff, $ll),
@@ -373,6 +375,7 @@ final class Renderer implements RendererInterface
                 'loc' => $where,
                 'file' => $ff,
                 'line' => $ll,
+                'args' => [],
                 'rel' => $toRel($ff),
                 'editorHref' => $toEditorHref((string) $editorTpl, $ff, $ll),
                 'codeHtml' => $this->renderCodeExcerpt($file, (int) $line),
