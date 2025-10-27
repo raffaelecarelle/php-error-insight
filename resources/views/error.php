@@ -1306,8 +1306,28 @@ $dumper->setStyles([
         });
     });
 
-    $('#expandAll')?.addEventListener('click', () => $$('.frame').forEach(f => setCollapsed(f, false)));
-    $('#collapseAll')?.addEventListener('click', () => $$('.frame').forEach(f => setCollapsed(f, true)));
+    function setArgsAccordionOpenAll(open) {
+        $$('.args-accordion').forEach(acc => {
+            const head = acc.querySelector('.args-head');
+            const content = acc.querySelector('.args-content');
+            if (!head || !content) return;
+            head.setAttribute('aria-expanded', String(open));
+            if (open) {
+                content.removeAttribute('hidden');
+            } else {
+                content.setAttribute('hidden', '');
+            }
+        });
+    }
+
+    $('#expandAll')?.addEventListener('click', () => {
+        $$('.frame').forEach(f => setCollapsed(f, false));
+        setArgsAccordionOpenAll(true);
+    });
+    $('#collapseAll')?.addEventListener('click', () => {
+        $$('.frame').forEach(f => setCollapsed(f, true));
+        setArgsAccordionOpenAll(false);
+    });
 
     // Arguments accordion behavior
     $$('.args-accordion').forEach(acc => {
