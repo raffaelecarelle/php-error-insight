@@ -27,6 +27,23 @@ foreach ($frames as $f) {
         break;
     }
 }
+
+$cloner = new \Symfony\Component\VarDumper\Cloner\VarCloner();
+$dumper = new \Symfony\Component\VarDumper\Dumper\HtmlDumper();
+$dumper->setStyles([
+    'default' => 'background-color:transparent; color:inherit; line-height:1.5; font:12px var(--mono); word-wrap: break-word; white-space: pre-wrap;',
+    'num' => 'font-weight:bold; color:#d19a66',
+    'const' => 'font-weight:bold; color:#61afef',
+    'str' => 'font-weight:bold; color:#98c379',
+    'note' => 'color:#9fb0c0',
+    'ref' => 'color:#7c8d9f',
+    'public' => 'color:#e5c07b',
+    'protected' => 'color:#c678dd',
+    'private' => 'color:#e06c75',
+    'meta' => 'color:#56b6c2',
+    'key' => 'color:#61afef',
+    'index' => 'color:#9fb0c0',
+]);
 ?>
 <!doctype html>
 <html lang="<?= $e($docLang) ?>" class="dark">
@@ -458,6 +475,235 @@ foreach ($frames as $f) {
             border: 0;
         }
 
+        .light .card h3 {
+            background: #f8fafc;
+            color: #334155;
+        }
+
+        .light .loc {
+            color: #334155;
+        }
+
+        .light .code {
+            background: #ffffff;
+        }
+
+        .light .code .src {
+            color: #0b1220;
+        }
+
+        .light .code .gutter {
+            color: #64748b;
+        }
+
+        .light .code .hl {
+            background: rgba(14, 165, 233, 0.18);
+        }
+
+        .light .kv {
+            color: #334155;
+        }
+
+        .light .kv .k {
+            color: #475569;
+        }
+
+        .light .kv .v {
+            color: #0b1220;
+        }
+
+        .light .tab:hover {
+            background: #e2e8f0;
+        }
+
+        .light .tab.is-active {
+            background: #ffffff;
+            border-color: #cbd5e1;
+            border-bottom-color: #ffffff;
+        }
+
+        /* Collapsible frames */
+        .frame.collapsed .code {
+            display: none;
+        }
+
+        .chev {
+            display: inline-block;
+            transform: rotate(90deg);
+            transition: transform .15s ease;
+            margin-right: 6px;
+            color: var(--muted);
+        }
+
+        .frame.collapsed .chev {
+            transform: rotate(0deg);
+        }
+
+        /* Higher contrast for light theme section header and locations */
+        .light .card h3 {
+            background: #f8fafc;
+            color: #334155;
+        }
+
+        .light .loc {
+            color: #334155;
+        }
+
+        /* Copy feedback */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        @keyframes pulseCopied {
+            0% {
+                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5);
+            }
+            100% {
+                box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
+            }
+        }
+
+        .button.copied {
+            background: var(--ok);
+            border-color: #16a34a;
+            color: #04130a;
+            animation: pulseCopied .6s ease;
+        }
+
+        /* Light theme code and table contrast tweaks */
+        .light .code {
+            background: #ffffff;
+        }
+
+        .light .code .src {
+            color: #0b1220;
+        }
+
+        .light .code .gutter {
+            color: #64748b;
+        }
+
+        .light .code .hl {
+            background: rgba(14, 165, 233, 0.18);
+        }
+
+        .light .kv {
+            color: #334155;
+        }
+
+        .light .kv .k {
+            color: #475569;
+        }
+
+        .light .kv .v {
+            color: #0b1220;
+        }
+
+        /* Extra styles for Renderer::renderCodeExcerpt() output */
+        .code-excerpt {
+            border-top: 1px solid var(--border);
+        }
+
+        .code-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .code-table td {
+            padding: 6px 10px;
+        }
+
+        .line-number {
+            width: 1%;
+            white-space: nowrap;
+            text-align: right;
+            color: #9fb0c0;
+        }
+
+        .code-content {
+            width: 99%;
+            color: #dbe7f3;
+        }
+
+        .error-line .line-number, .error-line .code-content {
+            background: rgba(239, 68, 68, .15);
+            color: #fecaca;
+            font-weight: 700;
+        }
+
+        .light .line-number {
+            color: #64748b;
+        }
+
+        .light .code-content {
+            color: #0b1220;
+        }
+
+        /* Tabs for Environment Details */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            appearance: none;
+            border: 1px solid transparent;
+            border-bottom: none;
+            background: transparent;
+            color: var(--muted);
+            padding: 8px 10px;
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .tab:hover {
+            color: var(--text);
+            background: #1b2430;
+            border-color: var(--border);
+            border-bottom-color: transparent;
+        }
+
+        .tab.is-active {
+            background: var(--panel);
+            color: var(--text);
+            border-color: var(--border);
+            border-bottom-color: var(--panel);
+            font-weight: 600;
+        }
+
+        .tabpanel {
+            border: 1px solid var(--border);
+            border-radius: 0 10px 10px 10px;
+            background: var(--panel);
+            padding: 0;
+        }
+
+        .tabpanel .code {
+            border: 0;
+        }
+
+        .light .tab:hover {
+            background: #e2e8f0;
+        }
+
+        .light .tab.is-active {
+            background: #ffffff;
+            border-color: #cbd5e1;
+            border-bottom-color: #ffffff;
+        }
+
         @keyframes pulseCopied {
             0% {
                 box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5);
@@ -520,6 +766,41 @@ foreach ($frames as $f) {
         .tabpanel .code {
             border: 0;
         }
+
+        /* Input Arguments accordion inside a frame */
+        .args-accordion {
+            border-top: 1px solid var(--border);
+            background: var(--panel);
+        }
+        .args-head {
+            /* inherits base styles from .frame-head */
+            padding: 8px 12px;
+            background: var(--panel);
+            border-top: 1px solid var(--border);
+            cursor: pointer;
+        }
+        .args-head .sig {
+            font-weight: 600;
+            color: var(--muted);
+        }
+        .args-head:hover {
+            background: #1b2430;
+        }
+        .args-head:focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+        .args-head .chev { transform: rotate(0deg); }
+        .args-head[aria-expanded="true"] .chev { transform: rotate(90deg); }
+        .args-content { border-top: 1px solid var(--border); }
+        /* Ensure args are visible even when the frame is collapsed; visibility controlled by [hidden] */
+        .frame.collapsed .args-content { display: block; }
+        .args-content[hidden] { display: none !important; }
+
+        /* Light theme tweaks */
+        .light .args-head { background: #f8fafc; }
+        .light .args-head:hover { background: #e2e8f0; }
+        .light .args-head .sig { color: #334155; }
     </style>
     <style>
         /* tiny icons via CSS only */
@@ -545,6 +826,134 @@ foreach ($frames as $f) {
 
         .i-title::before {
             content: "🏷️"
+        }
+
+        /* Symfony VarDumper styling integration */
+        .dump pre.sf-dump, .sf-dump-default {
+            background: transparent !important;
+            border: 0 !important;
+            margin: 0 !important;
+            padding: 12px !important;
+            line-height: 1.5 !important;
+            font-size: 12px !important;
+            font-family: var(--mono) !important;
+        }
+
+        .dump .sf-dump {
+            color: var(--text) !important;
+        }
+
+        /* Dark theme colors for VarDumper */
+        .dark .sf-dump-str { color: #98c379 !important; }
+        .dark .sf-dump-num { color: #d19a66 !important; }
+        .dark .sf-dump-const { color: #61afef !important; }
+        .dark .sf-dump-note { color: #9fb0c0 !important; }
+        .dark .sf-dump-ref { color: #7c8d9f !important; }
+        .dark .sf-dump-public { color: #e5c07b !important; }
+        .dark .sf-dump-protected { color: #c678dd !important; }
+        .dark .sf-dump-private { color: #e06c75 !important; }
+        .dark .sf-dump-meta { color: #56b6c2 !important; }
+        .dark .sf-dump-key { color: #61afef !important; }
+        .dark .sf-dump-index { color: #9fb0c0 !important; }
+        .dark .sf-dump-ellipsis { color: #9fb0c0 !important; }
+        .dark .sf-dump-ns { color: #9fb0c0 !important; user-select: none; }
+
+        /* Light theme colors for VarDumper */
+        .light .sf-dump-str { color: #22863a !important; }
+        .light .sf-dump-num { color: #005cc5 !important; }
+        .light .sf-dump-const { color: #005cc5 !important; }
+        .light .sf-dump-note { color: #6a737d !important; }
+        .light .sf-dump-ref { color: #6a737d !important; }
+        .light .sf-dump-public { color: #e36209 !important; }
+        .light .sf-dump-protected { color: #6f42c1 !important; }
+        .light .sf-dump-private { color: #d73a49 !important; }
+        .light .sf-dump-meta { color: #005cc5 !important; }
+        .light .sf-dump-key { color: #005cc5 !important; }
+        .light .sf-dump-index { color: #6a737d !important; }
+        .light .sf-dump-ellipsis { color: #6a737d !important; }
+        .light .sf-dump-ns { color: #6a737d !important; user-select: none; }
+
+        /* VarDumper expand/collapse toggle styling */
+        .sf-dump-compact .sf-dump-toggle {
+            color: var(--primary) !important;
+            cursor: pointer;
+        }
+
+        .sf-dump-compact .sf-dump-toggle:hover {
+            color: var(--primary-600) !important;
+        }
+
+        /* VarDumper array/object brackets */
+        .dark .sf-dump-public.sf-dump-highlight,
+        .dark .sf-dump-protected.sf-dump-highlight,
+        .dark .sf-dump-private.sf-dump-highlight {
+            background: rgba(14, 165, 233, 0.15) !important;
+        }
+
+        .light .sf-dump-public.sf-dump-highlight,
+        .light .sf-dump-protected.sf-dump-highlight,
+        .light .sf-dump-private.sf-dump-highlight {
+            background: rgba(14, 165, 233, 0.20) !important;
+        }
+
+        /* Search highlighting in dumps */
+        .sf-dump-search-wrapper {
+            background: var(--panel) !important;
+            border: 1px solid var(--border) !important;
+            padding: 8px !important;
+            margin-bottom: 8px !important;
+            border-radius: 6px !important;
+        }
+
+        .sf-dump-search-wrapper input {
+            background: var(--code-bg) !important;
+            border: 1px solid var(--border) !important;
+            color: var(--text) !important;
+            padding: 6px 10px !important;
+            border-radius: 6px !important;
+            font-family: var(--mono) !important;
+            font-size: 12px !important;
+        }
+
+        .sf-dump-search-wrapper input:focus {
+            outline: 2px solid var(--primary) !important;
+            outline-offset: 0 !important;
+        }
+
+        /* Better spacing for nested structures */
+        .sf-dump .sf-dump-compact {
+            display: inline-block;
+        }
+
+        /* Scrollbar styling for dump sections */
+        .dump::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .dump::-webkit-scrollbar-track {
+            background: var(--code-bg);
+        }
+
+        .dump::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        .dump::-webkit-scrollbar-thumb:hover {
+            background: var(--muted);
+        }
+
+        .light .dump::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        .light .dump::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+        }
+
+        .light .dump::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
         }
     </style>
 </head>
@@ -648,8 +1057,20 @@ foreach ($frames as $f) {
                                 </div>
                             </div>
                             <?php if (!empty($f['args'])): ?>
-                                <div class="code" role="region" aria-label="<?= $e($labels['aria']['frame_args'] ?? 'Function arguments') ?>">
-                                    <pre><code><?= $e(print_r($f['args'], true)) ?></code></pre>
+                                <div class="args-accordion">
+                                    <div class="frame-head args-head" role="button" tabindex="0"
+                                         aria-expanded="false" aria-controls="args-<?= $i ?>">
+                                        <div class="frame-meta">
+                                            <span class="chev" aria-hidden="true">▶</span>
+                                            <div class="sig">
+                                                <?= $e($labels['aria']['frame_args'] ?? 'Function arguments') ?>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div id="args-<?= $i ?>" class="code args-content" role="region"
+                                         aria-label="<?= $e($labels['aria']['frame_args'] ?? 'Function arguments') ?>" hidden>
+                                        <pre><code><?= $e($dumper->dump($cloner->cloneVar($f['args'] ?? []))) ?></code></pre>
+                                    </div>
                                 </div>
                             <?php endif; ?>
                             <div class="code" role="region" aria-label="<?= $e($labels['aria']['code_excerpt'] ?? 'Code excerpt') ?>">
@@ -694,45 +1115,45 @@ foreach ($frames as $f) {
 
                     <div id="tab-server" class="tabpanel" role="tabpanel" tabindex="0" aria-labelledby="tabbtn-server">
                         <div class="code dump" role="region" aria-label="<?= $e($labels['aria']['server_dump'] ?? 'Server / Request dump') ?>">
-                            <pre><code><?= $e(var_export($_SERVER ?? [], true)) ?></code></pre>
+                            <pre><code><?= $e($dumper->dump($cloner->cloneVar($_SERVER ?? []))) ?></code></pre>
                         </div>
                     </div>
 
                     <div id="tab-env" class="tabpanel" role="tabpanel" hidden tabindex="0" aria-labelledby="tabbtn-env">
                         <div class="code dump">
-                            <pre><code><?= $e(var_export($_ENV ?? [], true)) ?></code></pre>
+                            <pre><code><?= $e($dumper->dump($cloner->cloneVar($_ENV ?? []))) ?></code></pre>
                         </div>
                     </div>
 
                     <div id="tab-cookies" class="tabpanel" role="tabpanel" hidden tabindex="0"
                          aria-labelledby="tabbtn-cookies">
                         <div class="code dump">
-                            <pre><code><?= $e(var_export($_COOKIE ?? [], true)) ?></code></pre>
+                            <pre><code><?= $e($dumper->dump($cloner->cloneVar($_COOKIE ?? []))) ?></code></pre>
                         </div>
                     </div>
 
                     <div id="tab-session" class="tabpanel" role="tabpanel" hidden tabindex="0"
                          aria-labelledby="tabbtn-session">
                         <div class="code dump">
-                            <pre><code><?= $e(var_export($_SESSION ?? [], true)) ?></code></pre>
+                            <pre><code><?= $e($dumper->dump($cloner->cloneVar($_SESSION ?? []))) ?></code></pre>
                         </div>
                     </div>
 
                     <div id="tab-get" class="tabpanel" role="tabpanel" hidden tabindex="0" aria-labelledby="tabbtn-get">
                         <div class="code dump">
-                            <pre><code><?= $e(var_export($_GET ?? [], true)) ?></code></pre>
+                            <pre><code><?= $e($dumper->dump($cloner->cloneVar($_GET ?? []))) ?></code></pre>
                         </div>
                     </div>
 
                     <div id="tab-post" class="tabpanel" role="tabpanel" hidden tabindex="0" aria-labelledby="tabbtn-post">
                         <div class="code dump">
-                            <pre><code><?= $e(var_export($_POST ?? [], true)) ?></code></pre>
+                            <pre><code><?= $e($dumper->dump($cloner->cloneVar($_POST ?? []))) ?></code></pre>
                         </div>
                     </div>
 
                     <div id="tab-files" class="tabpanel" role="tabpanel" hidden tabindex="0" aria-labelledby="tabbtn-files">
                         <div class="code dump">
-                            <pre><code><?= $e(var_export($_FILES ?? [], true)) ?></code></pre>
+                            <pre><code><?= $e($dumper->dump($cloner->cloneVar($_FILES ?? []))) ?></code></pre>
                         </div>
                     </div>
                 </div>
@@ -887,6 +1308,35 @@ foreach ($frames as $f) {
 
     $('#expandAll')?.addEventListener('click', () => $$('.frame').forEach(f => setCollapsed(f, false)));
     $('#collapseAll')?.addEventListener('click', () => $$('.frame').forEach(f => setCollapsed(f, true)));
+
+    // Arguments accordion behavior
+    $$('.args-accordion').forEach(acc => {
+        const head = acc.querySelector('.args-head');
+        const content = acc.querySelector('.args-content');
+        if (!head || !content) return;
+        function setOpen(open) {
+            head.setAttribute('aria-expanded', String(open));
+            if (open) {
+                content.removeAttribute('hidden');
+            } else {
+                content.setAttribute('hidden', '');
+            }
+        }
+        head.addEventListener('click', (e) => {
+            // Prevent toggling the whole frame when clicking the args header
+            e.stopPropagation();
+            const open = head.getAttribute('aria-expanded') === 'true';
+            setOpen(!open);
+        });
+        head.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+                const open = head.getAttribute('aria-expanded') === 'true';
+                setOpen(!open);
+            }
+        });
+    });
 </script>
 <script>
     // Accessible Tabs for Environment Details (same behavior as docs)

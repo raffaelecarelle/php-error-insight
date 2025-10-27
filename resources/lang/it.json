@@ -81,7 +81,8 @@
       "copy_line": "Copia riga",
       "code_excerpt": "Estratto codice",
       "server_dump": "Dump Server / Richiesta",
-      "env_tabs": "Schede ambiente"
+      "env_tabs": "Schede ambiente",
+      "frame_args": "Argomenti in input"
     },
     "js": {
       "copied": "Copiato!",

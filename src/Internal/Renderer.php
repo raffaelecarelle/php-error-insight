@@ -353,6 +353,7 @@ final class Renderer implements RendererInterface
                 'code_excerpt' => Translator::t($config, 'html.aria.code_excerpt'),
                 'server_dump' => Translator::t($config, 'html.aria.server_dump'),
                 'env_tabs' => Translator::t($config, 'html.aria.env_tabs'),
+                'frame_args' => Translator::t($config, 'html.aria.frame_args'),
             ],
             'js' => [
                 'copied' => Translator::t($config, 'html.js.copied'),
