@@ -7,7 +7,6 @@ namespace PhpErrorInsight\Internal;
 use PhpErrorInsight\Config;
 use PhpErrorInsight\Contracts\ExplainerInterface;
 use PhpErrorInsight\Contracts\RendererInterface;
-use PhpErrorInsight\Contracts\StateDumperInterface;
 use Throwable;
 
 use function call_user_func;
@@ -43,7 +42,6 @@ final class ErrorHandler
         ?callable $prevExceptionHandler = null,
         private readonly ExplainerInterface $explainer = new Explainer(),
         private readonly RendererInterface $renderer = new Renderer(),
-        private readonly StateDumperInterface $stateDumper = new StateDumper()
     ) {
         // Why we store previous handlers: to preserve host application semantics by chaining.
         $this->prevErrorHandler = $prevErrorHandler;
@@ -77,8 +75,6 @@ final class ErrorHandler
         array_shift($trace);
 
         $exp = $this->explainer->explain('error', $message, (string) $file, (int) $line, $trace, $severity, $this->config);
-        // Attach extended state dump so the renderer can surface useful context.
-        $exp['state'] = $this->stateDumper->collectState($trace);
         $this->renderer->render($exp, $this->config, 'error', false);
 
         // Best-effort chain to any previous handler to keep compatibility with the host app.
@@ -106,7 +102,6 @@ final class ErrorHandler
         }
 
         $exp = $this->explainer->explain('exception', $e->getMessage(), $e->getFile(), $e->getLine(), $e->getTrace(), null, $this->config);
-        $exp['state'] = $this->stateDumper->collectState($e->getTrace());
         $this->renderer->render($exp, $this->config, 'exception', false);
 
         // Best-effort chain to any previous handler
@@ -143,7 +138,6 @@ final class ErrorHandler
         }
 
         $exp = $this->explainer->explain('shutdown', $message, $file, $line, $trace, $severity, $this->config);
-        $exp['state'] = $this->stateDumper->collectState($trace);
         $this->renderer->render($exp, $this->config, 'shutdown', true);
     }
 

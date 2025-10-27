@@ -40,6 +40,5 @@ final class E2ERegisterTest extends TestCase
         $this->assertIsArray($decoded);
         $this->assertSame('Boom E2E', $decoded['original']['message'] ?? null);
         $this->assertArrayHasKey('trace', $decoded);
-        $this->assertArrayHasKey('state', $decoded);
     }
 }
