@@ -79,8 +79,6 @@ final class Renderer implements RendererInterface
      *
      * Why set headers here: when running under a web SAPI we owe a proper content-type and a 500 status code
      * so upstream reverse proxies and clients can react appropriately.
-     *
-     * @param array<string,mixed> $explanation
      */
     /**
      * Detect whether the incoming HTTP request declares a JSON content type.
@@ -92,16 +90,21 @@ final class Renderer implements RendererInterface
         }
 
         $contentType = '';
+        $accept = '';
 
-        // Prefer getallheaders() when available (Apache/FPM)
+        // Prefer getallheaders() when available (Apache/FPM/cli-server)
         if (function_exists('getallheaders')) {
             $headers = getallheaders();
-            if (is_array($headers)) {
-                foreach ($headers as $name => $value) {
-                    if (is_string($name) && strtolower((string) $name) === 'content-type' && is_string($value)) {
-                        $contentType = (string) $value;
-                        break;
-                    }
+            foreach ($headers as $name => $value) {
+                if (!is_string($name) || !is_string($value)) {
+                    continue;
+                }
+
+                $lname = strtolower($name);
+                if ('content-type' === $lname) {
+                    $contentType = $value;
+                } elseif ('accept' === $lname) {
+                    $accept = $value;
                 }
             }
         }
@@ -111,20 +114,25 @@ final class Renderer implements RendererInterface
             $contentType = is_string($ct) ? $ct : '';
         }
 
-        $ct = strtolower(trim($contentType));
-        if ('' === $ct) {
-            return false;
+        if ('' === $accept) {
+            $ac = $_SERVER['HTTP_ACCEPT'] ?? '';
+            $accept = is_string($ac) ? $ac : '';
         }
 
-        // Match common JSON content types: application/json, application/ld+json, application/json-patch+json
-        // and any vendor-specific types ending with +json; also accept "json-p" per requirement.
-        if (str_contains($ct, 'json')) {
+        $ct = strtolower(trim($contentType));
+        $ac = strtolower(trim($accept));
+
+        // If either Content-Type or Accept declares JSON (including +json or json-p), force JSON output.
+        if ('' !== $ct && str_contains($ct, 'json')) {
             return true;
         }
 
-        return false;
+        return '' !== $ac && str_contains($ac, 'json');
     }
 
+    /**
+     * @param array<string,mixed> $explanation
+     */
     private function renderJson(array $explanation): void
     {
         if (PHP_SAPI !== 'cli' && !headers_sent()) {
