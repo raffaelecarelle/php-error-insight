@@ -41,12 +41,20 @@ final class Renderer implements RendererInterface
      *
      * Why AUTO: we prefer text in CLI for readability and HTML in web for rich context.
      *
+     * Also: if the incoming HTTP request declares a JSON content type (e.g. application/json,
+     * application/ld+json, application/json-patch+json), we force JSON output regardless of config
+     * so API clients always get machine-readable errors.
+     *
      * @param array<string,mixed> $explanation
      */
     public function render(array $explanation, Config $config, string $kind, bool $isShutdown): void
     {
         $format = $config->output;
-        if (Config::OUTPUT_AUTO === $format) {
+
+        // Force JSON output for JSON HTTP content types
+        if ($this->isHttpJsonRequest()) {
+            $format = Config::OUTPUT_JSON;
+        } elseif (Config::OUTPUT_AUTO === $format) {
             $format = (PHP_SAPI === 'cli' || PHP_SAPI === 'phpdbg') ? Config::OUTPUT_TEXT : Config::OUTPUT_HTML;
         }
 
@@ -74,6 +82,49 @@ final class Renderer implements RendererInterface
      *
      * @param array<string,mixed> $explanation
      */
+    /**
+     * Detect whether the incoming HTTP request declares a JSON content type.
+     */
+    private function isHttpJsonRequest(): bool
+    {
+        if (PHP_SAPI === 'cli' || PHP_SAPI === 'phpdbg') {
+            return false;
+        }
+
+        $contentType = '';
+
+        // Prefer getallheaders() when available (Apache/FPM)
+        if (function_exists('getallheaders')) {
+            $headers = getallheaders();
+            if (is_array($headers)) {
+                foreach ($headers as $name => $value) {
+                    if (is_string($name) && strtolower((string) $name) === 'content-type' && is_string($value)) {
+                        $contentType = (string) $value;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if ('' === $contentType) {
+            $ct = $_SERVER['CONTENT_TYPE'] ?? ($_SERVER['HTTP_CONTENT_TYPE'] ?? '');
+            $contentType = is_string($ct) ? $ct : '';
+        }
+
+        $ct = strtolower(trim($contentType));
+        if ('' === $ct) {
+            return false;
+        }
+
+        // Match common JSON content types: application/json, application/ld+json, application/json-patch+json
+        // and any vendor-specific types ending with +json; also accept "json-p" per requirement.
+        if (str_contains($ct, 'json')) {
+            return true;
+        }
+
+        return false;
+    }
+
     private function renderJson(array $explanation): void
     {
         if (PHP_SAPI !== 'cli' && !headers_sent()) {
