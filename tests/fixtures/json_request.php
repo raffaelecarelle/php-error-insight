@@ -12,7 +12,7 @@ use PhpErrorInsight\ErrorExplainer;
 
 // Force a non-JSON preferred output to verify that JSON is still enforced by the Content-Type heuristic
 ErrorExplainer::register([
-    'output' => Config::OUTPUT_HTML, // would normally render HTML, but should be forced to JSON
+    'output' => Config::OUTPUT_AUTO, // would normally render HTML, but should be forced to JSON
     'language' => 'en',
     'backend' => 'none',
     'verbose' => false,

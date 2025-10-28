@@ -52,10 +52,11 @@ final class Renderer implements RendererInterface
         $format = $config->output;
 
         // Force JSON output for JSON HTTP content types
-        if ($this->isHttpJsonRequest()) {
-            $format = Config::OUTPUT_JSON;
-        } elseif (Config::OUTPUT_AUTO === $format) {
+        if (Config::OUTPUT_AUTO === $format) {
             $format = (PHP_SAPI === 'cli' || PHP_SAPI === 'phpdbg') ? Config::OUTPUT_TEXT : Config::OUTPUT_HTML;
+            if ($this->isHttpJsonRequest()) {
+                $format = Config::OUTPUT_JSON;
+            }
         }
 
         if (Config::OUTPUT_JSON === $format) {
