@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace PhpErrorInsight\Internal\Model;
 
+use function is_array;
+
 final class Frame
 {
     public function __construct(

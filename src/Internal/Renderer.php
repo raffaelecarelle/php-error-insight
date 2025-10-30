@@ -158,7 +158,7 @@ final class Renderer implements RendererInterface
         $styler->registerStyles($formatter);
 
         $severity = $exp->severityLabel;
-        $message = $exp->message() !== '' ? $exp->message() : $exp->title;
+        $message = '' !== $exp->message() ? $exp->message() : $exp->title;
         $file = $exp->file();
         $line = $exp->line();
         $suggestions = $exp->suggestions;
@@ -199,7 +199,7 @@ final class Renderer implements RendererInterface
         // Stack with code excerpt for the first location (original file:line)
         if ('' !== $file && $line > 0) {
             $where = $file . ':' . $line;
-            if ($config->projectRoot !== null && $config->projectRoot !== '' && $config->projectRoot !== '0') {
+            if (null !== $config->projectRoot && '' !== $config->projectRoot && '0' !== $config->projectRoot) {
                 $where = Path::makeRelative($where, $config->projectRoot);
             }
 
@@ -212,7 +212,7 @@ final class Renderer implements RendererInterface
         }
 
         // Render frames (yellow), without code
-        if (count($exp->trace->frames) > 0) {
+        if ($exp->trace->frames !== []) {
             $i = 1;
             foreach ($exp->trace->frames as $frame) {
                 $lineOut = sprintf('%d %s %s', $i, $frame->location(), $frame->signature());
@@ -223,7 +223,7 @@ final class Renderer implements RendererInterface
 
         if ($config->verbose) {
             // Footer diagnostic info
-            $lang = $config->language !== '' && $config->language !== '0' ? $config->language : 'it';
+            $lang = '' !== $config->language && '0' !== $config->language ? $config->language : 'it';
             $model = (string) $config->model;
             $info = 'lang=' . $lang;
             if ('' !== $model) {
@@ -281,7 +281,7 @@ final class Renderer implements RendererInterface
     private function getTemplatePath(Config $config): string
     {
         $template = $config->template ?? (getenv('PHP_ERROR_INSIGHT_TEMPLATE') ?: null);
-        if ($template === '' || $template === '0' || $template === null) {
+        if ('' === $template || '0' === $template || null === $template) {
             $template = dirname(__DIR__, 2) . '/resources/views/error.php';
         }
 

@@ -9,15 +9,11 @@ namespace PhpErrorInsight\Internal\Model;
  */
 final class Trace
 {
-    /** @var list<Frame> */
-    public readonly array $frames;
-
     /**
      * @param list<Frame> $frames
      */
-    public function __construct(array $frames)
+    public function __construct(public readonly array $frames)
     {
-        $this->frames = $frames;
     }
 
     /**

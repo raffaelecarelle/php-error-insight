@@ -35,11 +35,30 @@ final class ConsoleStyler
         return '<' . $name . '>' . $s . '</' . $name . '>';
     }
 
-    public function yellow(string $s): string { return $this->tag('pe-yellow', $s); }
-    public function green(string $s): string { return $this->tag('pe-green', $s); }
-    public function blue(string $s): string { return $this->tag('pe-blue', $s); }
-    public function dim(string $s): string { return $this->tag('pe-dim', $s); }
-    public function boldWhite(string $s): string { return $this->tag('pe-boldwhite', $s); }
+    public function yellow(string $s): string
+    {
+        return $this->tag('pe-yellow', $s);
+    }
+
+    public function green(string $s): string
+    {
+        return $this->tag('pe-green', $s);
+    }
+
+    public function blue(string $s): string
+    {
+        return $this->tag('pe-blue', $s);
+    }
+
+    public function dim(string $s): string
+    {
+        return $this->tag('pe-dim', $s);
+    }
+
+    public function boldWhite(string $s): string
+    {
+        return $this->tag('pe-boldwhite', $s);
+    }
 
     /**
      * Bold white text on severity background (red/yellow/blue), code must be 41/43/44.
