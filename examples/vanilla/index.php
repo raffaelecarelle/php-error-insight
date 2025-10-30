@@ -16,7 +16,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/../../vendor/autoload.php'; // Ensure you ran `composer dump-autoload`
 
-use ErrorExplainer\ErrorExplainer;
+use PhpErrorInsight\ErrorExplainer;
 
 ErrorExplainer::register([
     'enabled' => true,
@@ -28,6 +28,10 @@ ErrorExplainer::register([
     'language' => getenv('PHP_ERROR_INSIGHT_LANG') ?: 'en',
     'apiKey' => getenv('PHP_ERROR_INSIGHT_API_KEY') ?: null,
     'apiUrl' => getenv('PHP_ERROR_INSIGHT_API_URL') ?: null,
+    'projectRoot' => dirname(__DIR__, 2),
 ]);
 
+trigger_error("Notice function called.", E_USER_NOTICE);
+trigger_error("Deprecated function called.", E_USER_DEPRECATED);
 echo $undefinedVar;
+throw new Exception('This is a test exception');

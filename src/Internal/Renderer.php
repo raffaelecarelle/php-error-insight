@@ -7,6 +7,7 @@ namespace PhpErrorInsight\Internal;
 use PhpErrorInsight\Config;
 use PhpErrorInsight\Contracts\RendererInterface;
 use RuntimeException;
+use Symfony\Component\Filesystem\Path;
 
 use function count;
 use function dirname;
@@ -149,77 +150,103 @@ final class Renderer implements RendererInterface
      */
     private function renderText(array $explanation, Config $config): void
     {
-        $data = $this->buildViewData($explanation, $config);
-        $lines = [];
-
         $ansi = $this->supportsAnsi();
-        $muted = static fn (string $s): string => $ansi ? "\033[90m{$s}\033[0m" : $s;
-        $bold = static fn (string $s): string => $ansi ? "\033[1m{$s}\033[0m" : $s;
-        $titleC = static fn (string $s): string => $ansi ? "\033[1;31m{$s}\033[0m" : $s; // bold red
-        $section = static fn (string $s): string => $ansi ? "\033[1;34m{$s}\033[0m" : $s; // bold blue
-        $bullet = static fn (string $s): string => $ansi ? "\033[36m{$s}\033[0m" : $s; // cyan
-        $fileC = static fn (string $s): string => $ansi ? "\033[33m{$s}\033[0m" : $s; // yellow
+        $color = static fn (string $s, string $code): string => $ansi ? "\033[{$code}m{$s}\033[0m" : $s;
+        static fn (string $s): string => $color($s, '1');
+        static fn (string $s): string => $color($s, '31');
+        $yellow = static fn (string $s): string => $color($s, '33');
+        $green = static fn (string $s): string => $color($s, '32');
+        $blue = static fn (string $s): string => $color($s, '34');
+        $dim = static fn (string $s): string => $color($s, '90');
 
-        // Header
-        $header = '🚨 ' . $data['title'];
-        if ('' !== $data['where']) {
-            $header .= ' ' . Translator::t($config, 'labels.in') . ' ' . $data['where'];
+        $severity = (string) ($explanation['severityLabel'] ?? 'Error');
+        $original = isset($explanation['original']) && is_array($explanation['original']) ? $explanation['original'] : [];
+        $message = isset($original['message']) && is_string($original['message']) ? $original['message'] : (string) ($explanation['title'] ?? '');
+        $file = isset($original['file']) ? (string) $original['file'] : '';
+        $line = isset($original['line']) ? (int) $original['line'] : 0;
+        $suggestions = isset($explanation['suggestions']) && is_array($explanation['suggestions']) ? $explanation['suggestions'] : [];
+        $trace = isset($explanation['trace']) && is_array($explanation['trace']) ? $explanation['trace'] : [];
+        $boldWhite = static fn (string $s): string => $ansi ? "\033[1;37m{$s}\033[0m" : $s;
+
+        // Severity background for titles (white text on colored background)
+        $sevLower = strtolower($severity);
+        $bgCode = '44'; // blue default
+        if (str_contains($sevLower, 'exception') || str_contains($sevLower, 'error') || str_contains($sevLower, 'fatal') || str_contains($sevLower, 'critical')) {
+            $bgCode = '41'; // red background
+        } elseif (str_contains($sevLower, 'warning') || str_contains($sevLower, 'deprecated') || str_contains($sevLower, 'notice')) {
+            $bgCode = '43'; // yellow background
         }
 
-        $lines[] = $titleC($header);
-        $lines[] = $muted((string) $data['severity']);
+        $headerOnBg = static function (string $s) use ($ansi, $bgCode): string {
+            return $ansi ? "\033[1;37;{$bgCode}m{$s}\033[0m" : $s; // bold white on severity background
+        };
 
-        // Stack (show top frames with code excerpt)
-        if (!empty($data['frames']) && (bool) $data['verbose']) {
-            $lines[] = '';
-            $lines[] = $section((string) ($data['labels']['headings']['stack'] ?? 'Stack trace'));
-            $maxFrames = 3; // keep concise
-            $i = 0;
-            foreach ($data['frames'] as $f) {
-                $sig = (string) ($f['sig'] ?? '');
-                $loc = (string) ($f['loc'] ?? '');
-                $idx = (int) ($f['idx'] ?? 0);
-                $locOut = '' !== $loc ? $fileC($loc) : '';
-                $lines[] = sprintf('#%d %s %s%s', $idx, '' !== $sig ? $bold($sig) : '(unknown)', '' !== $locOut ? '— ' : '', $locOut);
+        // Headers: severity label and message
+        echo $headerOnBg(' ' . $severity . ' ') . "\n\n";
+        if ('' !== trim($message)) {
+            echo $boldWhite($message) . "\n\n";
+        }
 
-                if ($i < $maxFrames && '' !== $loc) {
-                    // derive file and line from loc "path:line"
-                    $file = $loc;
-                    $line = null;
-                    $pos = strrpos($loc, ':');
-                    if (false !== $pos) {
-                        $file = substr($loc, 0, $pos);
-                        $lineStr = substr($loc, $pos + 1);
-                        $line = ctype_digit($lineStr) ? (int) $lineStr : null;
-                    }
-
-                    $excerpt = $this->renderCodeExcerptText($file, $line ?? 0, 3);
-                    if ('' !== $excerpt) {
-                        foreach (explode("\n", $excerpt) as $l) {
-                            $lines[] = '   ' . $l;
-                        }
-                    }
+        // Suggestions
+        if ([] !== $suggestions) {
+            echo $green('Suggestions:') . "\n"; // keep literal for tests
+            foreach ($suggestions as $sug) {
+                if (!is_string($sug)) {
+                    continue;
                 }
 
+                echo $green('  - ' . $sug) . "\n";
+            }
+
+            echo "\n";
+        }
+
+        // Stack with code excerpt for the first location (original file:line)
+        if ('' !== $file && $line > 0) {
+            $where = $file . ':' . $line;
+            if ($config->projectRoot !== null && $config->projectRoot !== '' && $config->projectRoot !== '0') {
+                $where = Path::makeRelative($where, $config->projectRoot);
+            }
+
+            echo 'at ' . $blue($where) . "\n";
+            $excerpt = $this->renderCodeExcerptText($file, $line, 5);
+            if ('' !== $excerpt) {
+                echo $excerpt . "\n\n";
+            }
+        }
+
+        if ([] !== $trace) {
+            // Render frames list (yellow), without code
+            $i = 1;
+            foreach ($trace as $frame) {
+                $ff = isset($frame['file']) ? (string) $frame['file'] : '';
+                $ll = isset($frame['line']) ? (int) $frame['line'] : 0;
+                $fn = isset($frame['function']) ? (string) $frame['function'] : 'unknown';
+                $cls = isset($frame['class']) ? (string) $frame['class'] : '';
+                $type = isset($frame['type']) ? (string) $frame['type'] : '';
+                $sig = trim($cls . $type . $fn . '()');
+                $loc = '' !== $ff ? ($ff . (0 !== $ll ? ':' . $ll : '')) : '';
+                $lineOut = sprintf('%d %s %s', $i, $loc, $sig);
+                echo $yellow($lineOut) . "\n";
                 ++$i;
             }
         }
 
-        // Details (only when verbose)
-        if (!empty($data['details']) && (bool) $data['verbose']) {
-            $lines[] = $section(Translator::t($config, 'labels.details'));
-            $lines[] = (string) $data['details'];
-        }
-
-        // Suggestions
-        if (!empty($data['suggestions'])) {
-            $lines[] = $section(Translator::t($config, 'labels.suggestions'));
-            foreach ($data['suggestions'] as $s) {
-                $lines[] = ' ' . $bullet('•') . ' ' . $s;
+        if ($config->verbose) {
+            // Footer diagnostic info
+            $lang = $config->language !== '' && $config->language !== '0' ? $config->language : 'it';
+            $model = (string) $config->model;
+            $info = 'lang=' . $lang;
+            if ('' !== $model) {
+                $info .= ' model=' . $model;
             }
+
+            echo "\n" . $dim($info) . "\n";
         }
 
-        echo implode("\n", $lines), "\n";
+        if (PHP_SAPI === 'cli' || PHP_SAPI === 'phpdbg') {
+            echo "\n";
+        }
     }
 
     /**
@@ -520,20 +547,29 @@ final class Renderer implements RendererInterface
         }
 
         $ansi = $this->supportsAnsi();
+        $color = static fn (string $s, string $code): string => $ansi ? "\033[{$code}m{$s}\033[0m" : $s;
+        $yellow = static fn (string $s): string => $color($s, '33');
+
+        $ansi = $this->supportsAnsi();
         $hl = static fn (string $s): string => $ansi ? "\033[1;37;41m{$s}\033[0m" : $s; // white on red for current line number gutter
         $dim = static fn (string $s): string => $ansi ? "\033[90m{$s}\033[0m" : $s;
+        $boldWhite = static fn (string $s): string => $ansi ? "\033[1;37m{$s}\033[0m" : $s;
         $total = count($rows);
         $start = max(1, $line - $radius);
         $end = min($total, $line + $radius);
         $numWidth = strlen((string) $end);
         $out = [];
         for ($ln = $start; $ln <= $end; ++$ln) {
-            $prefix = $ln === $line ? '>' : ' ';
+            $prefix = $ln === $line ? $yellow('➜') : ' ';
             $num = str_pad((string) $ln, $numWidth, ' ', STR_PAD_LEFT);
             $gutter = $ln === $line ? $hl($num) : $dim($num);
             $code = $rows[$ln - 1];
             // show tabs as spaces
             $code = str_replace("\t", '    ', $code);
+            if ($ln === $line) {
+                $code = $boldWhite($code); // bold white for the code content of the current line
+            }
+
             $out[] = sprintf('%s %s | %s', $prefix, $gutter, $code);
         }
 
