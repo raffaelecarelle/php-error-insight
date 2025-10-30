@@ -31,7 +31,7 @@ ErrorExplainer::register([
     'projectRoot' => dirname(__DIR__, 2),
 ]);
 
-trigger_error("Notice function called.", E_USER_NOTICE);
-trigger_error("Deprecated function called.", E_USER_DEPRECATED);
-echo $undefinedVar;
-throw new Exception('This is a test exception');
+trigger_error("function called.", E_USER_NOTICE);
+trigger_error("function called.", E_USER_DEPRECATED);
+trigger_error("function called.", E_USER_WARNING);
+throw new Exception("exception thrown.");

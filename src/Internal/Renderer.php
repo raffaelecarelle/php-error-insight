@@ -54,7 +54,7 @@ final class Renderer implements RendererInterface
 
         // Force JSON output for JSON HTTP content types
         if (Config::OUTPUT_AUTO === $format) {
-            $format = (PHP_SAPI === 'cli' || PHP_SAPI === 'phpdbg') ? Config::OUTPUT_TEXT : Config::OUTPUT_HTML;
+            $format = $this->isCliOrPhpdbg() ? Config::OUTPUT_TEXT : Config::OUTPUT_HTML;
             if ($this->isHttpJsonRequest()) {
                 $format = Config::OUTPUT_JSON;
             }
@@ -137,12 +137,11 @@ final class Renderer implements RendererInterface
      */
     private function renderJson(array $explanation): void
     {
-        if (PHP_SAPI !== 'cli' && !headers_sent()) {
-            header('Content-Type: application/json; charset=utf-8');
-            http_response_code(500);
+        if (!$this->isCliOrPhpdbg() && !headers_sent()) {
+            $this->sendJsonHeaders();
         }
 
-        echo json_encode($explanation, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), (PHP_SAPI === 'cli' ? "\n" : '');
+        echo json_encode($explanation, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), ($this->isCliOrPhpdbg() ? "\n" : '');
     }
 
     /**
@@ -152,8 +151,6 @@ final class Renderer implements RendererInterface
     {
         $ansi = $this->supportsAnsi();
         $color = static fn (string $s, string $code): string => $ansi ? "\033[{$code}m{$s}\033[0m" : $s;
-        static fn (string $s): string => $color($s, '1');
-        static fn (string $s): string => $color($s, '31');
         $yellow = static fn (string $s): string => $color($s, '33');
         $green = static fn (string $s): string => $color($s, '32');
         $blue = static fn (string $s): string => $color($s, '34');
@@ -254,16 +251,11 @@ final class Renderer implements RendererInterface
      */
     private function renderHtml(array $explanation, Config $config): void
     {
-        if (PHP_SAPI !== 'cli' && PHP_SAPI !== 'phpdbg' && !headers_sent()) {
-            header('Content-Type: text/html; charset=utf-8');
-            http_response_code(500);
+        if (!$this->isCliOrPhpdbg() && !headers_sent()) {
+            $this->sendHtmlHeaders();
         }
 
-        $template = $config->template ?? (getenv('PHP_ERROR_INSIGHT_TEMPLATE') ?: null);
-        if ('' === $template || '0' === $template || null === $template) {
-            $template = dirname(__DIR__, 2) . '/resources/views/error.php';
-        }
-
+        $template = $this->getTemplatePath($config);
         $data = $this->buildViewData($explanation, $config);
 
         if (!is_file($template)) {
@@ -275,6 +267,33 @@ final class Renderer implements RendererInterface
             extract($__data, EXTR_SKIP);
             require $__template;
         })($template, $data);
+    }
+
+    private function isCliOrPhpdbg(): bool
+    {
+        return PHP_SAPI === 'cli' || PHP_SAPI === 'phpdbg';
+    }
+
+    private function sendJsonHeaders(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+        http_response_code(500);
+    }
+
+    private function sendHtmlHeaders(): void
+    {
+        header('Content-Type: text/html; charset=utf-8');
+        http_response_code(500);
+    }
+
+    private function getTemplatePath(Config $config): string
+    {
+        $template = $config->template ?? (getenv('PHP_ERROR_INSIGHT_TEMPLATE') ?: null);
+        if ($template === '' || $template === '0' || $template === null) {
+            $template = dirname(__DIR__, 2) . '/resources/views/error.php';
+        }
+
+        return $template;
     }
 
     /**
@@ -531,8 +550,9 @@ final class Renderer implements RendererInterface
     private function highlightText(string $text): string
     {
         $text = highlight_string($text, true);
+        $clean = preg_replace('|<code style="color: #[a-fA-F0-9]{6}">|', '<code>', $text);
 
-        return preg_replace('|<code style="color: #[a-fA-F0-9]{6}">|', '<code>', $text);
+        return is_string($clean) ? $clean : $text;
     }
 
     private function renderCodeExcerptText(?string $file, ?int $line, int $radius = 5): string
@@ -549,8 +569,6 @@ final class Renderer implements RendererInterface
         $ansi = $this->supportsAnsi();
         $color = static fn (string $s, string $code): string => $ansi ? "\033[{$code}m{$s}\033[0m" : $s;
         $yellow = static fn (string $s): string => $color($s, '33');
-
-        $ansi = $this->supportsAnsi();
         $hl = static fn (string $s): string => $ansi ? "\033[1;37;41m{$s}\033[0m" : $s; // white on red for current line number gutter
         $dim = static fn (string $s): string => $ansi ? "\033[90m{$s}\033[0m" : $s;
         $boldWhite = static fn (string $s): string => $ansi ? "\033[1;37m{$s}\033[0m" : $s;
@@ -578,7 +596,7 @@ final class Renderer implements RendererInterface
 
     private function supportsAnsi(): bool
     {
-        if (PHP_SAPI !== 'cli' && PHP_SAPI !== 'phpdbg') {
+        if (!$this->isCliOrPhpdbg()) {
             return false;
         }
 
