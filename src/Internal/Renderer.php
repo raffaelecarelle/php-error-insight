@@ -156,6 +156,9 @@ final class Renderer implements RendererInterface
         $formatter = new OutputFormatter($this->supportsAnsi());
         $styler = new ConsoleStyler();
         $styler->registerStyles($formatter);
+        // Register code token styles (Dracula theme by default)
+        $highlighter = new CodeHighlighter();
+        $highlighter->registerStyles($formatter, CodeHighlighter::THEME_DRACULA);
 
         $severity = $exp->severityLabel;
         $message = '' !== $exp->message() ? $exp->message() : $exp->title;
@@ -212,7 +215,7 @@ final class Renderer implements RendererInterface
         }
 
         // Render frames (yellow), without code
-        if ($exp->trace->frames !== []) {
+        if ([] !== $exp->trace->frames) {
             $i = 1;
             foreach ($exp->trace->frames as $frame) {
                 $lineOut = sprintf('%d %s %s', $i, $frame->location(), $frame->signature());
@@ -553,29 +556,36 @@ final class Renderer implements RendererInterface
             return '';
         }
 
-        $rows = @file($file, FILE_IGNORE_NEW_LINES);
-        if (false === $rows) {
+        $source = @file_get_contents($file);
+        if (!is_string($source)) {
+            return '';
+        }
+
+        // Normalize newlines and visualize tabs as 4 spaces for alignment in terminals
+        $source = str_replace(["\r\n", "\r", "\t"], ["\n", "\n", '    '], $source);
+
+        $highlighter = new CodeHighlighter();
+        $tokenLines = $highlighter->tokenizeToLines($source);
+        if ([] === $tokenLines) {
             return '';
         }
 
         $styler = new ConsoleStyler();
-        $total = count($rows);
+        $total = count($tokenLines);
         $start = max(1, $line - $radius);
         $end = min($total, $line + $radius);
         $numWidth = strlen((string) $end);
+
         $out = [];
         for ($ln = $start; $ln <= $end; ++$ln) {
             $prefix = $ln === $line ? $styler->yellow('➜') : ' ';
             $num = str_pad((string) $ln, $numWidth, ' ', STR_PAD_LEFT);
             $gutter = $ln === $line ? $styler->gutterHighlight($num) : $styler->dim($num);
-            $code = $rows[$ln - 1];
-            // show tabs as spaces
-            $code = str_replace("\t", '    ', $code);
-            if ($ln === $line) {
-                $code = $styler->boldWhite($code); // bold white for the code content of the current line
-            }
 
-            $out[] = sprintf('%s %s | %s', $prefix, $gutter, $code);
+            // Build colored code for this line from tokens
+            $colored = $highlighter->colorTokenLineText($tokenLines[$ln - 1]);
+
+            $out[] = sprintf('%s %s | %s', $prefix, $gutter, $colored);
         }
 
         return implode("\n", $out);

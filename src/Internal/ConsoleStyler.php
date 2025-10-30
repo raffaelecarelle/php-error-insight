@@ -28,6 +28,7 @@ final class ConsoleStyler
         $formatter->setStyle('pe-header-yellow', new OutputFormatterStyle('white', 'yellow', ['bold']));
         $formatter->setStyle('pe-header-blue', new OutputFormatterStyle('white', 'blue', ['bold']));
         $formatter->setStyle('pe-gutter-hl', new OutputFormatterStyle('white', 'red', ['bold']));
+
     }
 
     private function tag(string $name, string $s): string
