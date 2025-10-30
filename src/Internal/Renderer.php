@@ -6,7 +6,9 @@ namespace PhpErrorInsight\Internal;
 
 use PhpErrorInsight\Config;
 use PhpErrorInsight\Contracts\RendererInterface;
+use PhpErrorInsight\Internal\Model\Explanation;
 use RuntimeException;
+use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Filesystem\Path;
 
 use function count;
@@ -149,50 +151,46 @@ final class Renderer implements RendererInterface
      */
     private function renderText(array $explanation, Config $config): void
     {
-        $ansi = $this->supportsAnsi();
-        $color = static fn (string $s, string $code): string => $ansi ? "\033[{$code}m{$s}\033[0m" : $s;
-        $yellow = static fn (string $s): string => $color($s, '33');
-        $green = static fn (string $s): string => $color($s, '32');
-        $blue = static fn (string $s): string => $color($s, '34');
-        $dim = static fn (string $s): string => $color($s, '90');
+        $exp = Explanation::fromArray($explanation);
 
-        $severity = (string) ($explanation['severityLabel'] ?? 'Error');
-        $original = isset($explanation['original']) && is_array($explanation['original']) ? $explanation['original'] : [];
-        $message = isset($original['message']) && is_string($original['message']) ? $original['message'] : (string) ($explanation['title'] ?? '');
-        $file = isset($original['file']) ? (string) $original['file'] : '';
-        $line = isset($original['line']) ? (int) $original['line'] : 0;
-        $suggestions = isset($explanation['suggestions']) && is_array($explanation['suggestions']) ? $explanation['suggestions'] : [];
-        $trace = isset($explanation['trace']) && is_array($explanation['trace']) ? $explanation['trace'] : [];
-        $boldWhite = static fn (string $s): string => $ansi ? "\033[1;37m{$s}\033[0m" : $s;
+        $formatter = new OutputFormatter($this->supportsAnsi());
+        $styler = new ConsoleStyler();
+        $styler->registerStyles($formatter);
+
+        $severity = $exp->severityLabel;
+        $message = $exp->message() !== '' ? $exp->message() : $exp->title;
+        $file = $exp->file();
+        $line = $exp->line();
+        $suggestions = $exp->suggestions;
 
         // Severity background for titles (white text on colored background)
         $sevLower = strtolower($severity);
         $bgCode = '44'; // blue default
         if (str_contains($sevLower, 'exception') || str_contains($sevLower, 'error') || str_contains($sevLower, 'fatal') || str_contains($sevLower, 'critical')) {
             $bgCode = '41'; // red background
-        } elseif (str_contains($sevLower, 'warning') || str_contains($sevLower, 'deprecated') || str_contains($sevLower, 'notice')) {
+        } elseif (str_contains($sevLower, 'warning')) {
             $bgCode = '43'; // yellow background
         }
 
-        $headerOnBg = static function (string $s) use ($ansi, $bgCode): string {
-            return $ansi ? "\033[1;37;{$bgCode}m{$s}\033[0m" : $s; // bold white on severity background
+        $headerOnBg = static function (string $s) use ($styler, $bgCode): string {
+            return $styler->headerOnBgCode($bgCode, $s); // bold white on severity background
         };
 
         // Headers: severity label and message
-        echo $headerOnBg(' ' . $severity . ' ') . "\n\n";
+        echo $formatter->format($headerOnBg(' ' . $severity . ' ')) . "\n\n";
         if ('' !== trim($message)) {
-            echo $boldWhite($message) . "\n\n";
+            echo $formatter->format($styler->boldWhite($message)) . "\n\n";
         }
 
         // Suggestions
         if ([] !== $suggestions) {
-            echo $green('Suggestions:') . "\n"; // keep literal for tests
+            echo $formatter->format($styler->green('Suggestions:')) . "\n"; // keep literal for tests
             foreach ($suggestions as $sug) {
                 if (!is_string($sug)) {
                     continue;
                 }
 
-                echo $green('  - ' . $sug) . "\n";
+                echo $formatter->format($styler->green('  - ' . $sug)) . "\n";
             }
 
             echo "\n";
@@ -205,26 +203,20 @@ final class Renderer implements RendererInterface
                 $where = Path::makeRelative($where, $config->projectRoot);
             }
 
-            echo 'at ' . $blue($where) . "\n";
+            echo $formatter->format('at ' . $styler->blue($where)) . "\n";
             $excerpt = $this->renderCodeExcerptText($file, $line, 5);
             if ('' !== $excerpt) {
-                echo $excerpt . "\n\n";
+                // format excerpt tags as well
+                echo $formatter->format($excerpt) . "\n\n";
             }
         }
 
-        if ([] !== $trace) {
-            // Render frames list (yellow), without code
+        // Render frames (yellow), without code
+        if (count($exp->trace->frames) > 0) {
             $i = 1;
-            foreach ($trace as $frame) {
-                $ff = isset($frame['file']) ? (string) $frame['file'] : '';
-                $ll = isset($frame['line']) ? (int) $frame['line'] : 0;
-                $fn = isset($frame['function']) ? (string) $frame['function'] : 'unknown';
-                $cls = isset($frame['class']) ? (string) $frame['class'] : '';
-                $type = isset($frame['type']) ? (string) $frame['type'] : '';
-                $sig = trim($cls . $type . $fn . '()');
-                $loc = '' !== $ff ? ($ff . (0 !== $ll ? ':' . $ll : '')) : '';
-                $lineOut = sprintf('%d %s %s', $i, $loc, $sig);
-                echo $yellow($lineOut) . "\n";
+            foreach ($exp->trace->frames as $frame) {
+                $lineOut = sprintf('%d %s %s', $i, $frame->location(), $frame->signature());
+                echo $formatter->format($styler->yellow($lineOut)) . "\n";
                 ++$i;
             }
         }
@@ -238,7 +230,7 @@ final class Renderer implements RendererInterface
                 $info .= ' model=' . $model;
             }
 
-            echo "\n" . $dim($info) . "\n";
+            echo "\n" . $formatter->format($styler->dim($info)) . "\n";
         }
 
         if (PHP_SAPI === 'cli' || PHP_SAPI === 'phpdbg') {
@@ -557,7 +549,7 @@ final class Renderer implements RendererInterface
 
     private function renderCodeExcerptText(?string $file, ?int $line, int $radius = 5): string
     {
-        if (null === $file || '' === $file || '0' === $file || (null === $line || 0 === $line) || !is_file($file) || $line < 1) {
+        if ($line < 1 || !is_file($file)) {
             return '';
         }
 
@@ -566,26 +558,21 @@ final class Renderer implements RendererInterface
             return '';
         }
 
-        $ansi = $this->supportsAnsi();
-        $color = static fn (string $s, string $code): string => $ansi ? "\033[{$code}m{$s}\033[0m" : $s;
-        $yellow = static fn (string $s): string => $color($s, '33');
-        $hl = static fn (string $s): string => $ansi ? "\033[1;37;41m{$s}\033[0m" : $s; // white on red for current line number gutter
-        $dim = static fn (string $s): string => $ansi ? "\033[90m{$s}\033[0m" : $s;
-        $boldWhite = static fn (string $s): string => $ansi ? "\033[1;37m{$s}\033[0m" : $s;
+        $styler = new ConsoleStyler();
         $total = count($rows);
         $start = max(1, $line - $radius);
         $end = min($total, $line + $radius);
         $numWidth = strlen((string) $end);
         $out = [];
         for ($ln = $start; $ln <= $end; ++$ln) {
-            $prefix = $ln === $line ? $yellow('➜') : ' ';
+            $prefix = $ln === $line ? $styler->yellow('➜') : ' ';
             $num = str_pad((string) $ln, $numWidth, ' ', STR_PAD_LEFT);
-            $gutter = $ln === $line ? $hl($num) : $dim($num);
+            $gutter = $ln === $line ? $styler->gutterHighlight($num) : $styler->dim($num);
             $code = $rows[$ln - 1];
             // show tabs as spaces
             $code = str_replace("\t", '    ', $code);
             if ($ln === $line) {
-                $code = $boldWhite($code); // bold white for the code content of the current line
+                $code = $styler->boldWhite($code); // bold white for the code content of the current line
             }
 
             $out[] = sprintf('%s %s | %s', $prefix, $gutter, $code);
