@@ -170,7 +170,7 @@ final class Renderer implements RendererInterface
         $lines[] = $muted((string) $data['severity']);
 
         // Stack (show top frames with code excerpt)
-        if (!empty($data['frames'])) {
+        if (!empty($data['frames']) && (bool) $data['verbose']) {
             $lines[] = '';
             $lines[] = $section((string) ($data['labels']['headings']['stack'] ?? 'Stack trace'));
             $maxFrames = 3; // keep concise
