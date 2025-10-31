@@ -976,7 +976,9 @@ $dumper->setStyles([
         <div class="toolbar" role="toolbar" aria-label="<?= $e($labels['aria']['page_actions'] ?? 'Page actions') ?>">
             <button class="button primary i-title" id="copyTitle"> <?= $e($labels['toolbar']['copy_title'] ?? 'Copy title') ?></button>
             <button class="button i-stack" id="copyStack"> <?= $e($labels['toolbar']['copy_stack'] ?? 'Copy stack') ?></button>
-            <button class="button i-link" id="openEditor" <?= $firstEditor === '' ? 'disabled' : '' ?>> <?= $e($labels['toolbar']['open_in_editor'] ?? 'Open in your editor') ?></button>
+            <?php if($firstEditor !== ''): ?>
+                <button class="button i-link" id="openEditor"> <?= $e($labels['toolbar']['open_in_editor'] ?? 'Open in your editor') ?></button>
+            <?php endif; ?>
             <button class="button i-moon" id="toggleTheme" aria-pressed="false" aria-label="<?= $e($labels['aria']['toggle_theme'] ?? 'Toggle theme') ?>"> <?= $e($labels['toolbar']['theme'] ?? 'Theme') ?></button>
         </div>
     </header>
