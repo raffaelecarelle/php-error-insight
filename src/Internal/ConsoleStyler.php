@@ -7,6 +7,9 @@ namespace PhpErrorInsight\Internal;
 use Symfony\Component\Console\Formatter\OutputFormatterInterface;
 use Symfony\Component\Console\Formatter\OutputFormatterStyle;
 
+use function is_array;
+use function is_string;
+
 /**
  * ConsoleStyler defines style tags and helps produce tagged strings.
  *
@@ -16,19 +19,71 @@ final class ConsoleStyler
 {
     /**
      * Register our custom styles into a Symfony Output formatter.
+     *
+     * @param array<string,mixed>|null $config styles override structure (Config::$consoleColors)
      */
-    public function registerStyles(OutputFormatterInterface $formatter): void
+    public function registerStyles(OutputFormatterInterface $formatter, ?array $config = null): void
     {
-        $formatter->setStyle('pe-yellow', new OutputFormatterStyle('yellow'));
-        $formatter->setStyle('pe-green', new OutputFormatterStyle('green'));
-        $formatter->setStyle('pe-blue', new OutputFormatterStyle('blue'));
-        $formatter->setStyle('pe-dim', new OutputFormatterStyle('gray'));
-        $formatter->setStyle('pe-boldwhite', new OutputFormatterStyle('white', null, ['bold']));
-        $formatter->setStyle('pe-header-red', new OutputFormatterStyle('white', 'red', ['bold']));
-        $formatter->setStyle('pe-header-yellow', new OutputFormatterStyle('white', 'yellow', ['bold']));
-        $formatter->setStyle('pe-header-blue', new OutputFormatterStyle('white', 'blue', ['bold']));
-        $formatter->setStyle('pe-gutter-hl', new OutputFormatterStyle('white', 'red', ['bold']));
+        $styles = is_array($config) && isset($config['styles']) && is_array($config['styles']) ? $config['styles'] : [];
 
+        // Helper to read [fg, bg, options[]]
+        $spec = static function (array $styles, string $key, array $def): array {
+            $v = $styles[$key] ?? null;
+            if (!is_array($v)) {
+                return $def;
+            }
+
+            return [
+                (string) ($v[0] ?? $def[0]),
+                null !== ($v[1] ?? null) ? (string) $v[1] : ($def[1] ?? null),
+                is_array($v[2] ?? null) ? $v[2] : ($def[2] ?? []),
+            ];
+        };
+
+        // Core text styles (defaults preserve current behavior)
+        [$fg, $bg, $opt] = $spec($styles, 'yellow', ['yellow', null, []]);
+        $formatter->setStyle('pe-yellow', new OutputFormatterStyle($fg, $bg, $opt));
+        [$fg, $bg, $opt] = $spec($styles, 'green', ['green', null, []]);
+        $formatter->setStyle('pe-green', new OutputFormatterStyle($fg, $bg, $opt));
+        [$fg, $bg, $opt] = $spec($styles, 'blue', ['blue', null, []]);
+        $formatter->setStyle('pe-blue', new OutputFormatterStyle($fg, $bg, $opt));
+        [$fg, $bg, $opt] = $spec($styles, 'dim', ['gray', null, []]);
+        $formatter->setStyle('pe-dim', new OutputFormatterStyle($fg, $bg, $opt));
+        [$fg, $bg, $opt] = $spec($styles, 'boldwhite', ['white', null, ['bold']]);
+        $formatter->setStyle('pe-boldwhite', new OutputFormatterStyle($fg, $bg, $opt));
+
+        // Title, Suggestion, Stack, Location semantic tags (new; default map to old colors)
+        [$fg, $bg, $opt] = $spec($styles, 'title', ['white', null, ['bold']]);
+        $formatter->setStyle('pe-title', new OutputFormatterStyle($fg, $bg, $opt));
+        [$fg, $bg, $opt] = $spec($styles, 'suggestion', ['green', null, []]);
+        $formatter->setStyle('pe-suggestion', new OutputFormatterStyle($fg, $bg, $opt));
+        [$fg, $bg, $opt] = $spec($styles, 'stack', ['yellow', null, []]);
+        $formatter->setStyle('pe-stack', new OutputFormatterStyle($fg, $bg, $opt));
+        [$fg, $bg, $opt] = $spec($styles, 'location', ['blue', null, []]);
+        $formatter->setStyle('pe-location', new OutputFormatterStyle($fg, $bg, $opt));
+
+        // Gutter styles
+        [$fg, $bg, $opt] = $spec($styles, 'gutter_hl', ['white', 'red', ['bold']]);
+        $formatter->setStyle('pe-gutter-hl', new OutputFormatterStyle($fg, $bg, $opt));
+        [$fg, $bg, $opt] = $spec($styles, 'gutter_num', ['gray', null, []]);
+        $formatter->setStyle('pe-gutter-num', new OutputFormatterStyle($fg, $bg, $opt));
+        [$fg, $bg, $opt] = $spec($styles, 'gutter_sep', ['gray', null, []]);
+        $formatter->setStyle('pe-gutter-sep', new OutputFormatterStyle($fg, $bg, $opt));
+
+        // Severity backgrounds: build tags like pe-header-<color>
+        $sev = is_array($config) && isset($config['severity']) && is_array($config['severity']) ? $config['severity'] : [];
+        $bgColors = ['red', 'yellow', 'blue'];
+        foreach (['error', 'warning', 'info'] as $k) {
+            $v = $sev[$k] ?? null;
+            if (is_string($v) && '' !== $v) {
+                $bgColors[] = strtolower($v);
+            }
+        }
+
+        $bgColors = array_values(array_unique($bgColors));
+        foreach ($bgColors as $c) {
+            $formatter->setStyle('pe-header-' . $c, new OutputFormatterStyle('white', $c, ['bold']));
+        }
     }
 
     private function tag(string $name, string $s): string
@@ -81,5 +136,50 @@ final class ConsoleStyler
     public function gutterHighlight(string $s): string
     {
         return $this->tag('pe-gutter-hl', $s);
+    }
+
+    /**
+     * Default gutter line number (non-highlighted lines).
+     */
+    public function gutterNumber(string $s): string
+    {
+        return $this->tag('pe-gutter-num', $s);
+    }
+
+    /**
+     * Gutter vertical separator style.
+     */
+    public function gutterSeparator(string $s): string
+    {
+        return $this->tag('pe-gutter-sep', $s);
+    }
+
+    // Convenience wrappers for semantic styles
+    public function title(string $s): string
+    {
+        return $this->tag('pe-title', $s);
+    }
+
+    public function suggestion(string $s): string
+    {
+        return $this->tag('pe-suggestion', $s);
+    }
+
+    public function stack(string $s): string
+    {
+        return $this->tag('pe-stack', $s);
+    }
+
+    public function location(string $s): string
+    {
+        return $this->tag('pe-location', $s);
+    }
+
+    /**
+     * Bold white text on named background color (e.g., 'red','yellow','blue', ...).
+     */
+    public function headerOnBgName(string $bgName, string $s): string
+    {
+        return $this->tag('pe-header-' . strtolower($bgName), $s);
     }
 }

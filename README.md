@@ -38,6 +38,7 @@ Supported environment variables:
 - PHP_ERROR_INSIGHT_ROOT: absolute project root to compute relative file paths in the stack (optional)
 - PHP_ERROR_INSIGHT_HOST_ROOT: absolute host project root used to map container paths when opening files via editor links (optional; useful in Docker)
 - PHP_ERROR_INSIGHT_EDITOR: editor URL template for clickable file links, using %file and %line placeholders (e.g. "vscode://file/%file:%line" or "phpstorm://open?file=%file&line=%line")
+- PHP_ERROR_INSIGHT_CONSOLE_COLORS: JSON object to customize console styles (token colors, severity backgrounds, title/suggestions/stack/location).
 
 Configuration examples:
 
@@ -180,6 +181,79 @@ Technical details:
 - You can inject your own AI client (AIClientInterface) if you prefer to handle sanitization externally.
 
 For more details, see docs/sanitizzazione-dati-ai.md.
+
+## Console colors customization (CLI)
+
+You can customize the colors used in the CLI output (syntax highlighting, severity header background, title, AI suggestions, stack trace and locations).
+
+Two ways to configure:
+
+- Environment variable `PHP_ERROR_INSIGHT_CONSOLE_COLORS` containing a JSON object
+- Programmatic via `Config::fromEnvAndArray(['consoleColors' => [...]])`
+
+Structure of the JSON/object:
+
+```json
+{
+  "tokens": {
+    "default": ["white", null, []],
+    "comment": ["white", null, []],
+    "string": ["yellow", null, []],
+    "keyword": ["magenta", null, ["bold"]],
+    "html": ["cyan", null, ["bold"]],
+    "variable": ["cyan", null, []],
+    "function": ["blue", null, ["bold"]],
+    "method": ["green", null, ["underscore"]]
+  },
+  "severity": {
+    "error": "red",
+    "warning": "yellow",
+    "info": "blue"
+  },
+  "styles": {
+    "title": ["white", null, ["bold"]],
+    "suggestion": ["green", null, []],
+    "stack": ["yellow", null, []],
+    "location": ["blue", null, []],
+    "gutter_hl": ["white", "red", ["bold"]],
+    "gutter_num": ["gray", null, []],
+    "gutter_sep": ["gray", null, []]
+  }
+}
+```
+
+Notes:
+- Each style uses the form `[fg, bg, options[]]`. `fg` and `bg` accept Symfony Console color names (e.g., "white", "yellow", "red", "blue", "cyan", "magenta", "gray"), and `options` can include `bold`, `underscore`, `blink`, `reverse`, `conceal`.
+- `tokens` overrides the syntax highlighter palette for these categories: `default`, `comment`, `string`, `keyword`, `html`, `variable`, `function`, `method`.
+- `severity` maps `error|warning|info` to a background color name for the header badge with the severity label.
+- `styles` lets you tweak semantic tags used by the renderer: `title` (error message), `suggestion` (AI suggestions label and items), `stack` (stack trace lines when rendered in compact mode), `location` (file:line), `gutter_hl` (current line number in code excerpts), `gutter_num` (non-current line numbers), and `gutter_sep` (the vertical separator).
+- Any key you omit falls back to sensible defaults.
+
+Examples
+
+- Via environment variable:
+
+```bash
+export PHP_ERROR_INSIGHT_CONSOLE_COLORS='{
+  "severity": {"error":"magenta","warning":"yellow","info":"cyan"},
+  "styles": {"title":["white",null,["bold"]],"suggestion":["cyan",null,[]]},
+  "tokens": {"keyword":["magenta",null,["bold"]],"string":["green",null,[]]}
+}'
+```
+
+- Via code:
+
+```php
+use PhpErrorInsight\Config;
+
+$config = Config::fromEnvAndArray([
+    'consoleColors' => [
+        'severity' => [ 'error' => 'magenta', 'warning' => 'yellow', 'info' => 'blue' ],
+        'styles' => [ 'title' => ['white', null, ['bold']], 'suggestion' => ['cyan', null, []] ],
+        'tokens' => [ 'keyword' => ['magenta', null, ['bold']], 'string' => ['green', null, []] ],
+    ],
+]);
+```
 
 ## Development
 

@@ -53,9 +53,24 @@ final class CodeHighlighter
      *   pe-tok-string, pe-tok-comment, pe-tok-keyword, pe-tok-default, pe-tok-html
      *   plus: pe-tok-variable, pe-tok-function, pe-tok-method
      */
-    public function registerStyles(OutputFormatterInterface $formatter, string $theme = self::THEME_DEFAULT): void
+    /**
+     * @param array<string, array{0?:string,1?:string|null,2?:array<string>}>|null $overrides
+     */
+    public function registerStyles(OutputFormatterInterface $formatter, string $theme = self::THEME_DEFAULT, ?array $overrides = null): void
     {
         $palette = $this->paletteFor($theme);
+        if (is_array($overrides)) {
+            // Merge overrides into palette (shallow per key)
+            foreach ($overrides as $k => $spec) {
+                if (is_array($spec)) {
+                    $palette[$k] = [
+                        $spec[0] ?? ($palette[$k][0] ?? 'white'),
+                        $spec[1] ?? ($palette[$k][1] ?? null),
+                        $spec[2] ?? ($palette[$k][2] ?? []),
+                    ];
+                }
+            }
+        }
 
         $formatter->setStyle('pe-tok-string', new OutputFormatterStyle(
             $palette['string'][0] ?? 'green',

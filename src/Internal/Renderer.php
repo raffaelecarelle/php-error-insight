@@ -155,10 +155,16 @@ final class Renderer implements RendererInterface
 
         $formatter = new OutputFormatter($this->supportsAnsi());
         $styler = new ConsoleStyler();
-        $styler->registerStyles($formatter);
-        // Register code token styles (Dracula theme by default)
+        $styler->registerStyles($formatter, $config->consoleColors ?? null);
+        // Register code token styles (Dracula theme by default), allow overrides from config
         $highlighter = new CodeHighlighter();
-        $highlighter->registerStyles($formatter, CodeHighlighter::THEME_DRACULA);
+        $tokenOverrides = null;
+        if (is_array($config->consoleColors ?? null) && isset($config->consoleColors['tokens']) && is_array($config->consoleColors['tokens'])) {
+            /** @var array<string, array{0:string,1:string|null,2:array<string>}> $tokenOverrides */
+            $tokenOverrides = $config->consoleColors['tokens'];
+        }
+
+        $highlighter->registerStyles($formatter, CodeHighlighter::THEME_DRACULA, $tokenOverrides);
 
         $severity = $exp->severityLabel;
         $message = '' !== $exp->message() ? $exp->message() : $exp->title;
@@ -168,32 +174,49 @@ final class Renderer implements RendererInterface
 
         // Severity background for titles (white text on colored background)
         $sevLower = strtolower($severity);
-        $bgCode = '44'; // blue default
+        $sevKey = 'info';
         if (str_contains($sevLower, 'exception') || str_contains($sevLower, 'error') || str_contains($sevLower, 'fatal') || str_contains($sevLower, 'critical')) {
-            $bgCode = '41'; // red background
+            $sevKey = 'error';
         } elseif (str_contains($sevLower, 'warning')) {
-            $bgCode = '43'; // yellow background
+            $sevKey = 'warning';
         }
 
-        $headerOnBg = static function (string $s) use ($styler, $bgCode): string {
-            return $styler->headerOnBgCode($bgCode, $s); // bold white on severity background
+        $bgName = null;
+        if (is_array($config->consoleColors ?? null) && isset($config->consoleColors['severity']) && is_array($config->consoleColors['severity'])) {
+            $map = $config->consoleColors['severity'];
+            $bg = $map[$sevKey] ?? null;
+            if (is_string($bg) && '' !== $bg) {
+                $bgName = strtolower($bg);
+            }
+        }
+
+        if (null === $bgName) {
+            $bgName = match ($sevKey) {
+                'error' => 'red',
+                'warning' => 'yellow',
+                default => 'blue',
+            };
+        }
+
+        $headerOnBg = static function (string $s) use ($styler, $bgName): string {
+            return $styler->headerOnBgName($bgName, $s); // bold white on severity background
         };
 
         // Headers: severity label and message
         echo $formatter->format($headerOnBg(' ' . $severity . ' ')) . "\n\n";
         if ('' !== trim($message)) {
-            echo $formatter->format($styler->boldWhite($message)) . "\n\n";
+            echo $formatter->format($styler->title($message)) . "\n\n";
         }
 
         // Suggestions
         if ([] !== $suggestions) {
-            echo $formatter->format($styler->green('Suggestions:')) . "\n"; // keep literal for tests
+            echo $formatter->format($styler->suggestion('Suggestions:')) . "\n"; // keep literal for tests
             foreach ($suggestions as $sug) {
                 if (!is_string($sug)) {
                     continue;
                 }
 
-                echo $formatter->format($styler->green('  - ' . $sug)) . "\n";
+                echo $formatter->format($styler->suggestion('  - ' . $sug)) . "\n";
             }
 
             echo "\n";
@@ -206,7 +229,7 @@ final class Renderer implements RendererInterface
                 $where = Path::makeRelative($where, $config->projectRoot);
             }
 
-            echo $formatter->format('at ' . $styler->blue($where)) . "\n";
+            echo $formatter->format('at ' . $styler->location($where)) . "\n";
             $excerpt = $this->renderCodeExcerptText($file, $line, 5);
             if ('' !== $excerpt) {
                 // format excerpt tags as well
@@ -219,7 +242,7 @@ final class Renderer implements RendererInterface
             $i = 1;
             foreach ($exp->trace->frames as $frame) {
                 $lineOut = sprintf('%d %s %s', $i, $frame->location(), $frame->signature());
-                echo $formatter->format($styler->yellow($lineOut)) . "\n";
+                echo $formatter->format($styler->stack($lineOut)) . "\n";
                 ++$i;
             }
         }
@@ -580,12 +603,13 @@ final class Renderer implements RendererInterface
         for ($ln = $start; $ln <= $end; ++$ln) {
             $prefix = $ln === $line ? $styler->yellow('➜') : ' ';
             $num = str_pad((string) $ln, $numWidth, ' ', STR_PAD_LEFT);
-            $gutter = $ln === $line ? $styler->gutterHighlight($num) : $styler->dim($num);
+            $gutter = $ln === $line ? $styler->gutterHighlight($num) : $styler->gutterNumber($num);
 
             // Build colored code for this line from tokens
             $colored = $highlighter->colorTokenLineText($tokenLines[$ln - 1]);
 
-            $out[] = sprintf('%s %s | %s', $prefix, $gutter, $colored);
+            $sep = $styler->gutterSeparator('|');
+            $out[] = sprintf('%s %s %s %s', $prefix, $gutter, $sep, $colored);
         }
 
         return implode("\n", $out);

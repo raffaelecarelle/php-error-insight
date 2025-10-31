@@ -6,6 +6,7 @@ namespace PhpErrorInsight;
 
 use function array_key_exists;
 use function in_array;
+use function is_array;
 
 final class Config
 {
@@ -40,6 +41,31 @@ final class Config
     public ?string $hostProjectRoot = null; // absolute host project root used to map container paths for editor links (Docker)
 
     public ?string $editorUrl = null; // template like "vscode://file/%file:%line" or "phpstorm://open?file=%file&line=%line"
+
+    /**
+     * Console colors and styles configuration.
+     * Structure example:
+     * [
+     *   'tokens' => [ 'default' => ['white', null, []], ... ],
+     *   'styles' => [
+     *       'yellow' => ['yellow', null, []],
+     *       'green' => ['green', null, []],
+     *       'blue' => ['blue', null, []],
+     *       'dim' => ['gray', null, []],
+     *       'boldwhite' => ['white', null, ['bold']],
+     *       'gutter_hl' => ['white', 'red', ['bold']],
+     *       'gutter_num' => ['gray', null, []],
+     *       'gutter_sep' => ['gray', null, []],
+     *       'title' => ['white', null, ['bold']],
+     *       'suggestion' => ['green', null, []],
+     *       'stack' => ['yellow', null, []],
+     *       'location' => ['blue', null, []]
+     *   ]
+     * ].
+     *
+     * @var array<string, mixed>|null
+     */
+    public ?array $consoleColors = null;
 
     /**
      * @param array<string, mixed> $options
@@ -93,6 +119,10 @@ final class Config
         if (array_key_exists('editorUrl', $options)) {
             $this->editorUrl = null !== $options['editorUrl'] ? (string) $options['editorUrl'] : null;
         }
+
+        if (array_key_exists('consoleColors', $options)) {
+            $this->consoleColors = is_array($options['consoleColors']) ? $options['consoleColors'] : null;
+        }
     }
 
     /**
@@ -113,6 +143,16 @@ final class Config
             'projectRoot' => self::getEnvVar('PHP_ERROR_INSIGHT_ROOT') ?: null,
             'hostProjectRoot' => self::getEnvVar('PHP_ERROR_INSIGHT_HOST_ROOT') ?: null,
             'editorUrl' => self::getEnvVar('PHP_ERROR_INSIGHT_EDITOR') ?: null,
+            'consoleColors' => (function (): ?array {
+                $raw = self::getEnvVar('PHP_ERROR_INSIGHT_CONSOLE_COLORS');
+                if (false === $raw || '' === $raw || '0' === $raw) {
+                    return null;
+                }
+
+                $decoded = json_decode($raw, true);
+
+                return is_array($decoded) ? $decoded : null;
+            })(),
         ];
         // Options override env
         $merged = array_merge($env, $options);

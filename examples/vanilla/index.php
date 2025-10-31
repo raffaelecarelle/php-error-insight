@@ -5,7 +5,7 @@ declare(strict_types=1);
 // Minimal example demonstrating PHP Error Explainer
 // Run with: php examples/vanilla/index.php
 // Optional AI config (env):
-//   PHP_ERROR_INSIGHT_BACKEND=none|local|api|openai|anthropic|google|gemini
+// called   PHP_ERROR_INSIGHT_BACKEND=none|local|api|openai|anthropic|google|gemini
 //   PHP_ERROR_INSIGHT_MODEL=llama3:instruct|gpt-4o-mini|claude-3-5-sonnet-20240620|gemini-1.5-flash|...
 //   PHP_ERROR_INSIGHT_API_URL=http://localhost:11434 (Ollama) | https://api.openai.com/v1/chat/completions (OpenAI) | https://api.anthropic.com/v1/messages (Anthropic) | https://generativelanguage.googleapis.com/v1/models (Google Gemini)
 //   PHP_ERROR_INSIGHT_API_KEY=sk-... (OpenAI) | api-key (Anthropic) | api-key (Google Gemini)
@@ -34,4 +34,5 @@ ErrorExplainer::register([
 trigger_error((string) "function called.", E_USER_NOTICE);
 trigger_error("function called.", E_USER_DEPRECATED);
 trigger_error("function called.", E_USER_WARNING);
+@trigger_error((string) "Should skipped.", E_USER_NOTICE); //should skip error
 throw new Exception("exception thrown.");
