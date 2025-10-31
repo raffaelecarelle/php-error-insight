@@ -61,7 +61,6 @@ class HtmlRendererAdapter implements RendererInterface
         $where = $this->str->trim($file . ('' !== $line ? ":{$line}" : ''));
 
         // Title must be the error/warning message (fallback to previous title if missing)
-        $title = '' !== $origMessage ? $origMessage : ($explanation->title ?? 'PHP Error Explainer');
         $aiTitle = Translator::t($config, 'title.ai');
         $subtitle = $explanation->title === $aiTitle ? $aiTitle : '';
         $severity = $explanation->severityLabel;
@@ -137,7 +136,7 @@ class HtmlRendererAdapter implements RendererInterface
 
         return [
             'docLang' => $docLang,
-            'title' => $title,
+            'title' => $origMessage,
             'subtitle' => $subtitle,
             'severity' => $severity,
             'where' => $where,

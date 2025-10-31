@@ -122,7 +122,7 @@ $dumper->setStyles([
             font-size: 20px;
             font-weight: 700;
             line-height: 1.3;
-            margin: 6px 0 0;
+            margin: 20px 0 0;
         }
 
         .subtitle {
@@ -133,13 +133,13 @@ $dumper->setStyles([
 
         .location {
             color: var(--muted);
-            font-family: var(--mono);
+            font-family: var(--mono), serif;
             font-size: 12px;
             margin-top: 6px;
         }
 
         .toolbar {
-            margin-top: 14px;
+            margin-top: 20px;
             display: flex;
             gap: 8px;
             flex-wrap: wrap;

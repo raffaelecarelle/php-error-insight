@@ -52,7 +52,7 @@ class CliRendererAdapter implements RendererInterface
 
         $severity = $explanation->severityLabel;
         $exceptionClass = $explanation->exceptionClass;
-        $message = '' !== $explanation->message() ? $explanation->message() : $explanation->title;
+        $message = $explanation->message();
         $file = $explanation->file();
         $line = $explanation->line();
         $suggestions = $explanation->suggestions;
