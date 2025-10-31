@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PhpErrorInsight\Tests;
 
 use PhpErrorInsight\Config;
+use PhpErrorInsight\Internal\Model\Explanation;
 use PhpErrorInsight\Internal\Renderer;
 use PHPUnit\Framework\TestCase;
 
@@ -23,7 +24,7 @@ final class RendererLinkingTest extends TestCase
         $line = __LINE__ - 2; // approximate reference within this test method
         $projectRoot = dirname(__DIR__); // repo root
 
-        $explanation = [
+        $explanation = Explanation::fromArray([
             'title' => 'Linking Test',
             'summary' => 'check links',
             'severityLabel' => 'Error',
@@ -49,7 +50,7 @@ final class RendererLinkingTest extends TestCase
                     'line' => 99,
                 ],
             ],
-        ];
+        ]);
 
         $cfg = new Config([
             'output' => Config::OUTPUT_HTML,

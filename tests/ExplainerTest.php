@@ -40,11 +40,10 @@ final class ExplainerTest extends TestCase
 
         $out = $explainer->explain('error', 'Undefined variable: foo', __FILE__, 123, [], E_USER_NOTICE, $config);
 
-        $this->assertIsArray($out);
-        $this->assertSame('Undefined variable: foo', $out['title']);
-        $this->assertNotEmpty($out['suggestions']);
-        $this->assertContains('Do A', $out['suggestions']);
-        $this->assertContains('Do B', $out['suggestions']);
-        $this->assertStringContainsString('[AI]', $out['details']);
+        $this->assertSame('Undefined variable: foo', $out->title);
+        $this->assertNotEmpty($out->suggestions);
+        $this->assertContains('Do A', $out->suggestions);
+        $this->assertContains('Do B', $out->suggestions);
+        $this->assertStringContainsString('[AI]', $out->details);
     }
 }

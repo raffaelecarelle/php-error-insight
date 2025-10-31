@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PhpErrorInsight\Internal\Model;
 
+use JsonSerializable;
 use PhpErrorInsight\Internal\Util\SessionUtil;
 
 use function is_array;
@@ -25,19 +26,19 @@ use const E_USER_NOTICE;
 use const E_USER_WARNING;
 use const E_WARNING;
 
-final class Explanation
+final class Explanation implements JsonSerializable
 {
     /**
      * @param array{message?:string,file?:string,line?:int}|array{} $original
      * @param list<string>                                          $suggestions
      */
     private function __construct(
-        public readonly array $original,
-        public readonly array $suggestions,
-        public readonly string $severityLabel,
-        public readonly string $title,
-        public readonly string $details,
-        public readonly Trace $trace
+        public readonly array $original = [],
+        public readonly array $suggestions = [],
+        public readonly string $severityLabel = 'Error',
+        public readonly string $title = '',
+        public readonly string $details = '',
+        public readonly Trace $trace = new Trace([]),
     ) {
     }
 
@@ -70,7 +71,7 @@ final class Explanation
     /**
      * @return array<string,mixed>
      */
-    public function toArray(): array
+    public function jsonSerialize(): array
     {
         return [
             'title' => $this->title,

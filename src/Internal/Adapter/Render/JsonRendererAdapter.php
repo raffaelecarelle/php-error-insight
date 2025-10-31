@@ -6,6 +6,7 @@ namespace PhpErrorInsight\Internal\Adapter\Render;
 
 use PhpErrorInsight\Config;
 use PhpErrorInsight\Contracts\RendererInterface;
+use PhpErrorInsight\Internal\Model\Explanation;
 use PhpErrorInsight\Internal\Util\EnvUtil;
 use PhpErrorInsight\Internal\Util\HttpUtil;
 use PhpErrorInsight\Internal\Util\JsonUtil;
@@ -25,13 +26,13 @@ class JsonRendererAdapter implements RendererInterface
     ) {
     }
 
-    public function render(array $explanation, Config $config, string $kind, bool $isShutdown): void
+    public function render(Explanation $explanation, Config $config, string $kind, bool $isShutdown): void
     {
         if (!$this->env->isCliLike() && !$this->http->headersSent()) {
             $this->sendJsonHeaders();
         }
 
-        $json = $this->json->encode($explanation, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        $json = $this->json->encode($explanation->jsonSerialize(), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
         $suffix = $this->env->isCliLike() ? "\n" : '';
         $this->out->write($json . $suffix);
     }

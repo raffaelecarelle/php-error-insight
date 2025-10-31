@@ -8,6 +8,7 @@ use PhpErrorInsight\Config;
 use PhpErrorInsight\Contracts\RendererFactoryInterface;
 use PhpErrorInsight\Contracts\RendererInterface;
 use PhpErrorInsight\Internal\Adapter\Render\Factory\RendererFactory;
+use PhpErrorInsight\Internal\Model\Explanation;
 use PhpErrorInsight\Internal\Util\EnvUtil;
 use PhpErrorInsight\Internal\Util\HttpClientUtil;
 
@@ -39,10 +40,8 @@ final class Renderer implements RendererInterface
      * Also: if the incoming HTTP request declares a JSON content type (e.g. application/json,
      * application/ld+json, application/json-patch+json), we force JSON output regardless of config
      * so API clients always get machine-readable errors.
-     *
-     * @param array<string,mixed> $explanation
      */
-    public function render(array $explanation, Config $config, string $kind, bool $isShutdown): void
+    public function render(Explanation $explanation, Config $config, string $kind, bool $isShutdown): void
     {
         $format = $config->output ?? Config::OUTPUT_AUTO;
 

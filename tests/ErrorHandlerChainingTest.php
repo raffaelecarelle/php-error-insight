@@ -8,6 +8,7 @@ use PhpErrorInsight\Config;
 use PhpErrorInsight\Contracts\ExplainerInterface;
 use PhpErrorInsight\Contracts\RendererInterface;
 use PhpErrorInsight\Internal\ErrorHandler;
+use PhpErrorInsight\Internal\Model\Explanation;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use Throwable;
@@ -19,9 +20,9 @@ final class ErrorHandlerChainingTest extends TestCase
     private function makeFakeExplainer(): ExplainerInterface
     {
         return new class() implements ExplainerInterface {
-            public function explain(string $kind, string $message, ?string $file, ?int $line, ?array $trace, ?int $severity, Config $config): array
+            public function explain(string $kind, string $message, ?string $file, ?int $line, ?array $trace, ?int $severity, Config $config): Explanation
             {
-                return [
+                return Explanation::fromArray([
                     'title' => 'T',
                     'summary' => 'S',
                     'details' => 'D',
@@ -29,7 +30,7 @@ final class ErrorHandlerChainingTest extends TestCase
                     'severityLabel' => 'Notice',
                     'original' => ['message' => $message, 'file' => $file, 'line' => $line],
                     'trace' => [],
-                ];
+                ]);
             }
         };
     }
@@ -41,7 +42,7 @@ final class ErrorHandlerChainingTest extends TestCase
             {
             }
 
-            public function render(array $explanation, Config $config, string $kind, bool $isShutdown): void
+            public function render(Explanation $explanation, Config $config, string $kind, bool $isShutdown): void
             {
                 if (null !== $this->sink) {
                     $this->sink->explanation = $explanation;

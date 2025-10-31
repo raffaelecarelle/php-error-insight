@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PhpErrorInsight\Contracts;
 
 use PhpErrorInsight\Config;
+use PhpErrorInsight\Internal\Model\Explanation;
 
 interface ExplainerInterface
 {
@@ -14,8 +15,6 @@ interface ExplainerInterface
      *
      * @param string                              $kind  'error'|'exception'|'shutdown'
      * @param array<int,array<string,mixed>>|null $trace
-     *
-     * @return array<string,mixed>
      */
-    public function explain(string $kind, string $message, ?string $file, ?int $line, ?array $trace, ?int $severity, Config $config): array;
+    public function explain(string $kind, string $message, ?string $file, ?int $line, ?array $trace, ?int $severity, Config $config): Explanation;
 }

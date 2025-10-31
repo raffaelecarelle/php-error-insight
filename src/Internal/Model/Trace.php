@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace PhpErrorInsight\Internal\Model;
 
+use JsonSerializable;
+
 /**
  * @phpstan-type FrameArray array<string,mixed>
  */
-final class Trace
+final class Trace implements JsonSerializable
 {
     /**
      * @param list<Frame> $frames
@@ -17,16 +19,11 @@ final class Trace
     }
 
     /**
-     * @return array<int, array<int<0, max>, array<string, mixed>>>
+     * @return array{frames: array<int, Frame>}
      */
-    public static function toArray(self $trace): array
+    public function jsonSerialize(): array
     {
-        $frames = [];
-        foreach ($trace->frames as $f) {
-            $frames[] = $f->toArray();
-        }
-
-        return [$frames];
+        return ['frames' => $this->frames];
     }
 
     /**

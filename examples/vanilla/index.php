@@ -15,6 +15,7 @@ declare(strict_types=1);
 //   PHP_ERROR_INSIGHT_TEMPLATE=/absolute/path/to/custom/error.php
 
 require __DIR__ . '/../../vendor/autoload.php'; // Ensure you ran `composer dump-autoload`
+require __DIR__ . '/ErrorTest.php'; // Ensure you ran `composer dump-autoload`
 
 use PhpErrorInsight\ErrorExplainer;
 
@@ -31,8 +32,10 @@ ErrorExplainer::register([
     'projectRoot' => dirname(__DIR__, 2),
 ]);
 
+
 trigger_error((string) "function called.", E_USER_NOTICE);
 trigger_error("function called.", E_USER_DEPRECATED);
 trigger_error("function called.", E_USER_WARNING);
 @trigger_error((string) "Should skipped.", E_USER_NOTICE); //should skip error
 throw new Exception("exception thrown.");
+ErrorTest::throw();

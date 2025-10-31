@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace PhpErrorInsight\Internal\Model;
 
+use JsonSerializable;
+
 use function is_array;
 
-final class Frame
+final class Frame implements JsonSerializable
 {
     public function __construct(
         public readonly ?string $file,
@@ -37,7 +39,7 @@ final class Frame
     /**
      * @return array<string,mixed>
      */
-    public function toArray(): array
+    public function jsonSerialize(): array
     {
         return [
             'file' => $this->file ?? null,

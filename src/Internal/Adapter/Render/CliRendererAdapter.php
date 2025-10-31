@@ -35,10 +35,8 @@ class CliRendererAdapter implements RendererInterface
     ) {
     }
 
-    public function render(array $explanation, Config $config, string $kind, bool $isShutdown): void
+    public function render(Explanation $explanation, Config $config, string $kind, bool $isShutdown): void
     {
-        $exp = Explanation::fromArray($explanation);
-
         $formatter = new OutputFormatter($this->terminal->supportsAnsi());
         $styler = new ConsoleStyler();
         $styler->registerStyles($formatter, $config->consoleColors ?? null);
@@ -52,11 +50,11 @@ class CliRendererAdapter implements RendererInterface
 
         $highlighter->registerStyles($formatter, $tokenOverrides);
 
-        $severity = $exp->severityLabel;
-        $message = '' !== $exp->message() ? $exp->message() : $exp->title;
-        $file = $exp->file();
-        $line = $exp->line();
-        $suggestions = $exp->suggestions;
+        $severity = $explanation->severityLabel;
+        $message = '' !== $explanation->message() ? $explanation->message() : $explanation->title;
+        $file = $explanation->file();
+        $line = $explanation->line();
+        $suggestions = $explanation->suggestions;
 
         // Severity background for titles (white text on colored background)
         $sevLower = $this->str->toLower($severity);
@@ -133,9 +131,9 @@ class CliRendererAdapter implements RendererInterface
         }
 
         // Render frames without code
-        if ([] !== $exp->trace->frames) {
+        if ([] !== $explanation->trace->frames) {
             $i = 1;
-            foreach ($exp->trace->frames as $frame) {
+            foreach ($explanation->trace->frames as $frame) {
                 $lineOut = $this->str->sprintf('%d %s %s', $i, $frame->location(), $frame->signature());
                 echo $formatter->format($styler->stack($lineOut)) . "\n";
                 ++$i;

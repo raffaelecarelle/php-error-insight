@@ -8,6 +8,7 @@ use PhpErrorInsight\Config;
 use PhpErrorInsight\Contracts\ExplainerInterface;
 use PhpErrorInsight\Contracts\RendererInterface;
 use PhpErrorInsight\Internal\ErrorHandler;
+use PhpErrorInsight\Internal\Model\Explanation;
 use PHPUnit\Framework\TestCase;
 
 use function func_get_args;
@@ -24,11 +25,11 @@ final class ErrorHandlerFunctionalTest extends TestCase
             /** @var array<int, mixed> */
             public array $lastArgs;
 
-            public function explain(string $kind, string $message, ?string $file, ?int $line, ?array $trace, ?int $severity, Config $config): array
+            public function explain(string $kind, string $message, ?string $file, ?int $line, ?array $trace, ?int $severity, Config $config): Explanation
             {
                 $this->lastArgs = func_get_args();
 
-                return [
+                return Explanation::fromArray([
                     'title' => 'T',
                     'summary' => 'S',
                     'details' => 'D',
@@ -36,7 +37,7 @@ final class ErrorHandlerFunctionalTest extends TestCase
                     'severityLabel' => 'Notice',
                     'original' => ['message' => $message, 'file' => $file, 'line' => $line],
                     'trace' => [],
-                ];
+                ]);
             }
         };
 
@@ -45,7 +46,7 @@ final class ErrorHandlerFunctionalTest extends TestCase
             {
             }
 
-            public function render(array $explanation, Config $config, string $kind, bool $isShutdown): void
+            public function render(Explanation $explanation, Config $config, string $kind, bool $isShutdown): void
             {
                 $this->captured->explanation = $explanation;
                 $this->captured->kind = $kind;
@@ -66,9 +67,9 @@ final class ErrorHandlerFunctionalTest extends TestCase
         $handled = $handler->handleError(E_USER_NOTICE, 'Test message', __FILE__, 42);
 
         $this->assertTrue($handled);
-        $this->assertIsArray($captured->explanation);
+        $this->assertInstanceOf(Explanation::class, $captured->explanation);
         $this->assertSame('error', $captured->kind);
         $this->assertFalse($captured->isShutdown);
-        $this->assertSame('Test message', $captured->explanation['original']['message'] ?? null);
+        $this->assertSame('Test message', $captured->explanation->original['message'] ?? null);
     }
 }

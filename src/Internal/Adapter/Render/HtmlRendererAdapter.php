@@ -31,7 +31,7 @@ class HtmlRendererAdapter implements RendererInterface
     ) {
     }
 
-    public function render(array $explanation, Config $config, string $kind, bool $isShutdown): void
+    public function render(Explanation $explanation, Config $config, string $kind, bool $isShutdown): void
     {
         if (!$this->env->isCliLike() && !$this->http->headersSent()) {
             $this->sendHtmlHeaders();
@@ -48,28 +48,25 @@ class HtmlRendererAdapter implements RendererInterface
     }
 
     /**
-     * @param array<string, mixed> $explanation
-     *
      * @return array<string, mixed>
      */
-    private function buildViewData(array $explanation, Config $config): array
+    private function buildViewData(Explanation $explanation, Config $config): array
     {
         $docLang = '' !== $config->language && '0' !== $config->language ? $config->language : 'en';
 
-        $original = isset($explanation['original']) && $this->arr->isArray($explanation['original']) ? $explanation['original'] : [];
-        $origMessage = isset($original['message']) ? (string) $original['message'] : '';
-        $file = isset($original['file']) ? (string) $original['file'] : '';
+        $original = $explanation->original ?? [];
+        $origMessage = $explanation->message();
+        $file = $original['file'] ?? '';
         $line = isset($original['line']) ? (string) $original['line'] : '';
         $where = $this->str->trim($file . ('' !== $line ? ":{$line}" : ''));
 
         // Title must be the error/warning message (fallback to previous title if missing)
-        $title = '' !== $origMessage ? $origMessage : (string) ($explanation['title'] ?? 'PHP Error Explainer');
-
+        $title = '' !== $origMessage ? $origMessage : ($explanation->title ?? 'PHP Error Explainer');
         $aiTitle = Translator::t($config, 'title.ai');
-        $subtitle = ((string) ($explanation['title'] ?? '')) === $aiTitle ? $aiTitle : '';
-        $severity = (string) ($explanation['severityLabel'] ?? 'Error');
-        $details = (string) ($explanation['details'] ?? '');
-        $suggestions = isset($explanation['suggestions']) && $this->arr->isArray($explanation['suggestions']) ? $explanation['suggestions'] : [];
+        $subtitle = $explanation->title === $aiTitle ? $aiTitle : '';
+        $severity = $explanation->severityLabel;
+        $details = $explanation->details;
+        $suggestions = $explanation->suggestions;
 
         $projectRoot = (null !== $config->projectRoot && '' !== $config->projectRoot && '0' !== $config->projectRoot)
             ? $config->projectRoot
@@ -93,8 +90,7 @@ class HtmlRendererAdapter implements RendererInterface
 
         $frames = [];
         $idx = 0;
-        $expModel = Explanation::fromArray($explanation);
-        foreach ($expModel->trace->frames as $frame) {
+        foreach ($explanation->trace->frames as $frame) {
             $ff = $frame->file ?? '';
             $ll = $frame->line ?? 0;
             $frames[] = [

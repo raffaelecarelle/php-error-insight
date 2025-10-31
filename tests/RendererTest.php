@@ -5,17 +5,15 @@ declare(strict_types=1);
 namespace PhpErrorInsight\Tests;
 
 use PhpErrorInsight\Config;
+use PhpErrorInsight\Internal\Model\Explanation;
 use PhpErrorInsight\Internal\Renderer;
 use PHPUnit\Framework\TestCase;
 
 final class RendererTest extends TestCase
 {
-    /**
-     * @return array<string, mixed>
-     */
-    private function baseExplanation(): array
+    private function baseExplanation(): Explanation
     {
-        return [
+        return Explanation::fromArray([
             'title' => 'PHP Error Explanation',
             'details' => 'More details here',
             'suggestions' => ['Try this', 'Then that'],
@@ -26,7 +24,7 @@ final class RendererTest extends TestCase
                 'line' => __LINE__,
             ],
             'trace' => [],
-        ];
+        ]);
     }
 
     public function testRenderTextOutputsSuggestions(): void
