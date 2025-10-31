@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace PhpErrorInsight\Internal;
 
-use PhpErrorInsight\Adapter\Factory\AIAdapterFactory;
 use PhpErrorInsight\Config;
 use PhpErrorInsight\Contracts\AIAdapterFactoryInterface;
 use PhpErrorInsight\Contracts\ExplainerInterface;
+use PhpErrorInsight\Internal\Adapter\AI\Factory\AIAdapterFactory;
 use PhpErrorInsight\Internal\Model\Explanation;
+
+use const E_USER_ERROR;
 
 /**
  * Produces human-friendly explanations for runtime problems and optionally enriches them via an AI backend.
@@ -45,7 +47,7 @@ final class Explainer implements ExplainerInterface
         $explanation = Explanation::make(Translator::t($config, 'title.basic'), $severity, $message, $file, $line, $trace);
 
         if ('none' !== $config->backend) {
-            $aiText = $this->aiExplain($message, $file, $line, $severity, $config);
+            $aiText = $this->aiExplain($message, $file, $line, $severity ?? E_USER_ERROR, $config);
 
             if (null === $aiText) {
                 return $explanation->toArray();

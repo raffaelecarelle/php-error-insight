@@ -6,6 +6,7 @@ namespace PhpErrorInsight\Internal\Util;
 
 use function explode;
 use function implode;
+use function is_string;
 use function sprintf;
 use function str_contains;
 use function str_pad;
@@ -30,7 +31,7 @@ final class StringUtil
         return strtolower($s);
     }
 
-    public function capitalaze(string $s): string
+    public function capitalize(string $s): string
     {
         return ucfirst($s);
     }
@@ -64,8 +65,8 @@ final class StringUtil
     }
 
     /**
-     * Sostituisce la prima occorrenza di ricerca con il valore indicato su tutta la stringa.
-     * Perché: `str_replace()` è più semplice e veloce quando non serve regex.
+     * Replaces all occurrences of search with the given value in the entire string.
+     * Why: `str_replace()` is simpler and faster when regex is not needed.
      */
     public function replace(string $s, string $search, string $replace): string
     {
@@ -94,8 +95,8 @@ final class StringUtil
     }
 
     /**
-     * Formatta stringhe in stile printf.
-     * Perché: accettiamo variadic per pass-through diretto a `sprintf()` mantenendo tipizzazione.
+     * Formats strings in printf style.
+     * Why: we accept variadic for direct pass-through to `sprintf()` while maintaining type safety.
      */
     public function sprintf(string $fmt, mixed ...$args): string
     {
@@ -103,8 +104,8 @@ final class StringUtil
     }
 
     /**
-     * Unisce elementi con una colla.
-     * Perché: wrapper per coerenza API e facilità di stub nei test.
+     * Joins elements with a glue string.
+     * Why: wrapper for API consistency and ease of stubbing in tests.
      *
      * @param array<string> $pieces
      */
@@ -114,13 +115,18 @@ final class StringUtil
     }
 
     /**
-     * Divide una stringa in base a un delimitatore in un array di stringhe.
-     * Perché: wrapper per coerenza con le altre operazioni di stringa.
+     * Splits a string by a delimiter into an array of strings.
+     * Why: wrapper for consistency with other string operations.
      *
      * @return array<string>
      */
     public function explode(string $delimiter, string $string): array
     {
         return explode($delimiter, $string);
+    }
+
+    public function isString(string $s): bool
+    {
+        return is_string($s);
     }
 }

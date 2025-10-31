@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PhpErrorInsight\Adapter;
+namespace PhpErrorInsight\Internal\Adapter\AI;
 
 use PhpErrorInsight\Config;
 use PhpErrorInsight\Contracts\AIClientInterface;

@@ -24,7 +24,7 @@ final class Config
 
     public ?string $model = null;
 
-    public string $language = 'it';
+    public string $language = 'en';
 
     public string $output = self::OUTPUT_AUTO; // auto|html|text|json
 

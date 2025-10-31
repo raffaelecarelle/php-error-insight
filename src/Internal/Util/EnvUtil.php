@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace PhpErrorInsight\Internal\Util;
 
+use function in_array;
+
 use const PHP_SAPI;
 
 /**

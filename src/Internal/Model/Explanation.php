@@ -57,7 +57,7 @@ final class Explanation
                 'file' => $file,
                 'line' => $line,
             ],
-            'trace' => Trace::fromArray($trace)->frames,
+            'trace' => $trace,
             'globals' => [
                 'get' => $_GET,
                 'post' => $_POST,
@@ -67,6 +67,9 @@ final class Explanation
         ]);
     }
 
+    /**
+     * @return array<string,mixed>
+     */
     public function toArray(): array
     {
         return [

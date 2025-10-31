@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace PhpErrorInsight\Internal;
 
+use PhpErrorInsight\Internal\Util\ArrayUtil;
+use PhpErrorInsight\Internal\Util\StringUtil;
 use Symfony\Component\Console\Formatter\OutputFormatterInterface;
 use Symfony\Component\Console\Formatter\OutputFormatterStyle;
 
-use function is_array;
 use function is_string;
 
 /**
@@ -17,6 +18,12 @@ use function is_string;
  */
 final class ConsoleStyler
 {
+    public function __construct(
+        private readonly ArrayUtil $arr = new ArrayUtil(),
+        private readonly StringUtil $str = new StringUtil(),
+    ) {
+    }
+
     /**
      * Register our custom styles into a Symfony Output formatter.
      *
@@ -24,19 +31,19 @@ final class ConsoleStyler
      */
     public function registerStyles(OutputFormatterInterface $formatter, ?array $config = null): void
     {
-        $styles = is_array($config) && isset($config['styles']) && is_array($config['styles']) ? $config['styles'] : [];
+        $styles = $this->arr->isArray($config) && isset($config['styles']) && $this->arr->isArray($config['styles']) ? $config['styles'] : [];
 
         // Helper to read [fg, bg, options[]]
-        $spec = static function (array $styles, string $key, array $def): array {
+        $spec = function (array $styles, string $key, array $def): array {
             $v = $styles[$key] ?? null;
-            if (!is_array($v)) {
+            if (!$this->arr->isArray($v)) {
                 return $def;
             }
 
             return [
                 (string) ($v[0] ?? $def[0]),
                 null !== ($v[1] ?? null) ? (string) $v[1] : ($def[1] ?? null),
-                is_array($v[2] ?? null) ? $v[2] : ($def[2] ?? []),
+                $this->arr->isArray($v[2] ?? null) ? $v[2] : ($def[2] ?? []),
             ];
         };
 
@@ -71,16 +78,16 @@ final class ConsoleStyler
         $formatter->setStyle('pe-gutter-sep', new OutputFormatterStyle($fg, $bg, $opt));
 
         // Severity backgrounds: build tags like pe-header-<color>
-        $sev = is_array($config) && isset($config['severity']) && is_array($config['severity']) ? $config['severity'] : [];
+        $sev = $this->arr->isArray($config) && isset($config['severity']) && $this->arr->isArray($config['severity']) ? $config['severity'] : [];
         $bgColors = ['red', 'yellow', 'blue'];
         foreach (['error', 'warning', 'info'] as $k) {
             $v = $sev[$k] ?? null;
             if (is_string($v) && '' !== $v) {
-                $bgColors[] = strtolower($v);
+                $bgColors[] = $this->str->toLower($v);
             }
         }
 
-        $bgColors = array_values(array_unique($bgColors));
+        $bgColors = $this->arr->unique($bgColors);
         foreach ($bgColors as $c) {
             $formatter->setStyle('pe-header-' . $c, new OutputFormatterStyle('white', $c, ['bold']));
         }
@@ -180,6 +187,6 @@ final class ConsoleStyler
      */
     public function headerOnBgName(string $bgName, string $s): string
     {
-        return $this->tag('pe-header-' . strtolower($bgName), $s);
+        return $this->tag('pe-header-' . $this->str->toLower($bgName), $s);
     }
 }

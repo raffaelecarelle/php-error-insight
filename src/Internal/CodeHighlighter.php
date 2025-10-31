@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace PhpErrorInsight\Internal;
 
+use PhpErrorInsight\Internal\Util\ArrayUtil;
+use PhpErrorInsight\Internal\Util\StringUtil;
+use PhpErrorInsight\Internal\Util\TokenizerUtil;
 use Symfony\Component\Console\Formatter\OutputFormatterInterface;
 use Symfony\Component\Console\Formatter\OutputFormatterStyle;
 
-use function count;
 use function is_array;
 
 use const T_CLASS_C;
@@ -42,9 +44,12 @@ use const T_WHITESPACE;
  */
 final class CodeHighlighter
 {
-    public const THEME_DRACULA = 'dracula';
-
-    public const THEME_DEFAULT = self::THEME_DRACULA; // current default
+    public function __construct(
+        private readonly ArrayUtil $arr = new ArrayUtil(),
+        private readonly StringUtil $str = new StringUtil(),
+        private readonly TokenizerUtil $tokenizer = new TokenizerUtil(),
+    ) {
+    }
 
     /**
      * Register token styles for the chosen theme into a Symfony Output formatter.
@@ -52,17 +57,17 @@ final class CodeHighlighter
      * Styles are registered with tag names:
      *   pe-tok-string, pe-tok-comment, pe-tok-keyword, pe-tok-default, pe-tok-html
      *   plus: pe-tok-variable, pe-tok-function, pe-tok-method
-     */
-    /**
+     *
      * @param array<string, array{0?:string,1?:string|null,2?:array<string>}>|null $overrides
      */
-    public function registerStyles(OutputFormatterInterface $formatter, string $theme = self::THEME_DEFAULT, ?array $overrides = null): void
+    public function registerStyles(OutputFormatterInterface $formatter, ?array $overrides = null): void
     {
-        $palette = $this->paletteFor($theme);
-        if (is_array($overrides)) {
+        $palette = $this->getPalette();
+
+        if ($this->arr->isArray($overrides)) {
             // Merge overrides into palette (shallow per key)
             foreach ($overrides as $k => $spec) {
-                if (is_array($spec)) {
+                if ($this->arr->isArray($spec)) {
                     $palette[$k] = [
                         $spec[0] ?? ($palette[$k][0] ?? 'white'),
                         $spec[1] ?? ($palette[$k][1] ?? null),
@@ -120,22 +125,18 @@ final class CodeHighlighter
      *
      * @return array<string, array{0:string,1:string|null,2:array<string>}>
      */
-    private function paletteFor(string $theme): array
+    private function getPalette(): array
     {
-        $t = strtolower($theme);
-
-        return match ($t) {
-            default => [
-                'default' => ['white', null, []],
-                'comment' => ['white', null, []],
-                'string' => ['yellow', null, []],
-                'keyword' => ['magenta', null, ['bold']],
-                'html' => ['cyan', null, ['bold']],
-                'variable' => ['cyan', null, []],
-                'function' => ['blue', null, ['bold']],
-                'method' => ['green', null, ['underscore']],
-            ],
-        };
+        return [
+            'default' => ['white', null, []],
+            'comment' => ['white', null, []],
+            'string' => ['yellow', null, []],
+            'keyword' => ['magenta', null, ['bold']],
+            'html' => ['cyan', null, ['bold']],
+            'variable' => ['cyan', null, []],
+            'function' => ['blue', null, ['bold']],
+            'method' => ['green', null, ['underscore']],
+        ];
     }
 
     /**
@@ -145,14 +146,14 @@ final class CodeHighlighter
      */
     public function tokenizeToLines(string $source): array
     {
-        $tokens = token_get_all($source);
+        $tokens = $this->tokenizer->tokenize($source);
 
         // Build categorized tokens with minimal context (look-behind and look-ahead)
         $categorized = [];
-        $count = count($tokens);
+        $count = $this->arr->count($tokens);
         for ($i = 0; $i < $count; ++$i) {
             $t = $tokens[$i];
-            if (is_array($t)) {
+            if ($this->arr->isArray($t)) {
                 [$id, $text] = $t;
                 $cat = $this->mapPhpTokenToCategory($id);
 
@@ -167,7 +168,7 @@ final class CodeHighlighter
                     $j = $i + 1;
                     while ($j < $count) {
                         $tn = $tokens[$j];
-                        if (is_array($tn) && (T_WHITESPACE === $tn[0] || T_COMMENT === $tn[0] || T_DOC_COMMENT === $tn[0])) {
+                        if ($this->arr->isArray($tn) && (T_WHITESPACE === $tn[0] || T_COMMENT === $tn[0] || T_DOC_COMMENT === $tn[0])) {
                             ++$j;
                             continue;
                         }
@@ -182,7 +183,7 @@ final class CodeHighlighter
                         $k = $i - 1;
                         while ($k >= 0) {
                             $tp = $tokens[$k];
-                            if (is_array($tp) && (T_WHITESPACE === $tp[0] || T_COMMENT === $tp[0] || T_DOC_COMMENT === $tp[0])) {
+                            if ($this->arr->isArray($tp) && (T_WHITESPACE === $tp[0] || T_COMMENT === $tp[0] || T_DOC_COMMENT === $tp[0])) {
                                 --$k;
                                 continue;
                             }
@@ -190,7 +191,7 @@ final class CodeHighlighter
                             break;
                         }
 
-                        $isMethod = ($k >= 0 && (('->' === $tokens[$k]) || (is_array($tokens[$k]) && T_OBJECT_OPERATOR === $tokens[$k][0]) || ('::' === $tokens[$k]) || (is_array($tokens[$k]) && T_PAAMAYIM_NEKUDOTAYIM === $tokens[$k][0])));
+                        $isMethod = ($k >= 0 && (('->' === $tokens[$k]) || ($this->arr->isArray($tokens[$k]) && T_OBJECT_OPERATOR === $tokens[$k][0]) || ('::' === $tokens[$k]) || (is_array($tokens[$k]) && T_PAAMAYIM_NEKUDOTAYIM === $tokens[$k][0])));
                         $cat = $isMethod ? 'method' : 'function';
                     }
                 }
@@ -231,7 +232,7 @@ final class CodeHighlighter
         $line = [];
         foreach ($output as $tok) {
             [$type, $value] = $tok;
-            $chunks = explode("\n", $value);
+            $chunks = $this->str->explode("\n", $value);
             foreach ($chunks as $i2 => $chunk) {
                 if ($i2 > 0) {
                     $lines[] = $line;

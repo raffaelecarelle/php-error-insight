@@ -7,6 +7,7 @@ namespace PhpErrorInsight\Tests;
 use PhpErrorInsight\Config;
 use PhpErrorInsight\ErrorExplainer;
 use PHPUnit\Framework\TestCase;
+use Throwable;
 
 use const E_USER_WARNING;
 
@@ -30,8 +31,13 @@ final class E2ERegisterTest extends TestCase
         ]);
 
         ob_start();
-        @trigger_error('Boom E2E', E_USER_WARNING);
-        $out = (string) ob_get_clean();
+        try {
+            @trigger_error('Boom E2E', E_USER_WARNING);
+            $out = (string) ob_get_clean();
+        } catch (Throwable $throwable) {
+            ob_end_clean();
+            throw $throwable;
+        }
 
         $this->assertNotSame('', $out);
         $this->assertStringContainsString('"original"', $out);

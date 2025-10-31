@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace PhpErrorInsight\Adapter\Factory;
+namespace PhpErrorInsight\Internal\Adapter\AI\Factory;
 
 use InvalidArgumentException;
-use PhpErrorInsight\Adapter\AnthropicClientAdapter;
-use PhpErrorInsight\Adapter\GoogleClientAdapter;
-use PhpErrorInsight\Adapter\LocalClientAdapter;
-use PhpErrorInsight\Adapter\OpenAiClientAdapter;
 use PhpErrorInsight\Contracts\AIAdapterFactoryInterface;
 use PhpErrorInsight\Contracts\AIClientInterface;
+use PhpErrorInsight\Internal\Adapter\AI\AnthropicClientAdapter;
+use PhpErrorInsight\Internal\Adapter\AI\GoogleClientAdapter;
+use PhpErrorInsight\Internal\Adapter\AI\LocalClientAdapter;
+use PhpErrorInsight\Internal\Adapter\AI\OpenAiClientAdapter;
 
 class AIAdapterFactory implements AIAdapterFactoryInterface
 {
