@@ -39,6 +39,7 @@ final class Explanation implements JsonSerializable
         public readonly string $title = '',
         public readonly string $details = '',
         public readonly Trace $trace = new Trace([]),
+        public readonly ?string $exceptionClass = null,
     ) {
     }
 
@@ -46,13 +47,14 @@ final class Explanation implements JsonSerializable
      * @param array<int, string>                  $suggestions
      * @param array<int,array<string,mixed>>|null $trace
      */
-    public static function make(string $title, ?int $severity, string $message, string $file, ?int $line, ?array $trace, array $suggestions = [], string $details = ''): self
+    public static function make(string $title, ?int $severity, string $message, string $file, ?int $line, ?array $trace, array $suggestions = [], string $details = '', ?string $exceptionClass = null): self
     {
         return self::fromArray([
             'title' => $title,
             'details' => $details,
             'suggestions' => $suggestions,
             'severityLabel' => self::severityToString($severity ?? E_USER_ERROR),
+            'exceptionClass' => $exceptionClass,
             'original' => [
                 'message' => $message,
                 'file' => $file,
@@ -78,6 +80,7 @@ final class Explanation implements JsonSerializable
             'details' => $this->details,
             'suggestions' => $this->suggestions,
             'severityLabel' => $this->severityLabel,
+            'exceptionClass' => $this->exceptionClass,
             'original' => [
                 'message' => $this->message(),
                 'file' => $this->file(),
@@ -112,6 +115,7 @@ final class Explanation implements JsonSerializable
             $title,
             (string) ($data['details'] ?? ''),
             Trace::fromArray($traceArr),
+            $data['exceptionClass'] ?? null,
         );
     }
 

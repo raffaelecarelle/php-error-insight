@@ -17,6 +17,7 @@ $labels = $labels ?? ['headings' => [], 'labels' => []];
 $editorUrl = $editorUrl ?? '';
 $verbose = $verbose ?? '';
 $aiModel = $aiModel ?? '';
+$exceptionClass = $exceptionClass ?? '';
 $fullTitle = trim(($title !== '' ? $title : 'Error') . ($where !== '' ? ' in ' . $where : ''));
 
 // pick first available editor link (for toolbar action)
@@ -962,7 +963,9 @@ $dumper->setStyles([
     <header class="header" aria-labelledby="page-title">
         <div class="header-top">
             <span class="badge severity" aria-label="<?= $e($labels['badge']['severity'] ?? 'Severity') ?>"><?= $e($severity) ?></span>
-            <span class="badge">PHP Error Insight</span>
+            <?php if($exceptionClass !== ''): ?>
+                <span class="badge"><?= $e($exceptionClass) ?></span>
+            <?php endif ?>
         </div>
         <h1 id="page-title" class="title"><?= $e($fullTitle) ?></h1>
         <?php if ($subtitle !== ''): ?>

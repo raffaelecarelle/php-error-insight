@@ -25,7 +25,7 @@ final class ErrorHandlerFunctionalTest extends TestCase
             /** @var array<int, mixed> */
             public array $lastArgs;
 
-            public function explain(string $kind, string $message, ?string $file, ?int $line, ?array $trace, ?int $severity, Config $config): Explanation
+            public function explain(string $kind, string $message, ?string $file, ?int $line, ?array $trace, ?int $severity, Config $config, ?string $exceptionClass = null): Explanation
             {
                 $this->lastArgs = func_get_args();
 

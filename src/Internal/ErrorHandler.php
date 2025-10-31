@@ -101,7 +101,7 @@ final class ErrorHandler
             throw $e; // rethrow
         }
 
-        $exp = $this->explainer->explain('exception', $e->getMessage(), $e->getFile(), $e->getLine(), $e->getTrace(), null, $this->config);
+        $exp = $this->explainer->explain('exception', $e->getMessage(), $e->getFile(), $e->getLine(), $e->getTrace(), null, $this->config, $e::class);
         $this->renderer->render($exp, $this->config, 'exception', false);
 
         // Best-effort chain to any previous handler

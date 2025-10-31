@@ -40,9 +40,9 @@ final class Explainer implements ExplainerInterface
      * @param string                              $kind  'error'|'exception'|'shutdown'
      * @param array<int,array<string,mixed>>|null $trace
      */
-    public function explain(string $kind, string $message, ?string $file, ?int $line, ?array $trace, ?int $severity, Config $config): Explanation
+    public function explain(string $kind, string $message, ?string $file, ?int $line, ?array $trace, ?int $severity, Config $config, ?string $exceptionClass = null): Explanation
     {
-        $explanation = Explanation::make(Translator::t($config, 'title.basic'), $severity, $message, $file, $line, $trace);
+        $explanation = Explanation::make(Translator::t($config, 'title.basic'), $severity, $message, $file, $line, $trace, [], '', $exceptionClass);
 
         if ('none' !== $config->backend) {
             $aiText = $this->aiExplain($message, $file, $line, $severity ?? E_USER_ERROR, $config);
@@ -58,7 +58,7 @@ final class Explainer implements ExplainerInterface
             }
 
             if ($this->type->isArray($aiTextDecoded)) {
-                $explanation = Explanation::make(Translator::t($config, 'title.ai'), $severity, $message, $file, $line, $trace, $aiTextDecoded['suggestions'] ?? [], $aiTextDecoded['details'] ?? '');
+                $explanation = Explanation::make(Translator::t($config, 'title.ai'), $severity, $message, $file, $line, $trace, $aiTextDecoded['suggestions'] ?? [], $aiTextDecoded['details'] ?? '', $exceptionClass);
             }
         }
 

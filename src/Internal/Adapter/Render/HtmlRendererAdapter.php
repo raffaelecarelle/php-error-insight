@@ -66,6 +66,7 @@ class HtmlRendererAdapter implements RendererInterface
         $subtitle = $explanation->title === $aiTitle ? $aiTitle : '';
         $severity = $explanation->severityLabel;
         $details = $explanation->details;
+        $exceptionClass = $explanation->exceptionClass;
         $suggestions = $explanation->suggestions;
 
         $projectRoot = (null !== $config->projectRoot && '' !== $config->projectRoot && '0' !== $config->projectRoot)
@@ -148,6 +149,7 @@ class HtmlRendererAdapter implements RendererInterface
             'projectRoot' => $projectRoot,
             'editorUrl' => (string) $config->editorUrl,
             'aiModel' => (string) $config->model,
+            'exceptionClass' => $exceptionClass,
         ];
     }
 

@@ -55,8 +55,10 @@ final class ErrorExplainer
         }
 
         // Temporarily set handlers just to capture any previously installed callbacks; then restore.
-        $prevError = set_error_handler(static fn (int $errno, string $errstr, string $errfile, int $errline): bool => false // placeholder to retrieve the previous handler only
+        $prevError = set_error_handler(static fn (int $errno, string $errstr, string $errfile, int $errline): bool => false
+            // placeholder to retrieve the previous handler only
         );
+
         if (null !== $prevError) {
             restore_error_handler(); // restore immediately, we will replace with a composed handler below
         }
@@ -64,6 +66,7 @@ final class ErrorExplainer
         $prevEx = set_exception_handler(static function (): void {
             // placeholder to read previous, will be replaced immediately
         });
+
         if (null !== $prevEx) {
             restore_exception_handler();
         }

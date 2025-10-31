@@ -20,7 +20,7 @@ final class ErrorHandlerChainingTest extends TestCase
     private function makeFakeExplainer(): ExplainerInterface
     {
         return new class() implements ExplainerInterface {
-            public function explain(string $kind, string $message, ?string $file, ?int $line, ?array $trace, ?int $severity, Config $config): Explanation
+            public function explain(string $kind, string $message, ?string $file, ?int $line, ?array $trace, ?int $severity, Config $config, ?string $exceptionClass = null): Explanation
             {
                 return Explanation::fromArray([
                     'title' => 'T',

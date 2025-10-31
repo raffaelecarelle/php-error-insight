@@ -16,5 +16,5 @@ interface ExplainerInterface
      * @param string                              $kind  'error'|'exception'|'shutdown'
      * @param array<int,array<string,mixed>>|null $trace
      */
-    public function explain(string $kind, string $message, ?string $file, ?int $line, ?array $trace, ?int $severity, Config $config): Explanation;
+    public function explain(string $kind, string $message, ?string $file, ?int $line, ?array $trace, ?int $severity, Config $config, ?string $exceptionClass = null): Explanation;
 }

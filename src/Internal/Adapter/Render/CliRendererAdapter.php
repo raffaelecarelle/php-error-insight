@@ -51,6 +51,7 @@ class CliRendererAdapter implements RendererInterface
         $highlighter->registerStyles($formatter, $tokenOverrides);
 
         $severity = $explanation->severityLabel;
+        $exceptionClass = $explanation->exceptionClass;
         $message = '' !== $explanation->message() ? $explanation->message() : $explanation->title;
         $file = $explanation->file();
         $line = $explanation->line();
@@ -96,7 +97,8 @@ class CliRendererAdapter implements RendererInterface
         };
 
         // Headers: severity label and message
-        echo $formatter->format($headerOnBg(' ' . $severity . ' ')) . "\n\n";
+        echo $formatter->format('') . "\n";
+        echo $formatter->format($headerOnBg(' ' . $exceptionClass . ' ')) . "\n\n";
         if ('' !== $this->str->trim($message)) {
             echo $formatter->format($styler->title($message)) . "\n\n";
         }
