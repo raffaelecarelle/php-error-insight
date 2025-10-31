@@ -19,6 +19,8 @@ use PhpErrorInsight\Internal\Util\StringUtil;
 use PhpErrorInsight\Internal\Util\TerminalUtil;
 use Symfony\Component\Console\Formatter\OutputFormatter;
 
+use function array_key_exists;
+
 class CliRendererAdapter implements RendererInterface
 {
     public function __construct(
@@ -43,7 +45,7 @@ class CliRendererAdapter implements RendererInterface
 
         $highlighter = new CodeHighlighter();
         $tokenOverrides = null;
-        if ([] !== $config->consoleColors['tokens']) {
+        if (null !== $config->consoleColors && array_key_exists('tokens', $config->consoleColors) && [] !== $config->consoleColors['tokens']) {
             /** @var array<string, array{0:string,1:string|null,2:array<string>}> $tokenOverrides */
             $tokenOverrides = $config->consoleColors['tokens'];
         }

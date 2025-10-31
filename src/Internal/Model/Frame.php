@@ -34,6 +34,21 @@ final class Frame
         );
     }
 
+    /**
+     * @return array<string,mixed>
+     */
+    public function toArray(): array
+    {
+        return [
+            'file' => $this->file ?? null,
+            'line' => $this->line ?? null,
+            'class' => $this->class ?? null,
+            'type' => $this->type ?? null,
+            'function' => $this->function ?? null,
+            'args' => $this->args ?? [],
+        ];
+    }
+
     public function signature(): string
     {
         $cls = $this->class ?? '';

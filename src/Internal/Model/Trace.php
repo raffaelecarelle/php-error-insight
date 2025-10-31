@@ -17,6 +17,19 @@ final class Trace
     }
 
     /**
+     * @return array<int, array<int<0, max>, array<string, mixed>>>
+     */
+    public static function toArray(self $trace): array
+    {
+        $frames = [];
+        foreach ($trace->frames as $f) {
+            $frames[] = $f->toArray();
+        }
+
+        return [$frames];
+    }
+
+    /**
      * @param array<int, array<string,mixed>> $data
      */
     public static function fromArray(array $data): self

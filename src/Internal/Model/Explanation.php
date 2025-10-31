@@ -51,7 +51,7 @@ final class Explanation
             'title' => $title,
             'details' => $details,
             'suggestions' => $suggestions,
-            'severityLabel' => self::severityToString($severity),
+            'severityLabel' => self::severityToString($severity ?? E_USER_ERROR),
             'original' => [
                 'message' => $message,
                 'file' => $file,
@@ -82,7 +82,7 @@ final class Explanation
                 'file' => $this->file(),
                 'line' => $this->line(),
             ],
-            'trace' => $this->trace->frames,
+            'trace' => $this->trace,
             'globals' => [
                 'get' => $_GET,
                 'post' => $_POST,
