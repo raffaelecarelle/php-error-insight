@@ -56,7 +56,7 @@
         "stack": {
             "expand_all": "Expand all",
             "collapse_all": "Collapse all",
-            "copy": "Copy",
+            "copy": "Copy path",
             "open": "Open"
         },
         "tabs": {
