@@ -12,7 +12,6 @@ use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Filesystem\Path;
 
 use function count;
-use function dirname;
 use function function_exists;
 use function in_array;
 use function is_array;
@@ -22,7 +21,6 @@ use function strlen;
 
 use const DIRECTORY_SEPARATOR;
 use const ENT_QUOTES;
-use const EXTR_SKIP;
 use const FILE_IGNORE_NEW_LINES;
 use const JSON_PRETTY_PRINT;
 use const JSON_UNESCAPED_UNICODE;
@@ -39,6 +37,21 @@ use const STR_PAD_LEFT;
  */
 final class Renderer implements RendererInterface
 {
+    /**
+     * High-level renderer: delegates all PHP core function calls to small util services.
+     * Why: improves testability and keeps this class focused on presentation logic.
+     */
+    public function __construct(
+        private readonly Util\EnvUtil $env = new Util\EnvUtil(),
+        private readonly Util\HttpUtil $http = new Util\HttpUtil(),
+        private readonly Util\JsonUtil $json = new Util\JsonUtil(),
+        private readonly Util\StringUtil $str = new Util\StringUtil(),
+        private readonly Util\FileUtil $file = new Util\FileUtil(),
+        private readonly Util\OutputUtil $out = new Util\OutputUtil(),
+        private readonly Util\PathUtil $path = new Util\PathUtil(),
+    ) {
+    }
+
     /**
      * Decide output format at runtime and delegate to specialized renderers.
      *
@@ -89,49 +102,46 @@ final class Renderer implements RendererInterface
      */
     private function isHttpJsonRequest(): bool
     {
-        if (PHP_SAPI === 'cli' || PHP_SAPI === 'phpdbg') {
+        if ($this->env->isCliLike()) {
             return false;
         }
 
         $contentType = '';
         $accept = '';
 
-        // Prefer getallheaders() when available (Apache/FPM/cli-server)
-        if (function_exists('getallheaders')) {
-            $headers = getallheaders();
-            foreach ($headers as $name => $value) {
-                if (!is_string($name) || !is_string($value)) {
-                    continue;
-                }
-
-                $lname = strtolower($name);
-                if ('content-type' === $lname) {
-                    $contentType = $value;
-                } elseif ('accept' === $lname) {
-                    $accept = $value;
-                }
+        // Prefer server-provided headers when available
+        $headers = $this->http->getAllHeaders();
+        foreach ($headers as $name => $value) {
+            $lname = $this->str->toLower($name);
+            if ('content-type' === $lname) {
+                $contentType = $value;
+            } elseif ('accept' === $lname) {
+                $accept = $value;
             }
         }
 
         if ('' === $contentType) {
-            $ct = $_SERVER['CONTENT_TYPE'] ?? ($_SERVER['HTTP_CONTENT_TYPE'] ?? '');
-            $contentType = is_string($ct) ? $ct : '';
+            $ct = $this->http->serverVar('CONTENT_TYPE');
+            if ('' === $ct) {
+                $ct = $this->http->serverVar('HTTP_CONTENT_TYPE');
+            }
+
+            $contentType = $ct;
         }
 
         if ('' === $accept) {
-            $ac = $_SERVER['HTTP_ACCEPT'] ?? '';
-            $accept = is_string($ac) ? $ac : '';
+            $accept = $this->http->serverVar('HTTP_ACCEPT');
         }
 
-        $ct = strtolower(trim($contentType));
-        $ac = strtolower(trim($accept));
+        $ct = $this->str->toLower($this->str->trim($contentType));
+        $ac = $this->str->toLower($this->str->trim($accept));
 
         // If either Content-Type or Accept declares JSON (including +json or json-p), force JSON output.
-        if ('' !== $ct && str_contains($ct, 'json')) {
+        if ('' !== $ct && $this->str->contains($ct, 'json')) {
             return true;
         }
 
-        return '' !== $ac && str_contains($ac, 'json');
+        return '' !== $ac && $this->str->contains($ac, 'json');
     }
 
     /**
@@ -139,11 +149,13 @@ final class Renderer implements RendererInterface
      */
     private function renderJson(array $explanation): void
     {
-        if (!$this->isCliOrPhpdbg() && !headers_sent()) {
+        if (!$this->isCliOrPhpdbg() && !$this->http->headersSent()) {
             $this->sendJsonHeaders();
         }
 
-        echo json_encode($explanation, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), ($this->isCliOrPhpdbg() ? "\n" : '');
+        $json = $this->json->encode($explanation, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        $suffix = $this->isCliOrPhpdbg() ? "\n" : '';
+        $this->out->write($json . $suffix);
     }
 
     /**
@@ -269,46 +281,44 @@ final class Renderer implements RendererInterface
      */
     private function renderHtml(array $explanation, Config $config): void
     {
-        if (!$this->isCliOrPhpdbg() && !headers_sent()) {
+        if (!$this->isCliOrPhpdbg() && !$this->http->headersSent()) {
             $this->sendHtmlHeaders();
         }
 
         $template = $this->getTemplatePath($config);
         $data = $this->buildViewData($explanation, $config);
 
-        if (!is_file($template)) {
-            throw new RuntimeException(sprintf('Template file "%s" not found', $template));
+        if (!$this->file->isFile($template)) {
+            throw new RuntimeException($this->str->sprintf('Template file "%s" not found', $template));
         }
 
-        // Isolated scope include, expose $data keys as variables to the template
-        (static function (string $__template, array $__data): void {
-            extract($__data, EXTR_SKIP);
-            require $__template;
-        })($template, $data);
+        // Isolated scope include, expose $data keys as variables to the template via util
+        (new Util\TemplateUtil())->includeWithData($template, $data);
     }
 
     private function isCliOrPhpdbg(): bool
     {
-        return PHP_SAPI === 'cli' || PHP_SAPI === 'phpdbg';
+        return $this->env->isCliLike();
     }
 
     private function sendJsonHeaders(): void
     {
-        header('Content-Type: application/json; charset=utf-8');
-        http_response_code(500);
+        $this->http->sendHeader('Content-Type: application/json; charset=utf-8');
+        $this->http->setResponseCode(500);
     }
 
     private function sendHtmlHeaders(): void
     {
-        header('Content-Type: text/html; charset=utf-8');
-        http_response_code(500);
+        $this->http->sendHeader('Content-Type: text/html; charset=utf-8');
+        $this->http->setResponseCode(500);
     }
 
     private function getTemplatePath(Config $config): string
     {
-        $template = $config->template ?? (getenv('PHP_ERROR_INSIGHT_TEMPLATE') ?: null);
+        $template = $config->template ?? (in_array($this->env->getEnv('PHP_ERROR_INSIGHT_TEMPLATE'), ['', '0'], true) ? null : $this->env->getEnv('PHP_ERROR_INSIGHT_TEMPLATE'));
         if ('' === $template || '0' === $template || null === $template) {
-            $template = dirname(__DIR__, 2) . '/resources/views/error.php';
+            $base = $this->path->dirName(__DIR__, 2);
+            $template = $base . '/resources/views/error.php';
         }
 
         return $template;

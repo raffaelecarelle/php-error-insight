@@ -9,7 +9,6 @@ use PhpErrorInsight\Contracts\AIClientInterface;
 use PhpErrorInsight\Contracts\ExplainerInterface;
 
 use function function_exists;
-use function in_array;
 use function is_array;
 use function is_string;
 use function strlen;
@@ -37,7 +36,6 @@ use const E_USER_ERROR;
 use const E_USER_NOTICE;
 use const E_USER_WARNING;
 use const E_WARNING;
-use const PHP_SESSION_ACTIVE;
 
 /**
  * Produces human-friendly explanations for runtime problems and optionally enriches them via an AI backend.
@@ -48,8 +46,15 @@ use const PHP_SESSION_ACTIVE;
  */
 final class Explainer implements ExplainerInterface
 {
-    public function __construct(private readonly ?AIClientInterface $aiClient = null)
-    {
+    public function __construct(
+        private readonly ?AIClientInterface $aiClient = null,
+        private readonly Util\JsonUtil $json = new Util\JsonUtil(),
+        private readonly Util\ArrayUtil $arr = new Util\ArrayUtil(),
+        private readonly Util\StringUtil $str = new Util\StringUtil(),
+        private readonly Util\EnvUtil $env = new Util\EnvUtil(),
+        private readonly Util\TypeUtil $type = new Util\TypeUtil(),
+        private readonly Util\SessionUtil $session = new Util\SessionUtil(),
+    ) {
     }
 
     /**
@@ -87,7 +92,8 @@ final class Explainer implements ExplainerInterface
                 'get' => $_GET,
                 'post' => $_POST,
                 'cookie' => $_COOKIE,
-                'session' => (fn (): array => (function_exists('session_status') && PHP_SESSION_ACTIVE === session_status() && isset($_SESSION)) ? $_SESSION : [])(),
+                // Session access is isolated via a util to avoid direct core calls
+                'session' => $this->session->getSessionOrEmpty(),
             ],
         ];
 
@@ -98,13 +104,13 @@ final class Explainer implements ExplainerInterface
                 return $explanation;
             }
 
-            $aiTextDecoded = json_decode($aiText, true);
+            $aiTextDecoded = $this->json->decodeObject($aiText);
 
             if (null === $aiTextDecoded) {
                 return $explanation;
             }
 
-            if (is_array($aiTextDecoded)) {
+            if ($this->type->isArray($aiTextDecoded)) {
                 $explanation['title'] = Translator::t($config, 'title.ai');
                 $explanation['details'] = $aiTextDecoded['details'] ?? '';
                 $explanation['suggestions'] = $aiTextDecoded['suggestions'] ?? '';
@@ -184,16 +190,17 @@ Output must be in pure json (can be used with json_decode php function)): {\"det
         // Sanitize prompt before sending to any AI backend
         $sanitizer = new DefaultSensitiveDataSanitizer();
         $sanCfg = new SanitizerConfig();
-        $envSanitize = getenv('PHP_ERROR_INSIGHT_SANITIZE');
-        $shouldSanitize = false === $envSanitize ? true : in_array(strtolower((string) $envSanitize), ['1', 'true', 'yes', 'on'], true);
+        $envSanitize = $this->env->getEnv('PHP_ERROR_INSIGHT_SANITIZE');
+        $shouldSanitize = '' === $envSanitize ? true : $this->arr->inArrayStrict($this->str->toLower($envSanitize), ['1', 'true', 'yes', 'on']);
         if ($shouldSanitize) {
-            $rules = getenv('PHP_ERROR_INSIGHT_SANITIZE_RULES');
-            if (is_string($rules) && '' !== $rules) {
-                $sanCfg->enabledRules = array_map('trim', array_filter(explode(',', $rules)));
+            $rules = $this->env->getEnv('PHP_ERROR_INSIGHT_SANITIZE_RULES');
+            if ('' !== $rules) {
+                $sanCfg->enabledRules = $this->arr->filter($this->str->explode(',', $rules), fn ($v): bool => '' !== $this->str->trim((string) $v));
+                $sanCfg->enabledRules = $this->arr->map($sanCfg->enabledRules, fn ($v): string => $this->str->trim((string) $v));
             }
 
-            $mask = getenv('PHP_ERROR_INSIGHT_SANITIZE_MASK');
-            if (is_string($mask) && '' !== $mask) {
+            $mask = $this->env->getEnv('PHP_ERROR_INSIGHT_SANITIZE_MASK');
+            if ('' !== $mask) {
                 $sanCfg->masks['default'] = $mask;
             }
 
