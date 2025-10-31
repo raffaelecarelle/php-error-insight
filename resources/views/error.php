@@ -18,7 +18,7 @@ $editorUrl = $editorUrl ?? '';
 $verbose = $verbose ?? '';
 $aiModel = $aiModel ?? '';
 $exceptionClass = $exceptionClass ?? '';
-$fullTitle = trim(($title !== '' ? $title : 'Error') . ($where !== '' ? ' in ' . $where : ''));
+$fullTitle = trim(($title !== '' ? $title : 'Generic Error'));
 
 // pick first available editor link (for toolbar action)
 $firstEditor = '';
@@ -971,7 +971,7 @@ $dumper->setStyles([
         <?php if ($subtitle !== ''): ?>
             <div class="subtitle"><?= $e($subtitle) ?></div><?php endif; ?>
         <?php if ($where !== ''): ?>
-            <div class="location"><?= $e($where) ?></div><?php endif; ?>
+            <div class="location">at <?= $e($where) ?></div><?php endif; ?>
 
         <div class="toolbar" role="toolbar" aria-label="<?= $e($labels['aria']['page_actions'] ?? 'Page actions') ?>">
             <button class="button primary i-title" id="copyTitle"> <?= $e($labels['toolbar']['copy_title'] ?? 'Copy title') ?></button>
