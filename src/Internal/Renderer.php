@@ -49,6 +49,7 @@ final class Renderer implements RendererInterface
         private readonly Util\FileUtil $file = new Util\FileUtil(),
         private readonly Util\OutputUtil $out = new Util\OutputUtil(),
         private readonly Util\PathUtil $path = new Util\PathUtil(),
+        private readonly Util\HttpClientUtil $httpClientUtil = new Util\HttpClientUtil(),
     ) {
     }
 
@@ -70,7 +71,7 @@ final class Renderer implements RendererInterface
         // Force JSON output for JSON HTTP content types
         if (Config::OUTPUT_AUTO === $format) {
             $format = $this->isCliOrPhpdbg() ? Config::OUTPUT_TEXT : Config::OUTPUT_HTML;
-            if ($this->isHttpJsonRequest()) {
+            if ($this->httpClientUtil->isHttpJsonRequest()) {
                 $format = Config::OUTPUT_JSON;
             }
         }
@@ -89,59 +90,6 @@ final class Renderer implements RendererInterface
 
         // default to HTML
         $this->renderHtml($explanation, $config);
-    }
-
-    /**
-     * Emit a machine-readable representation for integrations.
-     *
-     * Why set headers here: when running under a web SAPI we owe a proper content-type and a 500 status code
-     * so upstream reverse proxies and clients can react appropriately.
-     */
-    /**
-     * Detect whether the incoming HTTP request declares a JSON content type.
-     */
-    private function isHttpJsonRequest(): bool
-    {
-        if ($this->env->isCliLike()) {
-            return false;
-        }
-
-        $contentType = '';
-        $accept = '';
-
-        // Prefer server-provided headers when available
-        $headers = $this->http->getAllHeaders();
-        foreach ($headers as $name => $value) {
-            $lname = $this->str->toLower($name);
-            if ('content-type' === $lname) {
-                $contentType = $value;
-            } elseif ('accept' === $lname) {
-                $accept = $value;
-            }
-        }
-
-        if ('' === $contentType) {
-            $ct = $this->http->serverVar('CONTENT_TYPE');
-            if ('' === $ct) {
-                $ct = $this->http->serverVar('HTTP_CONTENT_TYPE');
-            }
-
-            $contentType = $ct;
-        }
-
-        if ('' === $accept) {
-            $accept = $this->http->serverVar('HTTP_ACCEPT');
-        }
-
-        $ct = $this->str->toLower($this->str->trim($contentType));
-        $ac = $this->str->toLower($this->str->trim($accept));
-
-        // If either Content-Type or Accept declares JSON (including +json or json-p), force JSON output.
-        if ('' !== $ct && $this->str->contains($ct, 'json')) {
-            return true;
-        }
-
-        return '' !== $ac && $this->str->contains($ac, 'json');
     }
 
     /**
@@ -292,7 +240,6 @@ final class Renderer implements RendererInterface
             throw new RuntimeException($this->str->sprintf('Template file "%s" not found', $template));
         }
 
-        // Isolated scope include, expose $data keys as variables to the template via util
         (new Util\TemplateUtil())->includeWithData($template, $data);
     }
 
@@ -353,62 +300,20 @@ final class Renderer implements RendererInterface
 
         $trace = isset($explanation['trace']) && is_array($explanation['trace']) ? $explanation['trace'] : [];
 
-        // Compute project root and editor URL template
-        $projectRoot = null !== $config->projectRoot && '' !== $config->projectRoot && '0' !== $config->projectRoot ? $config->projectRoot : (getenv('PHP_ERROR_INSIGHT_ROOT') ?: getcwd());
-        $projectRoot = (string) $projectRoot;
+        $projectRoot = $config->projectRoot !== null && $config->projectRoot !== '' && $config->projectRoot !== '0' ? $config->projectRoot : $this->env->getCwd();
+
         if ('' !== $projectRoot) {
             $rp = realpath($projectRoot);
             $projectRoot = false !== $rp ? rtrim($rp, DIRECTORY_SEPARATOR) : rtrim($projectRoot, DIRECTORY_SEPARATOR);
         }
 
-        $editorTpl = null !== $config->editorUrl && '' !== $config->editorUrl && '0' !== $config->editorUrl ? $config->editorUrl : (getenv('PHP_ERROR_INSIGHT_EDITOR') ?: '');
+        $editorTpl = $config->editorUrl !== null && $config->editorUrl !== '' && $config->editorUrl !== '0' ? $config->editorUrl : $this->env->getEnv('PHP_ERROR_INSIGHT_EDITOR');
 
-        $normalize = static function (string $p): string {
-            $p = str_replace(['\\'], '/', $p);
+        $hostProjectRoot = $config->hostProjectRoot !== null && $config->hostProjectRoot !== '' && $config->hostProjectRoot !== '0' ? $config->hostProjectRoot : $this->env->getEnv('PHP_ERROR_INSIGHT_HOST_ROOT');
 
-            // collapse duplicate slashes
-            return preg_replace('#/{2,}#', '/', $p) ?? $p;
-        };
-        $hostProjectRoot = null !== $config->hostProjectRoot && '' !== $config->hostProjectRoot && '0' !== $config->hostProjectRoot ? $config->hostProjectRoot : (getenv('PHP_ERROR_INSIGHT_HOST_ROOT') ?: '');
-        $hostProjectRoot = (string) $hostProjectRoot;
         if ('' !== $hostProjectRoot) {
             $hostProjectRoot = rtrim('' !== (string) realpath($hostProjectRoot) && '0' !== (string) realpath($hostProjectRoot) ? (string) realpath($hostProjectRoot) : $hostProjectRoot, DIRECTORY_SEPARATOR);
         }
-
-        $toRel = static function (?string $abs) use ($projectRoot, $normalize): string {
-            if (null === $abs || '' === $abs) {
-                return '';
-            }
-
-            $a = $normalize($abs);
-            $root = $normalize($projectRoot);
-            if ('' !== $root && str_starts_with($a, $root . '/')) {
-                $rel = substr($a, strlen($root) + 1);
-            } else {
-                // try vendor truncation if path contains "/vendor/"
-                $pos = strpos($a, '/vendor/');
-                $rel = false !== $pos ? substr($a, $pos + 1) : ltrim($a, '/');
-            }
-
-            return $rel;
-        };
-        $toEditorHref = static function (string $tpl, ?string $abs, ?int $ln) use ($normalize, $projectRoot, $hostProjectRoot): string {
-            if ('' === $tpl || null === $abs || '' === $abs || null === $ln || 0 === $ln) {
-                return '';
-            }
-
-            $file = $normalize($abs);
-            $pr = $normalize($projectRoot);
-            $hr = $normalize($hostProjectRoot);
-            if ('' !== $hr && '' !== $pr && str_starts_with($file, $pr . '/')) {
-                $file = $hr . substr($file, strlen($pr));
-            }
-
-            $search = ['%file', '%line'];
-            $replace = [$file, (string) $ln];
-
-            return str_replace($search, $replace, $tpl);
-        };
 
         $frames = [];
         $idx = 0;
@@ -428,8 +333,8 @@ final class Renderer implements RendererInterface
                 'file' => $ff,
                 'line' => $ll,
                 'args' => $args,
-                'rel' => $toRel($ff),
-                'editorHref' => $toEditorHref((string) $editorTpl, $ff, $ll),
+                'rel' => $this->path->makeRelative($ff, $projectRoot),
+                'editorHref' => $this->path->toEditorHref($editorTpl, $ff, $ll, $projectRoot, $hostProjectRoot),
                 'codeHtml' => $this->renderCodeExcerpt($ff, $ll),
             ];
             ++$idx;
@@ -511,9 +416,9 @@ final class Renderer implements RendererInterface
                 'file' => $ff,
                 'line' => $ll,
                 'args' => [],
-                'rel' => $toRel($ff),
-                'editorHref' => $toEditorHref((string) $editorTpl, $ff, $ll),
-                'codeHtml' => $this->renderCodeExcerpt($file, (int) $line),
+                'rel' => $this->path->makeRelative($ff, $projectRoot),
+                'editorHref' => $this->path->toEditorHref($editorTpl, $ff, $ll, $projectRoot, $hostProjectRoot),
+                'codeHtml' => $this->renderCodeExcerpt($ff, $ll),
             ];
         }
 

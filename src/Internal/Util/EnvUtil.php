@@ -33,7 +33,7 @@ final class EnvUtil
      */
     public function getCwd(): string
     {
-        $cwd = getcwd();
+        $cwd = in_array($this->getEnv('PHP_ERROR_INSIGHT_ROOT'), ['', '0'], true) ? getcwd() : $this->getEnv('PHP_ERROR_INSIGHT_ROOT');
 
         return false === $cwd ? '' : $cwd;
     }

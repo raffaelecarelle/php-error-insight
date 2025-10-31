@@ -9,9 +9,9 @@ use const ENT_QUOTES;
 final class HtmlUtil
 {
     /**
-     * Esegue l'escape HTML di una stringa.
-     * Perché: `htmlspecialchars()` protegge da injection XSS; usiamo `ENT_QUOTES` per includere
-     * sia apici singoli che doppi e impostiamo l'encoding (UTF-8) per evitare ambiguità.
+     * Escapes a string for HTML.
+     * Why: `htmlspecialchars()` protects from XSS injection; we use `ENT_QUOTES` to include
+     * both single and double quotes and set encoding (UTF-8) to avoid ambiguities.
      */
     public function escape(string $s, int $flags = ENT_QUOTES, string $encoding = 'UTF-8'): string
     {

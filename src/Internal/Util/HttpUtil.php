@@ -57,8 +57,8 @@ final class HttpUtil
     }
 
     /**
-     * Invia un header HTTP, con opzione di sostituzione e code opzionale.
-     * Perché: incapsulare `header()` consente di centralizzare il comportamento e semplificare i test.
+     * Sends an HTTP header, with replacement option and optional response code.
+     * Why: encapsulating `header()` centralizes behavior and simplifies testing.
      */
     public function sendHeader(string $header, ?bool $replace = true, ?int $responseCode = null): void
     {

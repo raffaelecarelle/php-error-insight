@@ -10,8 +10,8 @@ namespace PhpErrorInsight\Internal\Util;
 final class RequestUtil
 {
     /**
-     * Restituisce i parametri di query.
-     * Perché: incapsulare l'accesso a `$_GET` facilita test e riduce il coupling con superglobali.
+     * Returns the query parameters.
+     * Why: encapsulating access to `$_GET` makes testing easier and reduces coupling with superglobals.
      *
      * @return array<string,mixed>
      */
@@ -21,8 +21,8 @@ final class RequestUtil
     }
 
     /**
-     * Restituisce i parametri del body (POST form-data/x-www-form-urlencoded).
-     * Perché: separare la lettura di `$_POST` rende chiari i punti di accesso e facilita il mocking.
+     * Returns body parameters (POST form-data/x-www-form-urlencoded).
+     * Why: separating the reading of `$_POST` clarifies access points and makes mocking easier.
      *
      * @return array<string,mixed>
      */
@@ -32,8 +32,8 @@ final class RequestUtil
     }
 
     /**
-     * Restituisce i cookie associati alla richiesta.
-     * Perché: accedere a `$_COOKIE` via wrapper semplifica controlli e test.
+     * Returns request cookies.
+     * Why: accessing `$_COOKIE` via a wrapper simplifies checks and testing.
      *
      * @return array<string,mixed>
      */
@@ -43,8 +43,8 @@ final class RequestUtil
     }
 
     /**
-     * Restituisce il contenuto di `$_SERVER`.
-     * Perché: l'isolamento delle superglobali consente di simulare l'ambiente in test.
+     * Returns the contents of `$_SERVER`.
+     * Why: isolating superglobals allows simulating the environment in tests.
      *
      * @return array<string,mixed>
      */

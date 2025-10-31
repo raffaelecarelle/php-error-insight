@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace PhpErrorInsight\Internal\Util;
 
+use Symfony\Component\Filesystem\Filesystem;
+
 use function is_string;
 
 use const FILE_IGNORE_NEW_LINES;
@@ -17,7 +19,7 @@ final class FileUtil
      */
     public function isFile(?string $path): bool
     {
-        return null !== $path && '' !== $path && '0' !== $path && is_file($path);
+        return null !== $path && is_file($path);
     }
 
     /**

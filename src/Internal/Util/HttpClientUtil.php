@@ -22,26 +22,33 @@ use const CURLOPT_URL;
  */
 final class HttpClientUtil
 {
+    public function __construct(
+        private readonly EnvUtil $env = new EnvUtil(),
+        private readonly HttpUtil $http = new HttpUtil(),
+        private readonly StringUtil $str = new StringUtil(),
+    ) {
+    }
+
     /**
-     * Esegue una richiesta HTTP con payload JSON e decodifica la risposta JSON.
-     * Perché:
-     * - Usiamo cURL per affidabilità e controllo di timeouts.
-     * - Impostiamo `Content-Length` per compatibilità con alcuni server/proxy.
-     * - `CURLOPT_CONNECTTIMEOUT` è limitato a max 5s per fail-fast nella fase di handshake,
-     *   mentre `CURLOPT_TIMEOUT` governa la durata complessiva secondo `timeoutSec`.
-     * - Torniamo `null` in caso di errori di rete o status non 2xx per segnalare fallimento
-     *   senza lanciare eccezioni in utility di basso livello.
-     * - Decodifichiamo come array associativo e verifichiamo che il risultato sia effettivamente un array.
+     * Performs an HTTP request with a JSON payload and decodes the JSON response.
+     * Why:
+     * - We use cURL for reliability and fine-grained timeout control.
+     * - We set `Content-Length` for compatibility with some servers/proxies.
+     * - `CURLOPT_CONNECTTIMEOUT` is capped at 5s to fail fast during the handshake, while
+     *   `CURLOPT_TIMEOUT` governs the total duration according to `timeoutSec`.
+     * - We return `null` on network errors or non-2xx status codes to signal failure without
+     *   throwing exceptions in a low-level utility.
+     * - We decode to an associative array and verify the result is actually an array.
      *
-     * @param array<string,mixed> $payload Dati da serializzare in JSON nel body
-     * @param array<int,string>   $headers Header addizionali da inviare
+     * @param array<string,mixed> $payload Data to serialize as JSON in the body
+     * @param array<int,string>   $headers Additional headers to send
      *
-     * @return array<string,mixed>|null JSON decodificato oppure null se errore/non 2xx/JSON non valido
+     * @return array<string,mixed>|null Decoded JSON or null on error/non-2xx/invalid JSON
      */
     public function requestJson(string $method, string $url, array $payload, array $headers, int $timeoutSec): ?array
     {
         if (!function_exists('curl_init')) {
-            // Per ambienti senza estensione cURL preferiamo un fallback neutro (null)
+            // For environments without the cURL extension we prefer a neutral fallback (null)
             return null;
         }
 
@@ -83,5 +90,58 @@ final class HttpClientUtil
         $decoded = json_decode((string) $result, true);
 
         return is_array($decoded) ? $decoded : null;
+    }
+
+    /**
+     * Emit a machine-readable representation for integrations.
+     *
+     * Why set headers here: when running under a web SAPI we owe a proper content-type and a 500 status code
+     * so upstream reverse proxies and clients can react appropriately.
+     */
+    /**
+     * Detect whether the incoming HTTP request declares a JSON content type.
+     */
+    public function isHttpJsonRequest(): bool
+    {
+        if ($this->env->isCliLike()) {
+            return false;
+        }
+
+        $contentType = '';
+        $accept = '';
+
+        // Prefer server-provided headers when available
+        $headers = $this->http->getAllHeaders();
+        foreach ($headers as $name => $value) {
+            $lname = $this->str->toLower($name);
+            if ('content-type' === $lname) {
+                $contentType = $value;
+            } elseif ('accept' === $lname) {
+                $accept = $value;
+            }
+        }
+
+        if ('' === $contentType) {
+            $ct = $this->http->serverVar('CONTENT_TYPE');
+            if ('' === $ct) {
+                $ct = $this->http->serverVar('HTTP_CONTENT_TYPE');
+            }
+
+            $contentType = $ct;
+        }
+
+        if ('' === $accept) {
+            $accept = $this->http->serverVar('HTTP_ACCEPT');
+        }
+
+        $ct = $this->str->toLower($this->str->trim($contentType));
+        $ac = $this->str->toLower($this->str->trim($accept));
+
+        // If either Content-Type or Accept declares JSON (including +json or json-p), force JSON output.
+        if ('' !== $ct && $this->str->contains($ct, 'json')) {
+            return true;
+        }
+
+        return '' !== $ac && $this->str->contains($ac, 'json');
     }
 }

@@ -22,17 +22,22 @@ use const STR_PAD_LEFT;
 final class StringUtil
 {
     /**
-     * Converte in minuscolo secondo l'implementazione nativa.
-     * Perché: incapsulare `strtolower()` rende il comportamento sostituibile/testabile.
+     * Converts to lowercase using the native implementation.
+     * Why: encapsulating `strtolower()` makes the behavior swappable/testable.
      */
     public function toLower(string $s): string
     {
         return strtolower($s);
     }
 
+    public function capitalaze(string $s): string
+    {
+        return ucfirst($s);
+    }
+
     /**
-     * Rimuove spazi bianchi ai bordi.
-     * Perché: centralizziamo `trim()` per coerenza con le altre util e facilità di test.
+     * Removes leading and trailing whitespace.
+     * Why: centralizing `trim()` keeps consistency with other utils and eases testing.
      */
     public function trim(string $s): string
     {
@@ -40,9 +45,9 @@ final class StringUtil
     }
 
     /**
-     * Restituisce la lunghezza della stringa in byte.
-     * Perché: `strlen()` è veloce e adatta per calcoli non sensibili a multibyte; se servisse
-     * consapevolezza multibyte si introdurrebbe un util separato.
+     * Returns the string length in bytes.
+     * Why: `strlen()` is fast and suitable for calculations not sensitive to multibyte; if multibyte
+     * awareness were needed, a separate util would be introduced.
      */
     public function length(string $s): int
     {
@@ -50,8 +55,8 @@ final class StringUtil
     }
 
     /**
-     * Verifica la presenza di una sottostringa.
-     * Perché: `str_contains()` è esplicita e sicura rispetto a confronti con `false` di `strpos()`.
+     * Checks for the presence of a substring.
+     * Why: `str_contains()` is explicit and safer than comparing `strpos()` with false.
      */
     public function contains(string $haystack, string $needle): bool
     {
@@ -68,8 +73,8 @@ final class StringUtil
     }
 
     /**
-     * Esegue sostituzioni multiple in un'unica passata.
-     * Perché: passare array di search/replace a `str_replace()` evita loop manuali.
+     * Performs multiple replacements in a single pass.
+     * Why: passing search/replace arrays to `str_replace()` avoids manual loops.
      *
      * @param array<string> $search
      * @param array<string> $replace
@@ -80,8 +85,8 @@ final class StringUtil
     }
 
     /**
-     * Padding a sinistra fino a una lunghezza target.
-     * Perché: `str_pad()` con `STR_PAD_LEFT` è più leggibile di costruzioni manuali.
+     * Left-pad up to a target length.
+     * Why: `str_pad()` with `STR_PAD_LEFT` is more readable than manual constructions.
      */
     public function padLeft(string $s, int $length, string $pad = ' '): string
     {

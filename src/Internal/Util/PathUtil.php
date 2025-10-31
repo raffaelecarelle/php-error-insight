@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace PhpErrorInsight\Internal\Util;
 
+use Symfony\Component\Filesystem\Path;
+
 use function dirname;
+use function strlen;
 
 use const DIRECTORY_SEPARATOR;
 
@@ -20,9 +23,9 @@ final class PathUtil
     }
 
     /**
-     * Risolve il percorso reale sul filesystem, lasciando invariato l'input se fallisce.
-     * Perché: `realpath()` può tornare false quando il file non esiste; il fallback preserva
-     * l'informazione originale evitando di propagare `false`.
+     * Resolves the real path on the filesystem, leaving the input unchanged if it fails.
+     * Why: `realpath()` can return false when the file does not exist; the fallback preserves
+     * the original information, avoiding propagation of `false`.
      */
     public function real(string $path): string
     {
@@ -31,9 +34,29 @@ final class PathUtil
         return false !== $rp ? $rp : $path;
     }
 
+    public function makeRelative(string $path, string $projectRoot): string
+    {
+        return Path::makeRelative($path, $projectRoot);
+    }
+
+    public function toEditorHref(string $editorTpl, string $file, int $line, string $projectRoot, string $hostProjectRoot): string
+    {
+        $file = $this->normalizeSlashes($file);
+        $pr = $this->normalizeSlashes($projectRoot);
+        $hr = $this->normalizeSlashes($hostProjectRoot);
+        if ('' !== $hr && '' !== $pr && str_starts_with($file, $pr . '/')) {
+            $file = $hr . substr($file, strlen($pr));
+        }
+
+        $search = ['%file', '%line'];
+        $replace = [$file, $line];
+
+        return str_replace($search, $replace, $editorTpl);
+    }
+
     /**
-     * Rimuove l'eventuale separatore finale in modo portabile.
-     * Perché: normalizzare i percorsi evita doppi separatori quando si concatenano segmenti.
+     * Removes any trailing directory separator in a portable way.
+     * Why: normalizing paths avoids double separators when concatenating segments.
      */
     public function rtrimSep(string $path): string
     {

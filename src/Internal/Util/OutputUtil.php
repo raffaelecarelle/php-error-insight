@@ -7,9 +7,9 @@ namespace PhpErrorInsight\Internal\Util;
 final class OutputUtil
 {
     /**
-     * Scrive una stringa su output standard senza newline.
-     * Perché: incapsulare `echo` permette di intercettare l'output nei test e di
-     * mantenere coerente la strategia di emissione (stdout).
+     * Writes a string to standard output without a newline.
+     * Why: encapsulating `echo` allows capturing output in tests and keeps a
+     * consistent emission strategy (stdout).
      */
     public function write(string $s): void
     {
@@ -17,8 +17,8 @@ final class OutputUtil
     }
 
     /**
-     * Scrive una stringa seguita da newline su output standard.
-     * Perché: avere un helper dedicato evita concatenazioni manuali e differenze di fine riga.
+     * Writes a string followed by a newline to standard output.
+     * Why: having a dedicated helper avoids manual concatenations and end-of-line differences.
      */
     public function writeln(string $s = ''): void
     {
