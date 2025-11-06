@@ -6,6 +6,7 @@ Screenshots:
 
 ![screenview1.png](resources/img/readme/screenview1.png)
 ![screenview2.png](resources/img/readme/screenview2.png)
+![terminal.png](resources/img/readme/terminal.png)
 
 - Supports local AI backends (e.g. Ollama/LocalAI) and APIs (e.g. OpenAI, Anthropic, Google Gemini).
 - HTML, text or JSON output.
