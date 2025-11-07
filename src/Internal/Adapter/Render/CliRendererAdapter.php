@@ -133,7 +133,7 @@ class CliRendererAdapter implements RendererInterface
         }
 
         // Render frames without code
-        if ([] !== $explanation->trace->frames) {
+        if ([] !== $explanation->trace->frames && $config->verbose) {
             $i = 1;
             foreach ($explanation->trace->frames as $frame) {
                 $lineOut = $this->str->sprintf('%d %s %s', $i, $frame->location(), $frame->signature());
