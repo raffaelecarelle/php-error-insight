@@ -6,6 +6,7 @@ namespace PhpErrorInsight\Tests\Util;
 
 use PhpErrorInsight\Internal\Util\SensitiveParameterSanitizer;
 use PHPUnit\Framework\TestCase;
+use SensitiveParameter;
 use stdClass;
 
 final class SensitiveParameterSanitizerTest extends TestCase
@@ -163,5 +164,11 @@ final class SensitiveParameterSanitizerTest extends TestCase
 
         $this->assertStringContainsString('[HIDDEN]', $result);
         $this->assertStringNotContainsString('***MASKED***', $result);
+    }
+
+    /** @phpstan-ignore-next-line */
+    private function methodWithSensitiveParam(string $email, #[SensitiveParameter] string $password): void
+    {
+
     }
 }

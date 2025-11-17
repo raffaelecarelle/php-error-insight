@@ -12,7 +12,7 @@ use Rector\DeadCode\Rector\ClassMethod\RemoveUselessParamTagRector;
 use Rector\DeadCode\Rector\ClassMethod\RemoveUselessReturnTagRector;
 use Rector\TypeDeclaration\Rector\ClassMethod\AddVoidReturnTypeWhereNoReturnRector;
 
-return RectorConfig::configure()
+$config = RectorConfig::configure()
     ->withPaths([
         __DIR__ . '/src',
         __DIR__ . '/tests',
@@ -38,3 +38,19 @@ return RectorConfig::configure()
         RemoveUselessReturnTagRector::class,
     ])
     ->withPhpSets(php81: true);
+
+$config->withSkip(
+    [
+        \Rector\DeadCode\Rector\ClassMethod\RemoveUnusedPrivateMethodParameterRector::class,
+        __DIR__ . '/tests/Util/SensitiveParameterSanitizerTest.php'
+    ]
+);
+
+$config->withSkip(
+    [
+        \Rector\DeadCode\Rector\ClassMethod\RemoveUnusedPrivateMethodRector::class,
+        __DIR__ . '/tests/Util/SensitiveParameterSanitizerTest.php'
+    ]
+);
+
+return $config;
