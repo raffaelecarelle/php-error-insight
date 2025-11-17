@@ -9,6 +9,7 @@ use PhpErrorInsight\Contracts\AIAdapterFactoryInterface;
 use PhpErrorInsight\Contracts\ExplainerInterface;
 use PhpErrorInsight\Internal\Adapter\AI\Factory\AIAdapterFactory;
 use PhpErrorInsight\Internal\Model\Explanation;
+use PhpErrorInsight\Internal\Util\SensitiveParameterSanitizer;
 
 use const E_USER_ERROR;
 
@@ -24,7 +25,8 @@ final class Explainer implements ExplainerInterface
     public function __construct(
         private readonly AIAdapterFactoryInterface $adapterFactory = new AIAdapterFactory(),
         private readonly Util\JsonUtil $json = new Util\JsonUtil(),
-        private readonly Util\TypeUtil $type = new Util\TypeUtil()
+        private readonly Util\TypeUtil $type = new Util\TypeUtil(),
+        private readonly SensitiveParameterSanitizer $sanitizer = new SensitiveParameterSanitizer()
     ) {
     }
 
@@ -69,10 +71,15 @@ final class Explainer implements ExplainerInterface
     {
         $lang = '' !== $config->language && '0' !== $config->language ? $config->language : 'en';
         $where = (null !== $file ? ($file . (null !== $line ? ":{$line}" : '')) : Translator::t($config, 'details.unknown'));
+
+        // Sanitize message and location before sending to AI
+        $sanitizedMessage = $this->sanitizer->sanitizeText($message);
+        $sanitizedWhere = $this->sanitizer->sanitizeText($where);
+
         $prompt = "You are an assistant that explains PHP errors in {$lang}.
-Message: {$message}
+Message: {$sanitizedMessage}
 Severity: {$severity}
-Location: {$where}
+Location: {$sanitizedWhere}
 Provide a concise Details (max 500 chars). Then list up to 2 practical fix suggestions.
 Output must be in pure json (can be used with json_decode php function)): {\"details\": \"\", \"suggestions\": [\"\", \"\"]}";
 

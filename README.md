@@ -170,18 +170,62 @@ Output:
 Note: the tool no longer uses static translated texts for details/suggestions. If the AI backend is not configured or doesn't respond, those sections might remain empty.
 
 ## Privacy and Data Sanitization
-By default, prompts are sanitized before being sent to any AI backend to reduce the risk of leaking sensitive information (emails, tokens, private IPs, cookies, payment-like numbers, etc.). You can control this behavior via environment variables:
 
-- PHP_ERROR_INSIGHT_SANITIZE: 1|0 (default: 1 when unset)
-- PHP_ERROR_INSIGHT_SANITIZE_RULES: comma-separated list of rules to enable (secrets, pii, payment, network). Example: `secrets,pii,network`
-- PHP_ERROR_INSIGHT_SANITIZE_MASK: override the default mask string (default: ***REDACTED***)
+### Automatic Sanitization of Sensitive Parameters
 
-Technical details:
-- Sanitization happens inside Internal/Explainer just after the prompt is built and before any backend/API call.
-- The default sanitizer masks Authorization headers, JWT-like tokens, emails, phone numbers, Italian CF/IBAN, payment-like card numbers, private IPs, and Cookie headers.
-- You can inject your own AI client (AIClientInterface) if you prefer to handle sanitization externally.
+PHP Error Insight automatically sanitizes sensitive data to prevent leakage in AI prompts. The sanitization system supports two main features:
 
-For more details, see docs/sanitizzazione-dati-ai.md.
+#### 1. Sensitive Parameter Detection
+
+Function and method parameters marked with the `#[SensitiveParameter]` attribute are automatically redacted in stack traces:
+
+```php
+function login(string $username, #[SensitiveParameter] string $password) {
+    // If an error occurs here, $password will be masked as ***REDACTED***
+    // in all error outputs (HTML, CLI, JSON) and AI prompts
+}
+```
+
+**How it works:**
+- The system uses PHP's Reflection API to detect parameters with `#[SensitiveParameter]` attribute
+- Arguments are sanitized automatically when building stack trace frames
+- Original values are never stored in logs or sent to AI backends
+- Sanitization happens transparently without any configuration needed
+
+**Example output:**
+```
+Stack trace:
+  #0 /path/to/file.php(42): login('admin', '***REDACTED***')
+  #1 ...
+```
+
+#### 2. Text Pattern Sanitization
+
+In addition to parameter-level sanitization, the system also masks common sensitive patterns in error messages and file paths before sending to AI:
+
+- **Authorization headers**: `Authorization: Bearer token` → `Authorization: Bearer ***REDACTED***`
+- **JWT tokens**: Long base64 strings in JWT format → `***REDACTED***`
+- **Email addresses**: `user@example.com` → `***REDACTED***`
+- **API keys and secrets**: `api_key=sk-123...` → `api_key=***REDACTED***`
+
+#### 3. Configuration
+
+The default mask string is `***REDACTED***`, but you can customize it programmatically if needed:
+
+```php
+use PhpErrorInsight\Internal\Util\SensitiveParameterSanitizer;
+
+$sanitizer = new SensitiveParameterSanitizer('[HIDDEN]');
+```
+
+**Where sanitization applies:**
+- AI prompts (error messages, file paths, and indirectly via stack traces)
+
+**Best practices:**
+1. Mark all sensitive parameters with `#[SensitiveParameter]`: passwords, tokens, API keys, personal data
+2. The sanitization is automatic and requires no configuration
+
+For more implementation details, see `src/Internal/Util/SensitiveParameterSanitizer.php`.
 
 ## Console colors customization (CLI)
 
