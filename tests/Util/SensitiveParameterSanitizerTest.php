@@ -6,7 +6,6 @@ namespace PhpErrorInsight\Tests\Util;
 
 use PhpErrorInsight\Internal\Util\SensitiveParameterSanitizer;
 use PHPUnit\Framework\TestCase;
-use SensitiveParameter;
 use stdClass;
 
 final class SensitiveParameterSanitizerTest extends TestCase

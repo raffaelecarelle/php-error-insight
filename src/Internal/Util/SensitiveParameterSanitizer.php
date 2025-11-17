@@ -10,7 +10,6 @@ use ReflectionParameter;
 use SensitiveParameter;
 use Throwable;
 
-use function count;
 use function is_array;
 use function is_object;
 use function is_string;
@@ -134,6 +133,6 @@ final class SensitiveParameterSanitizer
     {
         $attributes = $param->getAttributes(SensitiveParameter::class);
 
-        return $attributes !== [];
+        return [] !== $attributes;
     }
 }
