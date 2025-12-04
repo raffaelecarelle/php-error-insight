@@ -10,6 +10,19 @@
         "symfony/console": "^5.0|^6.0|^7.0",
         "symfony/filesystem": "^5.0|^6.0|^7.0"
     },
+    "keywords": [
+        "php",
+        "error",
+        "exception",
+        "warning",
+        "debug",
+        "llm",
+        "ai",
+        "gpt",
+        "chatgpt",
+        "local-llm",
+        "code-assistant"
+    ],
     "autoload": {
         "psr-4": {
             "PhpErrorInsight\\": "src/"
